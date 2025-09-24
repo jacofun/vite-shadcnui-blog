@@ -1,4 +1,4 @@
-export type ScheduleItem = {
+﻿export type ScheduleItem = {
   time: string
   title: string
   description: string
@@ -12,6 +12,12 @@ export type RegistryItem = {
 export type HighlightItem = {
   icon: "sparkles" | "heart"
   text: string
+}
+
+export type GalleryImage = {
+  src: string
+  alt: string
+  description?: string
 }
 
 export type EventConfig = {
@@ -53,6 +59,11 @@ export type EventConfig = {
     contact: string
     rsvpReminder: string
   }
+  gallery: {
+    title: string
+    description: string
+    images: GalleryImage[]
+  }
 }
 
 export const eventConfig: EventConfig = {
@@ -66,7 +77,7 @@ export const eventConfig: EventConfig = {
     badgeLabel: "Wedding Invitation",
     description:
       "With hearts full of joy, we invite you to join our family and friends for an intimate celebration of love under pastel evening skies.",
-    acceptLabel: "接受邀请",
+    acceptLabel: "Accept Invitation",
     highlights: [
       { icon: "sparkles", text: "Dress: Garden Chic" },
       { icon: "heart", text: "Adults Only" },
@@ -130,5 +141,35 @@ export const eventConfig: EventConfig = {
     ],
     contact: "Questions? Call Emma at (707) 555-0123",
     rsvpReminder: "Please RSVP by May 15 so we can save your seat beneath the stars.",
+  },
+  gallery: {
+    title: "Captured Moments",
+    description: "Golden hour engagements and joyful celebrations to set the mood for our day.",
+    images: [
+      {
+        src: "https://images.unsplash.com/photo-1463569643904-4fbae71ed917",
+        alt: "Couple walking through vineyard at sunset",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1520854221050-0f4caff449fb",
+        alt: "Bride holding bouquet with soft pink flowers",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1519741497674-611481863552",
+        alt: "Couple embracing during golden hour",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
+        alt: "Wedding reception table with candles and florals",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1520854221050-0fa76b395489",
+        alt: "Groom adjusting bow tie",
+      },
+      {
+        src: "https://images.unsplash.com/photo-1502720705749-3c7abb882bc1",
+        alt: "Guests celebrating with sparklers at night",
+      },
+    ],
   },
 }

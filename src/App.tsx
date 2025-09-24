@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { AnimatePresence, motion, type Transition } from "framer-motion"
 
 import { eventConfig } from "@/config/config"
 import { DetailsPage, type TimeLeft } from "@/pages/DetailsPage"
@@ -29,6 +30,9 @@ const calculateTimeLeft = (): TimeLeft => {
   }
 }
 
+const pageEase = [0.16, 1, 0.3, 1] as const
+const pageTransition: Transition = { duration: 0.45, ease: pageEase }
+
 function App() {
   const [hasAccepted, setHasAccepted] = useState(false)
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(() => calculateTimeLeft())
@@ -41,11 +45,31 @@ function App() {
     return () => clearInterval(timer)
   }, [])
 
-  if (!hasAccepted) {
-    return <InvitationPage onAccept={() => setHasAccepted(true)} />
-  }
-
-  return <DetailsPage timeLeft={timeLeft} />
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {!hasAccepted ? (
+        <motion.div
+          key="invitation"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -16 }}
+          transition={pageTransition}
+        >
+          <InvitationPage onAccept={() => setHasAccepted(true)} />
+        </motion.div>
+      ) : (
+        <motion.div
+          key="details"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -16 }}
+          transition={pageTransition}
+        >
+          <DetailsPage timeLeft={timeLeft} />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
 }
 
 export default App
