@@ -66,6 +66,14 @@ export type EventConfig = {
   }
 }
 
+export const globalConfig = {
+  data: {
+    title: "吴彦骁和焦芮的结婚邀请函",
+    description: "诚邀出席吴彦骁和焦芮的结婚典礼~"
+  }
+
+}
+
 export const eventConfig: EventConfig = {
   coupleNames: "Emma & Liam",
   eventSummary: "Saturday - June 21, 2025 - Villa Rosa, Napa Valley",
