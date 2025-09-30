@@ -1,183 +1,94 @@
-﻿export type ScheduleItem = {
-  time: string
-  title: string
-  description: string
-}
-
-export type RegistryItem = {
-  label: string
-  description: string
-}
-
-export type HighlightItem = {
-  icon: "sparkles" | "heart"
-  text: string
-}
-
-export type GalleryImage = {
-  src: string
-  alt: string
-  description?: string
-}
-
-export type EventConfig = {
-  coupleNames: string
-  eventSummary: string
-  celebrationDateLabel: string
-  arrivalWindow: string
-  venue: string
-  eventDateISO: string
-  invitation: {
-    badgeLabel: string
-    description: string
-    acceptLabel: string
-    highlights: HighlightItem[]
-  }
-  countdown: {
-    badgeLabel: string
-  }
-  eventDetails: {
-    title: string
-    description: string
-    ctaLabel: string
-  }
-  timeline: {
-    title: string
-    description: string
-    schedule: ScheduleItem[]
-  }
-  story: {
-    title: string
-    description: string
-    paragraphs: string[]
-  }
-  registry: {
-    title: string
-    description: string
-    buttonLabel: string
-    items: RegistryItem[]
-    contact: string
-    rsvpReminder: string
-  }
-  gallery: {
-    title: string
-    description: string
-    images: GalleryImage[]
-  }
-}
-
-export const globalConfig = {
+﻿const config = {
   data: {
-    title: "吴彦骁和焦芮的结婚邀请函",
-    description: "诚邀出席吴彦骁和焦芮的结婚典礼~"
-  }
-
-}
-
-export const eventConfig: EventConfig = {
-  coupleNames: "Emma & Liam",
-  eventSummary: "Saturday - June 21, 2025 - Villa Rosa, Napa Valley",
-  celebrationDateLabel: "Saturday, June 21, 2025",
-  arrivalWindow: "Arrivals from 4:00 PM - Ceremony at 5:00 PM",
-  venue: "Villa Rosa Gardens - 318 Lavender Lane - Napa Valley, CA",
-  eventDateISO: "2025-10-19T12:00:00+08:00",
-  invitation: {
-    badgeLabel: "Wedding Invitation",
+    // Main invitation title that appears on the page
+    title: "吴彦骁 & 焦芮的婚礼邀请函",
+    // Opening message/description of the invitation
     description:
-      "With hearts full of joy, we invite you to join our family and friends for an intimate celebration of love under pastel evening skies.",
-    acceptLabel: "Accept Invitation",
-    highlights: [
-      { icon: "sparkles", text: "Dress: Garden Chic" },
-      { icon: "heart", text: "Adults Only" },
+      "Kami akan menikah dan mengundang Anda untuk turut merayakan momen istimewa ini.", // Nanti ini dibikin random
+    // Groom's name
+    groomName: "吴彦骁",
+    // Bride's name
+    brideName: "焦芮",
+    // Groom's parents names
+    parentGroom: "Bapak Groom & Ibu Groom",
+    // Bride's parents names
+    parentBride: "Bapak Bride & Ibu Bride",
+    // Wedding date (format: YYYY-MM-DD)
+    date: "2024-12-24",
+    // Google Maps link for location (short clickable link)
+    maps_url: "https://goo.gl/maps/abcdef",
+    // Google Maps embed code to display map on website
+    // How to get: open Google Maps → select location → Share → Embed → copy link
+    maps_embed:
+      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.0000000000005!2d106.8270733147699!3d-6.175392995514422!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f4f1b6d7b1e7%3A0x2e69f4f1b6d7b1e7!2sMonumen%20Nasional!5e0!3m2!1sid!2sid!4v1633666820004!5m2!1sid!2sid",
+    // Event time (free format, example: "10:00 - 12:00 WIB")
+    time: "16:16 - 17:30 WIB",
+    // Venue/building name
+    location: "Grand Ballroom, Hotel Majesty",
+    // Full address of the wedding venue
+    address: "Jl. Jend. Sudirman No.1, Jakarta",
+    // Image that appears when link is shared on social media
+    ogImage: "/images/og-image.jpg",
+    // Icon that appears in browser tab
+    favicon: "/images/favicon.ico",
+    // List of event agenda/schedule
+    agenda: [
+      {
+        // First event name
+        title: "Akad Nikah",
+        // Event date (format: YYYY-MM-DD)
+        date: "2024-12-24",
+        // Start time (format: HH:MM)
+        startTime: "16:16",
+        // End time (format: HH:MM)
+        endTime: "17:30",
+        // Event venue
+        location: "Grand Ballroom, Hotel Majesty",
+        // Full address
+        address: "Jl. Jend. Sudirman No.1, Jakarta",
+      },
+      {
+        // Second event name
+        title: "Resepsi Nikah",
+        date: "2024-12-24",
+        startTime: "16:16",
+        endTime: "17:30",
+        location: "Grand Ballroom, Hotel Majesty",
+        address: "Jl. Jend. Sudirman No.1, Jakarta",
+      }
+      // You can add more agenda items with the same format
     ],
-  },
-  countdown: {
-    badgeLabel: "Countdown to Celebration",
-  },
-  eventDetails: {
-    title: "Event Details",
-    description: "We cannot wait to celebrate our forever with you.",
-    ctaLabel: "View Directions",
-  },
-  timeline: {
-    title: "Celebration Timeline",
-    description: "A gentle flow from golden hour vows to moonlit dancing.",
-    schedule: [
+
+    // Background music settings
+    audio: {
+      // Music file (choose one or replace with your own file)
+      src: "/audio/fulfilling-humming.mp3", // or /audio/nature-sound.mp3
+      // Music title to display
+      title: "Fulfilling Humming", // or Nature Sound
+      // Whether music plays automatically when website opens
+      autoplay: true,
+      // Whether music repeats continuously
+      loop: true
+    },
+
+    // List of bank accounts for digital envelope/gifts
+    banks: [
       {
-        time: "16:00",
-        title: "Guest Arrival & Welcome Drinks",
-        description: "Sip rose spritzers while soft jazz greets your evening.",
+        // Bank name
+        bank: "Bank Central Asia",
+        // Account number
+        accountNumber: "1234567890",
+        // Account holder name (all uppercase)
+        accountName: "FULAN",
       },
       {
-        time: "17:00",
-        title: "Garden Ceremony",
-        description: "Exchange of vows beneath blush florals and golden dusk light.",
-      },
-      {
-        time: "18:30",
-        title: "Dinner & Toasts",
-        description: "Seasonal tastes paired with heartfelt stories from loved ones.",
-      },
-      {
-        time: "20:00",
-        title: "First Dance & Celebration",
-        description: "Live band, sparkling lights, and a night of joyful dancing.",
-      },
-    ],
-  },
-  story: {
-    title: "Our Story",
-    description: "Twelve years, countless adventures, and a forever that begins here.",
-    paragraphs: [
-      "From a chance meeting in a cozy campus cafe to a sunset proposal on the cliffs of Big Sur, our love has been sealed with quiet moments and shared laughter.",
-      "We are honored to gather those who have cheered us on, hugged us tight, and believed in our happily ever after.",
-    ],
-  },
-  registry: {
-    title: "Kindly Respond & Registry",
-    description: "Let us know you will be with us and explore thoughtful gifts.",
-    buttonLabel: "Send RSVP",
-    items: [
-      {
-        label: "Honeymoon Wishes",
-        description: "Help us create memories on the Amalfi Coast getaway.",
-      },
-      {
-        label: "Home Keepsakes",
-        description: "A curated list of heirloom pieces to start our next chapter.",
-      },
-    ],
-    contact: "Questions? Call Emma at (707) 555-0123",
-    rsvpReminder: "Please RSVP by May 15 so we can save your seat beneath the stars.",
-  },
-  gallery: {
-    title: "Captured Moments",
-    description: "Golden hour engagements and joyful celebrations to set the mood for our day.",
-    images: [
-      {
-        src: "https://images.unsplash.com/photo-1463569643904-4fbae71ed917",
-        alt: "Couple walking through vineyard at sunset",
-      },
-      {
-        src: "https://images.unsplash.com/photo-1520854221050-0f4caff449fb",
-        alt: "Bride holding bouquet with soft pink flowers",
-      },
-      {
-        src: "https://images.unsplash.com/photo-1519741497674-611481863552",
-        alt: "Couple embracing during golden hour",
-      },
-      {
-        src: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
-        alt: "Wedding reception table with candles and florals",
-      },
-      {
-        src: "https://images.unsplash.com/photo-1520854221050-0fa76b395489",
-        alt: "Groom adjusting bow tie",
-      },
-      {
-        src: "https://images.unsplash.com/photo-1502720705749-3c7abb882bc1",
-        alt: "Guests celebrating with sparklers at night",
-      },
-    ],
-  },
-}
+        bank: "Bank Mandiri",
+        accountNumber: "0987654321",
+        accountName: "FULANA",
+      }
+      // You can add more banks with the same format
+    ]
+  }
+};
+
+export default config;

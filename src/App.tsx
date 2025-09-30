@@ -1,32 +1,27 @@
-import { useState } from "react"
-import { globalConfig } from "@/config/config"
+﻿import { useState } from "react"
+import config from "@/config/config"
 import { AnimatePresence} from "framer-motion"
-
-import { DetailsPage, type TimeLeft} from "@/pages/DetailsPage"
-import { InvitationPage } from "@/pages/InvitationPage"
 import { Helmet, HelmetProvider } from "react-helmet-async";
-
-const timeLeft:TimeLeft={
-  days: "20",
-  hours: "24",
-  minutes: "59",
-  seconds: "59"
-}
+import LandingPage from "@/pages/LandingPage";
+import Layout from "@/components/Layout";
+import MainContent from "@/pages/MainContent";
 
 function App() {
-  const [hasAccepted, setHasAccepted] = useState(false);
+  const [isInvitationOpen, setIsInvitationOpen] = useState(false);
   return(
     <HelmetProvider>
       <Helmet>
-        <title>{globalConfig.data.title}</title>
-        <meta name="title" content={globalConfig.data.title}/>
-        <meta name="description" content={globalConfig.data.description} />
+        <title>{config.data.title}</title>
+        <meta name="title" content={config.data.title}/>
+        <meta name="description" content={config.data.description} />
       </Helmet>
       <AnimatePresence mode='wait'>
-        {!hasAccepted?(
-          <InvitationPage onAccept={()=>setHasAccepted(true)}/>
-        ):(
-          <DetailsPage timeLeft={timeLeft}/>
+        {!isInvitationOpen ? (
+          <LandingPage onOpenInvitation={() => setIsInvitationOpen(true)} />
+        ) : (
+          <Layout>
+            <MainContent />
+          </Layout>
         )}
       </AnimatePresence>
     </HelmetProvider>
