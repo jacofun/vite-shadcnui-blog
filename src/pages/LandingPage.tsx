@@ -127,9 +127,9 @@ const LandingPage = ({ onOpenInvitation }: LandingPageProps) => {
             loading='eager'
             onLoad={() => handleImageLoad(index)}
             onError={() => handleImageLoad(index)}
-            initial={false}
+            initial={{opacity: 1}}
             animate={{ opacity: isReady ? (activeImage === index ? 1 : 0) : 0 }}
-            transition={{ duration: 1.5, ease: 'easeInOut' }}
+            transition={{ duration: 2, ease: 'easeInOut' }}
             className='absolute inset-0 h-full w-full object-cover'
             style={{ pointerEvents: 'none' }}
           />
@@ -145,10 +145,10 @@ const LandingPage = ({ onOpenInvitation }: LandingPageProps) => {
           transition={{ duration: 0.8 }}
           className='w-full max-w-2xl'
         >
-          <div className='backdrop-blur-md bg-white/65 p-8 sm:p-10 rounded-3xl border border-white/60 shadow-2xl'>
+          <div className='backdrop-blur-sm bg-white/65 p-8 sm:p-10 rounded-3xl border border-white/60 shadow-2xl'>
             <div className='mb-8 flex items-center justify-center gap-3'>
               <div className='h-px w-10 bg-rose-200/70' />
-              <span className='text-xs uppercase tracking-[0.4em] text-rose-300'>Wedding Day</span>
+              <span className='text-sm uppercase tracking-[0.4em] text-rose-300'>Wedding Day</span>
               <div className='h-px w-10 bg-rose-200/70' />
             </div>
 
@@ -231,7 +231,7 @@ const LandingPage = ({ onOpenInvitation }: LandingPageProps) => {
                 <div className='absolute inset-0 rounded-2xl bg-gradient-to-r from-rose-600 to-rose-500 opacity-0 transition-opacity duration-200 group-hover:opacity-100' />
               </motion.button>
               <p className='mt-3 text-center text-xs text-gray-500'>
-                点击后即可进入我们的专属页面，查看更完整的婚礼细节与照片。
+                点击后进入我们的专属页面，查看更完整的婚礼细节。
               </p>
             </motion.div>
           </div>
@@ -245,7 +245,7 @@ const LandingPage = ({ onOpenInvitation }: LandingPageProps) => {
             initial={{ opacity: 1 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: 1 }}
             className='absolute inset-0 z-20 flex items-center justify-center bg-white/85 backdrop-blur'
           >
             <div className='w-full max-w-sm space-y-6 rounded-3xl border border-white/70 bg-white/90 p-8 text-center shadow-2xl backdrop-blur'>
