@@ -7,6 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { zhCN } from "date-fns/locale";
 import { MapPin, RefreshCcw } from "lucide-react";
 import { Button } from "./ui/button";
+import { motion } from 'framer-motion'
 
 const AMAP_NAV_URL = "https://m.amap.com/navi/?dest=106.076318,38.018922&destName=%E9%9D%92%E9%93%9C%E5%B3%A1%E5%AE%BE%E9%A6%86%E4%BA%8C%E5%B1%82%E5%A5%A5%E6%96%AF%E5%8D%A1%E5%8E%85&hideRouteIcon=1&key=2f0ec297c02b58b342d65c080d21a976&jscodeaa83216f5d8d79b5246397c78e7284df=aa83216f5d8d79b5246397c78e7284df&aa83216f5d8d79b5246397c78e7284df=";
 const EVENT_DATE = new Date("2025-10-19T00:00:00");
@@ -31,16 +32,34 @@ export default function ScheduleSection(): JSX.Element {
         <p className="text-xs uppercase tracking-[0.6em] text-muted-foreground">
           Schedule
         </p>
-        <h2 className="text-3xl font-semibold tracking-[0.2em] text-foreground  sm:text-4xl">
+        <motion.h2
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          viewport={{ once: true, amount: 0.3 }} // 只执行一次，30%进入视口就触发
+          className="text-3xl font-semibold tracking-[0.2em] text-foreground  sm:text-4xl">
           日程
-        </h2>
-        <p className="text-base text-muted-foreground">
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          viewport={{ once: true, amount: 0.3 }} // 只执行一次，30%进入视口就触发
+          className="text-base text-muted-foreground">
           与您一同记录心动细节
-        </p>
+        </motion.p>
       </div>
 
       <div className="w-full max-w-3xl space-y-10 text-center">
-        <CountdownTimer targetDate={EVENT_DATE} />
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          viewport={{ once: true, amount: 0.3 }} // 只执行一次，30%进入视口就触发
+        >
+          <CountdownTimer targetDate={EVENT_DATE} />
+        </motion.div>
+
         <div className="rounded-3xl border border-border/40 bg-background/100 p-6 shadow-sm backdrop-blur">
           <Calendar
             mode="single"
@@ -76,7 +95,12 @@ export default function ScheduleSection(): JSX.Element {
           重置地图
         </Button>
 
-        <div className="overflow-hidden rounded-3xl border select-none border-border/40 shadow-sm pointer-events-none">
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          viewport={{ once: true, amount: 0.3 }} // 只执行一次，30%进入视口就触发
+          className="overflow-hidden rounded-3xl border select-none border-border/40 shadow-sm pointer-events-none">
           <iframe
             key={iframeKey}
             title="青铜峡宾馆导航"
@@ -85,7 +109,7 @@ export default function ScheduleSection(): JSX.Element {
             allowFullScreen
             loading="lazy"
           />
-        </div>
+        </motion.div>
 
 
       </div>

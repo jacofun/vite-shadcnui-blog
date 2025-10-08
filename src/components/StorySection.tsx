@@ -8,6 +8,7 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
+import { motion } from 'framer-motion'
 
 const STORY_SLIDES = [
   {
@@ -51,50 +52,66 @@ export default function StorySection(): JSX.Element {
       className="w-full bg-[#fff1ec] py-16 sm:py-20"
     >
       <div className="mx-auto flex items-center text-center w-full max-w-5xl flex-col gap-10 px-6">
-        <div className="max-w-2xl space-y-3">
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          viewport={{ once: true, amount: 0.3 }} // 只执行一次，30%进入视口就触发
+          className="max-w-2xl space-y-3">
           <p className="text-xs uppercase tracking-[0.5em] text-muted-foreground">
             Story
           </p>
-          <h2 className="text-3xl font-semibold tracking-[0.2em] text-foreground sm:text-4xl">
+          <h2
+            className="text-3xl font-semibold tracking-[0.2em] text-foreground sm:text-4xl">
             遇见
           </h2>
-          <p className="text-base text-muted-foreground">
+          <p
+            className="text-base text-muted-foreground">
             婚纱照里的光影，是我们一路走来的缩影。每一次按下快门，都是将相遇的惊喜与相知的暖意留在时间里。
           </p>
-        </div>
+        </motion.div>
 
-        <Carousel
-          setApi={setApi}
-          opts={{ align: "start", loop: false, skipSnaps: true }}
-          className="w-full"
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          viewport={{ once: true, amount: 0.3 }} // 只执行一次，30%进入视口就触发
         >
-          <CarouselContent className="-ml-4 md:-ml-6">
-            {STORY_SLIDES.map((slide) => (
-              <CarouselItem
-                key={slide.src}
-                className="min-w-0 basis-[85%] pl-4 md:basis-[60%] md:pl-6 lg:basis-[50%] xl:basis-[45%]"
-              >
-                <article className="flex h-full flex-col overflow-hidden rounded-3xl bg-white/95 shadow-sm">
-                  <img
-                    src={slide.src}
-                    className="h-full w-full object-cover select-none transition-opacity"
-                    decoding="async"
-                    loading="lazy"
-                    sizes="(max-width: 640px) 85vw, (max-width: 1024px) 60vw, 45vw"
-                    width={1080}  // 用目标展示最大宽度
-                    height={720}  // 按你的照片比例填写
-                    
-                  />
-                  <div className="space-y-1 px-5 py-4">
-                    <p className="text-sm text-muted-foreground">
-                      {slide.description}
-                    </p>
-                  </div>
-                </article>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
+          <Carousel
+            setApi={setApi}
+            opts={{ align: "start", loop: false, skipSnaps: true }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-4 md:-ml-6">
+              {STORY_SLIDES.map((slide) => (
+                <CarouselItem
+                  key={slide.src}
+                  className="min-w-0 basis-[85%] pl-4 md:basis-[60%] md:pl-6 lg:basis-[50%] xl:basis-[45%]"
+                >
+                  <article
+                    className="flex h-full flex-col overflow-hidden rounded-3xl bg-white/95 shadow-sm">
+                    <img
+                      src={slide.src}
+                      className="h-full w-full object-cover select-none transition-opacity"
+                      decoding="async"
+                      loading="lazy"
+                      sizes="(max-width: 640px) 85vw, (max-width: 1024px) 60vw, 45vw"
+                      width={1080}  // 用目标展示最大宽度
+                      height={720}  // 按你的照片比例填写
+
+                    />
+                    <div className="space-y-1 px-5 py-4">
+                      <p className="text-sm text-muted-foreground">
+                        {slide.description}
+                      </p>
+                    </div>
+                  </article>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+        </motion.div>
+
 
         <div className="flex items-center justify-center gap-3">
           {STORY_SLIDES.map((_, index) => (

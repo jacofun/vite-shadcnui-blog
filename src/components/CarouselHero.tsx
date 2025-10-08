@@ -6,6 +6,7 @@ import { CalendarDays, Clock3, Heart, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge } from "./ui/badge";
+import { motion } from 'framer-motion'
 
 const AUTOPLAY_DELAY = 3500;
 const NAVBAR_RESERVE = 88; // reserve ~88px for typical mobile bottom nav
@@ -172,8 +173,8 @@ export default function CarouselHero({
 
     window?.open(
       "mailto:?subject=" +
-        encodeURIComponent("\u9001\u4e0a\u795d\u798f") +
-        "&body=" + encodeURIComponent("\u795d\u798f\u8bed:")
+      encodeURIComponent("\u9001\u4e0a\u795d\u798f") +
+      "&body=" + encodeURIComponent("\u795d\u798f\u8bed:")
     );
   }, [onSendBlessing]);
 
@@ -246,7 +247,12 @@ export default function CarouselHero({
         </div>
 
         <div className="absolute inset-x-0 bottom-0 z-40 px-6 pb-24 sm:px-12 sm:pb-28">
-          <div className="pointer-events-auto flex max-w-xl flex-wrap items-center gap-3 text-white">
+          <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          viewport={{ once: true, amount: 0.3 }} // 只执行一次，30%进入视口就触发
+            className="pointer-events-auto flex max-w-xl flex-wrap items-center gap-3 text-white">
             <Button
               size="lg"
               variant="secondary"
@@ -266,11 +272,11 @@ export default function CarouselHero({
               <Heart className="size-4" />
               {"\u53d1\u9001\u795d\u798f"}
               <Badge variant="destructive" className="px-2 py-0.5 text-[10px]">
-        不可用
-      </Badge>
+                不可用
+              </Badge>
             </Button>
 
-          </div>
+          </motion.div>
         </div>
       </div>
 
