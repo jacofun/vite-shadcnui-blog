@@ -217,7 +217,7 @@ export default function CarouselHero({
               Wedding Invitation
             </p>
             <p className="text-xs uppercase tracking-[0.6em] text-white/70 sm:text-sm">
-              婚礼邀请函
+              婚礼邀请
             </p>
             <h1 className="text-2xl font-bold sm:text-5xl">
               吴彦骁 & 焦芮
