@@ -1,11 +1,12 @@
 ﻿const config = {
   data: {
     // Main invitation title that appears on the page
-    title: "吴彦骁 & 焦芮的婚礼邀请函222",
+    title: "吴彦骁 & 焦芮的婚礼邀请函",
     // Opening message/description of the invitation
     description:
-      "诚邀您的到来", // Nanti ini dibikin random
+      "诚邀您参加吴彦骁和焦芮的婚礼", // Nanti ini dibikin random
     // Groom's name
+    og_image: "https://yanxiao.me/images/og.jpg" ,
     groomName: "吴彦骁",
     // Bride's name
     brideName: "焦芮",

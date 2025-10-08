@@ -125,7 +125,7 @@ export default function CarouselHero({
     emblaApi.on("reInit", reInitHandler);
     emblaApi.on("pointerDown", pointerDownHandler);
     emblaApi.on("pointerUp", pointerUpHandler);
-    emblaApi.on("pointerLeave", pointerUpHandler);
+    // emblaApi.on("pointerLeave", pointerUpHandler);
 
     return () => {
       stopAutoplay();
@@ -133,7 +133,7 @@ export default function CarouselHero({
       emblaApi.off("reInit", reInitHandler);
       emblaApi.off("pointerDown", pointerDownHandler);
       emblaApi.off("pointerUp", pointerUpHandler);
-      emblaApi.off("pointerLeave", pointerUpHandler);
+      // emblaApi.off("pointerLeave", pointerUpHandler);
     };
   }, [emblaApi, images.length]);
 

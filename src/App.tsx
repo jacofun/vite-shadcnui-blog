@@ -13,6 +13,10 @@ function App() {
         <meta property="og:title" content={config.data.title}/>
         <meta name="description" content={config.data.description} />
         <meta property="og:description" content={config.data.description} />
+        <meta name="description" content={config.data.description}/>
+        <link rel="image_src" href={config.data.og_image}/>
+        <meta property="og:image" content={config.data.og_image}/>
+
       </Helmet>
       <AnimatePresence mode='wait'>
             <MainContent />
