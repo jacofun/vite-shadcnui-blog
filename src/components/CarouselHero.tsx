@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import useEmblaCarousel from "embla-carousel-react";
+import { CalendarDays, Send } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const AUTOPLAY_DELAY = 6000;
@@ -30,11 +32,15 @@ const defaultImages = [
 export type CarouselHeroProps = {
   images?: Array<{ src: string; alt?: string }>;
   className?: string;
+  onViewSchedule?: () => void;
+  onSendBlessing?: () => void;
 };
 
 export default function CarouselHero({
   images: overrideImages,
   className,
+  onViewSchedule,
+  onSendBlessing,
 }: CarouselHeroProps): JSX.Element {
   const images = useMemo(() => {
     const selected = overrideImages?.length ? overrideImages : defaultImages;
@@ -79,6 +85,7 @@ export default function CarouselHero({
         if (!emblaApi) {
           return;
         }
+
         if (emblaApi.canScrollNext()) {
           emblaApi.scrollNext();
         } else {
@@ -134,10 +141,36 @@ export default function CarouselHero({
         setActiveIndex(index);
         return;
       }
+
       emblaApi.scrollTo(index);
     },
     [emblaApi],
   );
+
+  const handleViewSchedule = useCallback(() => {
+    if (onViewSchedule) {
+      onViewSchedule();
+      return;
+    }
+
+    const scheduleTarget = document.querySelector<HTMLElement>('[data-section="schedule"], #schedule');
+    scheduleTarget?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [onViewSchedule]);
+
+  const handleSendBlessing = useCallback(() => {
+    if (onSendBlessing) {
+      onSendBlessing();
+      return;
+    }
+
+    const wishesTarget = document.querySelector<HTMLElement>('[data-section="wishes"], #wishes');
+    if (wishesTarget) {
+      wishesTarget.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    window?.open("mailto:?subject=送上祝福&body=祝福语:");
+  }, [onSendBlessing]);
 
   return (
     <div className={cn("relative w-full", className)}>
@@ -171,10 +204,49 @@ export default function CarouselHero({
             />
           ))}
         </div>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-3/5 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 px-6 pb-28 text-white sm:px-12 sm:pb-32">
+          <div className="max-w-xl space-y-6 text-left">
+            <p className="text-xs uppercase tracking-[0.6em] text-white/70 sm:text-sm">
+              Wedding Invitation
+            </p>
+            <h1 className="text-3xl font-semibold sm:text-5xl">{"\u5f20\u5e05\u5e05"} & {"\u738b\u7f8e\u7f8e"}</h1>
+            <p className="text-sm text-white/85 sm:text-base">
+              {"\u5b81\u590f\u5434\u4e2d"} {"\u00b7"} {"\u9752\u94dc\u5ce1\u5bbe\u9986"}
+              <br />
+              {"2025\u5e7410\u670819\u65e5"} {"\u00b7"} {"\u4e0a\u534811:28"}
+            </p>
+          </div>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 z-40 px-6 pb-16 sm:px-12 sm:pb-20">
+          <div className="pointer-events-auto flex max-w-xl flex-wrap items-center gap-3 text-white">
+            <Button
+              size="lg"
+              variant="secondary"
+              className="bg-white/90 text-black hover:bg-white"
+              onClick={handleViewSchedule}
+            >
+              <CalendarDays className="size-4" />
+              {"\u67e5\u770b\u65e5\u7a0b"}
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-white/70 bg-black/30 text-white hover:bg-white/10"
+              onClick={handleSendBlessing}
+            >
+              <Send className="size-4" />
+              {"\u53d1\u9001\u795d\u798f"}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {images.length > 1 ? (
-        <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-20 flex items-center justify-center gap-2">
+        <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-40 flex items-center justify-center gap-2">
           {images.map((_image, index) => {
             const isActive = index === activeIndex;
 
@@ -184,7 +256,7 @@ export default function CarouselHero({
                 type="button"
                 className={cn(
                   "h-2.5 w-2.5 rounded-full transition-all",
-                  isActive ? "w-6 bg-white/90" : "bg-white/50",
+                  isActive ? "w-6 bg-white" : "bg-white/50",
                 )}
                 aria-label={`Go to slide ${index + 1}`}
                 aria-pressed={isActive}
