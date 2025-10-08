@@ -1,7 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import { CalendarDays, Send } from "lucide-react";
+import { CalendarDays, Clock3, MapPin, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -179,7 +179,7 @@ export default function CarouselHero({
   return (
     <div className={cn("relative w-full", className)}>
       <div
-        className="relative w-full bg-zinc-900 select-none"
+        className="relative w-full bg-zinc-900"
         style={{ height: `calc(100vh - ${NAVBAR_RESERVE}px)` }}
       >
         <div className="absolute inset-0 z-0 overflow-hidden touch-pan-y" ref={emblaRef}>
@@ -201,7 +201,7 @@ export default function CarouselHero({
               src={image.src}
               alt={image.alt}
               className={cn(
-                "absolute inset-0 h-full w-full object-cover transition-opacity select-none",
+                "absolute inset-0 h-full w-full select-none object-cover transition-opacity",
                 index === activeIndex ? "opacity-100" : "opacity-0",
               )}
               style={{ transitionDuration: `${TRANSITION_DURATION}ms` }}
@@ -211,26 +211,40 @@ export default function CarouselHero({
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-3/5 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-6 pb-28 text-white select-none sm:px-12 sm:pb-32">
-          <div className="max-w-xl space-y-6 text-left">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 px-6 pb-40 text-white select-none sm:px-12 sm:pb-44">
+          <div className="max-w-xl space-y-5 text-left">
             <p className="text-xs uppercase tracking-[0.6em] text-white/70 sm:text-sm">
               Wedding Invitation
             </p>
-            <h1 className="text-3xl font-semibold sm:text-5xl">{"\u5f20\u5e05\u5e05"} & {"\u738b\u7f8e\u7f8e"}</h1>
-            <p className="text-sm text-white/85 sm:text-base">
-              {"\u5b81\u590f\u5434\u5fe0"} {"\u00b7"} {"\u9752\u94dc\u5ce1\u5bbe\u9986"}
-              <br />
-              {"2025\u5e7410\u670819\u65e5"} {"\u00b7"} {"\u4e0a\u534811:28"}
+            <h1 className="text-3xl font-semibold sm:text-5xl">
+              {"\u5f20\u5e05\u5e05"} & {"\u738b\u7f8e\u7f8e"}
+            </h1>
+            <p className="text-base font-medium text-white/90 sm:text-lg">
+              {"\u8bda\u631a\u9080\u8bf7\u60a8\u89c1\u8bc1\u6211\u4eec\u7684\u8a93\u8a00\u4e0e\u559c\u60a6"}
             </p>
+            <div className="space-y-2 text-sm text-white/85 sm:text-base">
+              <div className="flex items-center gap-2">
+                <MapPin className="size-4 text-white/70" />
+                <span>
+                  {"\u5b81\u590f\u5434\u5fe0"} {"\u00b7"} {"\u9752\u94dc\u5ce1\u5bbe\u9986"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock3 className="size-4 text-white/70" />
+                <span>
+                  {"2025\u5e7410\u670819\u65e5"} {"\u00b7"} {"\u4e0a\u534811:28"}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 z-40 px-6 pb-16 sm:px-12 sm:pb-20">
+        <div className="absolute inset-x-0 bottom-0 z-40 px-6 pb-24 sm:px-12 sm:pb-28">
           <div className="pointer-events-auto flex max-w-xl flex-wrap items-center gap-3 text-white">
             <Button
               size="lg"
               variant="secondary"
-              className="bg-white/90 text-black hover:bg-white select-none focus-visible:ring-white/60 transition-transform active:scale-[0.97] active:bg-white"
+              className="bg-white/90 text-black select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.97] active:bg-white"
               onClick={handleViewSchedule}
             >
               <CalendarDays className="size-4" />
@@ -239,7 +253,7 @@ export default function CarouselHero({
             <Button
               size="lg"
               variant="outline"
-              className="border-white/70 bg-black/30 text-white hover:bg-white/10 select-none focus-visible:ring-white/60 transition-transform active:scale-[0.97] active:bg-white/20"
+              className="border-white/70 bg-black/30 text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
               onClick={handleSendBlessing}
             >
               <Send className="size-4" />
@@ -250,7 +264,7 @@ export default function CarouselHero({
       </div>
 
       {images.length > 1 ? (
-        <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-40 flex items-center justify-center gap-2 select-none">
+        <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-40 flex items-center justify-center gap-2">
           {images.map((_image, index) => {
             const isActive = index === activeIndex;
 
@@ -273,9 +287,3 @@ export default function CarouselHero({
     </div>
   );
 }
-
-
-
-
-
-
