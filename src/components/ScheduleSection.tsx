@@ -3,6 +3,7 @@
 import CountdownTimer from "@/components/CountdownTimer";
 import { Calendar } from "@/components/ui/calendar";
 import { zhCN } from "date-fns/locale";
+import { MapPin } from "lucide-react";
 
 const AMAP_NAV_URL = "https://m.amap.com/navi/?dest=106.076318,38.018922&destName=%E9%9D%92%E9%93%9C%E5%B3%A1%E5%AE%BE%E9%A6%86%E4%BA%8C%E5%B1%82%E5%A5%A5%E6%96%AF%E5%8D%A1%E5%8E%85&hideRouteIcon=1&key=2f0ec297c02b58b342d65c080d21a976&jscodeaa83216f5d8d79b5246397c78e7284df=aa83216f5d8d79b5246397c78e7284df&aa83216f5d8d79b5246397c78e7284df=";
 const EVENT_DATE = new Date("2025-10-19T00:00:00");
@@ -26,7 +27,7 @@ export default function ScheduleSection(): JSX.Element {
         </p>
       </div>
 
-      <div className="w-full max-w-3xl space-y-10">
+      <div className="w-full max-w-3xl space-y-10 text-center">
         <CountdownTimer targetDate={EVENT_DATE} />
         <div className="rounded-3xl border border-border/40 bg-background/100 p-6 shadow-sm backdrop-blur">
           <Calendar
@@ -40,6 +41,17 @@ export default function ScheduleSection(): JSX.Element {
             disabled={{ before: EVENT_DATE, after: EVENT_DATE }}
             className="w-full mx-auto"
           />
+        </div>
+        <div className="text-center">
+          <span className="inline-flex items-center gap-2">
+            <MapPin className="size-4 text-bg/10" />
+            <p className="text-base uppercase tracking-[0.4em] text-muted-foreground">
+              宴会地址
+            </p>
+          </span>
+          <span className="inline-flex text-xs uppercase tracking-[0.4em] text-muted-foreground">
+            宁夏·吴忠·青铜峡宾馆 二层奥斯卡厅
+          </span>
         </div>
 
         <div className="overflow-hidden rounded-3xl border border-border/40 shadow-sm pointer-events-none">
@@ -67,7 +79,7 @@ export default function ScheduleSection(): JSX.Element {
             </li>
           </ul>
         </div>
-        
+
       </div>
     </section>
   );
