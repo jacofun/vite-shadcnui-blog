@@ -179,7 +179,7 @@ export default function CarouselHero({
   return (
     <div className={cn("relative w-full", className)}>
       <div
-        className="relative w-full bg-zinc-900"
+        className="relative w-full bg-zinc-900 select-none"
         style={{ height: `calc(100vh - ${NAVBAR_RESERVE}px)` }}
       >
         <div className="absolute inset-0 z-0 overflow-hidden touch-pan-y" ref={emblaRef}>
@@ -216,11 +216,14 @@ export default function CarouselHero({
             <p className="text-xs uppercase tracking-[0.6em] text-white/70 sm:text-sm">
               Wedding Invitation
             </p>
-            <h1 className="text-3xl font-semibold sm:text-5xl">
-              {"\u5f20\u5e05\u5e05"} & {"\u738b\u7f8e\u7f8e"}
+            <p className="text-xs uppercase tracking-[0.6em] text-white/70 sm:text-sm">
+              婚礼邀请函
+            </p>
+            <h1 className="text-2xl font-bold sm:text-5xl">
+              吴彦骁 & 焦芮
             </h1>
-            <p className="text-base font-medium text-white/90 sm:text-lg">
-              {"\u8bda\u631a\u9080\u8bf7\u60a8\u89c1\u8bc1\u6211\u4eec\u7684\u8a93\u8a00\u4e0e\u559c\u60a6"}
+            <p className="text-base  text-white/80 sm:text-lg">
+              我们诚挚邀请您，共同见证一段温柔和喜悦。
             </p>
             <div className="space-y-2 text-sm text-white/85 sm:text-base">
               <div className="flex items-center gap-2">
