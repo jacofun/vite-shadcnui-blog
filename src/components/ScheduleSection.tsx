@@ -42,11 +42,11 @@ export default function ScheduleSection(): JSX.Element {
           />
         </div>
 
-        <div className="overflow-hidden rounded-3xl border border-border/40 shadow-sm">
+        <div className="overflow-hidden rounded-3xl border border-border/40 shadow-sm pointer-events-none">
           <iframe
             title="青铜峡宾馆导航"
             src={AMAP_NAV_URL}
-            className="h-[320px] w-full"
+            className="h-[320px] w-full pointer-events-auto"
             allowFullScreen
             loading="lazy"
           />

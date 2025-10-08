@@ -2,6 +2,7 @@
 
 import CarouselHero from "@/components/CarouselHero";
 import ScheduleSection from "@/components/ScheduleSection";
+import Footer from "@/components/Footer";
 
 // Main Invitation Content
 export default function MainContent(): JSX.Element {
@@ -9,6 +10,7 @@ export default function MainContent(): JSX.Element {
     <section className="flex w-full flex-col gap-12">
       <CarouselHero />
       <ScheduleSection />
+      <Footer />
       {/* <Hero />
       <Events />
       <Location />
