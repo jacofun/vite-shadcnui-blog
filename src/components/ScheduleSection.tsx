@@ -17,7 +17,7 @@ export default function ScheduleSection(): JSX.Element {
     >
       <div className="space-y-3 text-center">
         <p className="text-xs uppercase tracking-[0.6em] text-muted-foreground">
-          Wedding Schedule
+          Schedule
         </p>
         <h2 className="text-3xl font-semibold text-foreground sm:text-4xl">
           日程安排

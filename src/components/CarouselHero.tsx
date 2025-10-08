@@ -6,7 +6,7 @@ import { CalendarDays, Clock3, MapPin, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const AUTOPLAY_DELAY = 6000;
+const AUTOPLAY_DELAY = 3500;
 const NAVBAR_RESERVE = 88; // reserve ~88px for typical mobile bottom nav
 const TRANSITION_DURATION = 700;
 
@@ -200,6 +200,8 @@ export default function CarouselHero({
               key={image.src}
               src={image.src}
               alt={image.alt}
+              decoding="async"
+              loading="lazy"
               className={cn(
                 "absolute inset-0 h-full w-full select-none object-cover transition-opacity",
                 index === activeIndex ? "opacity-100" : "opacity-0",
