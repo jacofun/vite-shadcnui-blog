@@ -1,12 +1,16 @@
 ﻿import type { JSX } from "react";
 
+
 import CountdownTimer from "@/components/CountdownTimer";
 import { Calendar } from "@/components/ui/calendar";
 import { zhCN } from "date-fns/locale";
-import { MapPin } from "lucide-react";
+import { MapPin, RefreshCcw } from "lucide-react";
+import { Button } from "./ui/button";
 
 const AMAP_NAV_URL = "https://m.amap.com/navi/?dest=106.076318,38.018922&destName=%E9%9D%92%E9%93%9C%E5%B3%A1%E5%AE%BE%E9%A6%86%E4%BA%8C%E5%B1%82%E5%A5%A5%E6%96%AF%E5%8D%A1%E5%8E%85&hideRouteIcon=1&key=2f0ec297c02b58b342d65c080d21a976&jscodeaa83216f5d8d79b5246397c78e7284df=aa83216f5d8d79b5246397c78e7284df&aa83216f5d8d79b5246397c78e7284df=";
 const EVENT_DATE = new Date("2025-10-19T00:00:00");
+
+
 
 export default function ScheduleSection(): JSX.Element {
   return (
@@ -19,8 +23,8 @@ export default function ScheduleSection(): JSX.Element {
         <p className="text-xs uppercase tracking-[0.6em] text-muted-foreground">
           Schedule
         </p>
-        <h2 className="text-3xl font-semibold text-foreground sm:text-4xl">
-          日程安排
+        <h2 className="text-3xl font-semibold tracking-[0.2em] text-foreground  sm:text-4xl">
+          日程
         </h2>
         <p className="text-base text-muted-foreground">
           与您一同记录心动细节
@@ -52,9 +56,18 @@ export default function ScheduleSection(): JSX.Element {
           <span className="inline-flex text-xs uppercase tracking-[0.4em] text-muted-foreground">
             宁夏·吴忠·青铜峡宾馆 二层奥斯卡厅
           </span>
-        </div>
 
-        <div className="overflow-hidden rounded-3xl border border-border/40 shadow-sm pointer-events-none">
+        </div>
+        <Button
+          size="default"
+          variant="default"
+          className="bg-white text-black select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.95] active:bg-rose-100/80"
+        >
+          <RefreshCcw className="size-4" />
+          重置地图
+        </Button>
+
+        <div className="overflow-hidden rounded-3xl border select-none border-border/40 shadow-sm pointer-events-none">
           <iframe
             title="青铜峡宾馆导航"
             src={AMAP_NAV_URL}
