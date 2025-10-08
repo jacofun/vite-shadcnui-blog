@@ -1,5 +1,6 @@
 ﻿import type { JSX } from "react";
 
+import CountdownTimer from "@/components/CountdownTimer";
 import { Calendar } from "@/components/ui/calendar";
 import { zhCN } from "date-fns/locale";
 
@@ -26,6 +27,7 @@ export default function ScheduleSection(): JSX.Element {
       </div>
 
       <div className="w-full max-w-3xl space-y-10">
+        <CountdownTimer targetDate={EVENT_DATE} />
         <div className="rounded-3xl border border-border/40 bg-background/100 p-6 shadow-sm backdrop-blur">
           <Calendar
             mode="single"
