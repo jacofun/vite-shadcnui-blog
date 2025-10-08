@@ -5,6 +5,7 @@ import { CalendarDays, Clock3, Heart, MapPin } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Badge } from "./ui/badge";
 
 const AUTOPLAY_DELAY = 3500;
 const NAVBAR_RESERVE = 88; // reserve ~88px for typical mobile bottom nav
@@ -260,10 +261,15 @@ export default function CarouselHero({
               variant="outline"
               className="border-white/70 bg-black/30 text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
               onClick={handleSendBlessing}
+              disabled
             >
               <Heart className="size-4" />
               {"\u53d1\u9001\u795d\u798f"}
+              <Badge variant="destructive" className="px-2 py-0.5 text-[10px]">
+        不可用
+      </Badge>
             </Button>
+
           </div>
         </div>
       </div>

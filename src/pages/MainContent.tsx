@@ -1,26 +1,23 @@
 ﻿import type { JSX } from "react";
 
 import CarouselHero from "@/components/CarouselHero";
-import ScheduleSection from "@/components/ScheduleSection";
+import BottomBar from "@/components/BottomBar";
 import Footer from "@/components/Footer";
+import ScheduleSection from "@/components/ScheduleSection";
 import StorySection from "@/components/StorySection";
 
-// Main Invitation Content
 export default function MainContent(): JSX.Element {
   return (
     <section className="flex w-full flex-col">
-      <CarouselHero />
-      <StorySection/>
+      <div id="carousel-hero-anchor">
+        <CarouselHero />
+      </div>
+      <StorySection />
       <ScheduleSection />
-      
-      <Footer />
-      
-      {/* <Hero />
-      <Events />
-      <Location />
-      <Gifts />
-      <Wishes /> */}
+      <div id="footer-anchor">
+        <Footer />
+      </div>
+      <BottomBar />
     </section>
   );
 }
-
