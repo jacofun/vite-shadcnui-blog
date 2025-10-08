@@ -13,21 +13,21 @@ const TRANSITION_DURATION = 700;
 
 const defaultImages = [
   {
-    src: "/images/2Y6A6844.jpg",
-    alt: "Bride and groom smiling during an outdoor shoot",
-  },
-  {
-    src: "/images/2Y6A6872.jpg",
-    alt: "Couple walking hand in hand",
+    src: "/images/8.2212215.jpg",
+    alt: "Close-up portrait capturing a candid laugh",
   },
   {
     src: "/images/2Y6A7048.jpg",
     alt: "Close-up portrait capturing a candid laugh",
   },
   {
-    src: "/images/2Y6A7070.jpg",
-    alt: "Couple embracing at golden hour",
+    src: "/images/2Y6A7073.jpg",
+    alt: "Bride and groom smiling during an outdoor shoot",
   },
+  {
+    src: "/images/2Y6A7023.jpg",
+    alt: "Couple walking hand in hand",
+  }
 ];
 
 export type CarouselHeroProps = {

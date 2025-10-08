@@ -15,17 +15,17 @@ const STORY_SLIDES = [
     description: "初见时的一颦一笑，像命运悄悄翻开了新的一页。",
   },
   {
-    src: "/images/2Y6A6872.jpg",
+    src: "/images/2Y6A7070.jpg",
     description: "沿着日常的轨迹，我们将彼此的故事写进了生活。",
   },
   {
-    src: "/images/2Y6A7048.jpg",
+    src: "/images/8.2212101.jpg",
     description: "在无数次对视的瞬间，坚定了把未来交给对方的决定。",
   },
   {
-    src: "/images/2Y6A7070.jpg",
+    src: "/images/8.2212290.jpg",
     description: "愿余生的每一步，都与你一起看遍风景。",
-  },
+  }
 ];
 
 export default function StorySection(): JSX.Element {

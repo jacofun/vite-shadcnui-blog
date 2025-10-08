@@ -10,7 +10,9 @@ function App() {
       <Helmet>
         <title>{config.data.title}</title>
         <meta name="title" content={config.data.title}/>
+        <meta property="og:title" content={config.data.title}/>
         <meta name="description" content={config.data.description} />
+        <meta property="og:description" content={config.data.description} />
       </Helmet>
       <AnimatePresence mode='wait'>
             <MainContent />
