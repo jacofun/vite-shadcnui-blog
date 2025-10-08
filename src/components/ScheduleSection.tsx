@@ -34,33 +34,12 @@ export default function ScheduleSection(): JSX.Element {
             modifiers={{ highlighted: EVENT_DATE }}
             locale={zhCN}
             weekStartsOn={1}
-            modifiersClassNames={{ highlighted: "bg-primary/10 text-primary font-semibold" }}
+            modifiersClassNames={{ highlighted: "bg-primary/10 text-primary font-bold rounded-md" }}
             disabled={{ before: EVENT_DATE, after: EVENT_DATE }}
-            className="mx-auto"
+            className="w-full mx-auto"
           />
         </div>
 
-        <div className="rounded-3xl border border-border/40 bg-background/80 p-6 shadow-sm backdrop-blur">
-          <ul className="space-y-4 text-base text-foreground/90 font-mono">
-            <li className="flex items-baseline gap-3">
-              <span className="font-semibold text-foreground ">10:48</span>
-              <span>迎宾接待</span>
-            </li>
-            <li className="flex items-baseline gap-3">
-              <span className="font-semibold text-foreground">11:28</span>
-              <span>典礼开始</span>
-            </li>
-            <li className="flex items-baseline gap-3">
-              <span className="font-semibold text-foreground">12:00</span>
-              <span>祝酒午宴</span>
-            </li>
-          </ul>
-
-
-        </div>
-        <p className="mt-3 text-sm text-muted-foreground text-center">
-            典礼地点：青铜峡宾馆二层奥斯卡厅
-          </p>
         <div className="overflow-hidden rounded-3xl border border-border/40 shadow-sm">
           <iframe
             title="青铜峡宾馆导航"
@@ -70,6 +49,23 @@ export default function ScheduleSection(): JSX.Element {
             loading="lazy"
           />
         </div>
+        <div className="rounded-3xl border border-border/40 bg-background/80 p-6 shadow-sm backdrop-blur">
+          <ul className="space-y-4 text-base text-foreground/90 font-mono">
+            <li className="flex items-baseline gap-3">
+              <span className=" text-foreground ">10:48</span>
+              <span>迎宾接待</span>
+            </li>
+            <li className="flex items-baseline gap-3">
+              <span className="text-foreground">11:28</span>
+              <span>典礼开始</span>
+            </li>
+            <li className="flex items-baseline gap-3">
+              <span className="text-foreground">12:00</span>
+              <span>祝酒午宴</span>
+            </li>
+          </ul>
+        </div>
+        
       </div>
     </section>
   );
