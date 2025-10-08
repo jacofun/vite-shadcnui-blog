@@ -1,4 +1,5 @@
 ﻿import type { JSX } from "react";
+import { useState } from "react"
 
 
 import CountdownTimer from "@/components/CountdownTimer";
@@ -12,7 +13,14 @@ const EVENT_DATE = new Date("2025-10-19T00:00:00");
 
 
 
+
+
 export default function ScheduleSection(): JSX.Element {
+  const [iframeKey, setIframeKey] = useState(0);
+  const reloadIframe = () => {
+    // 改变 key 让 React 销毁旧 iframe，重新挂载一个新的
+    setIframeKey((prev) => prev + 1)
+  }
   return (
     <section
       id="schedule"
@@ -62,6 +70,7 @@ export default function ScheduleSection(): JSX.Element {
           size="default"
           variant="default"
           className="bg-white text-black select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.95] active:bg-rose-100/80"
+          onClick={reloadIframe}
         >
           <RefreshCcw className="size-4" />
           重置地图
@@ -69,6 +78,7 @@ export default function ScheduleSection(): JSX.Element {
 
         <div className="overflow-hidden rounded-3xl border select-none border-border/40 shadow-sm pointer-events-none">
           <iframe
+            key={iframeKey}
             title="青铜峡宾馆导航"
             src={AMAP_NAV_URL}
             className="h-[320px] w-full pointer-events-auto"
@@ -76,22 +86,7 @@ export default function ScheduleSection(): JSX.Element {
             loading="lazy"
           />
         </div>
-        <div className="rounded-3xl border border-border/40 bg-background/80 p-6 shadow-sm backdrop-blur">
-          <ul className="space-y-4 text-base text-foreground/90 font-mono">
-            <li className="flex items-baseline gap-3">
-              <span className=" text-foreground ">10:48</span>
-              <span>迎宾接待</span>
-            </li>
-            <li className="flex items-baseline gap-3">
-              <span className="text-foreground">11:28</span>
-              <span>典礼开始</span>
-            </li>
-            <li className="flex items-baseline gap-3">
-              <span className="text-foreground">12:00</span>
-              <span>祝酒午宴</span>
-            </li>
-          </ul>
-        </div>
+
 
       </div>
     </section>
