@@ -1,7 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import { CalendarDays, Clock3, MapPin, Send } from "lucide-react";
+import { CalendarDays, Clock3, Heart, MapPin } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -261,7 +261,7 @@ export default function CarouselHero({
               className="border-white/70 bg-black/30 text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
               onClick={handleSendBlessing}
             >
-              <Send className="size-4" />
+              <Heart className="size-4" />
               {"\u53d1\u9001\u795d\u798f"}
             </Button>
           </div>
