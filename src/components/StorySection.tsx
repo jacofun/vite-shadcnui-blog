@@ -26,6 +26,10 @@ const STORY_SLIDES = [
   {
     src: "/images/8.2212290.jpg",
     description: "愿余生的每一步，都与你一起看遍风景。",
+  },
+    {
+    src: "/images/8.2212526.jpg",
+    description: "愿余生的每一步，都与你一起看遍风景。",
   }
 ];
 
@@ -79,7 +83,7 @@ export default function StorySection(): JSX.Element {
         >
           <Carousel
             setApi={setApi}
-            opts={{ align: "start", loop: false, skipSnaps: true }}
+            opts={{ align: "start", loop: false, skipSnaps: true, containScroll: "trimSnaps"}}
             className="w-full"
           >
             <CarouselContent className="-ml-4 md:-ml-6">
@@ -89,10 +93,10 @@ export default function StorySection(): JSX.Element {
                   className="min-w-0 basis-[85%] pl-4 md:basis-[60%] md:pl-6 lg:basis-[50%] xl:basis-[45%]"
                 >
                   <article
-                    className="flex h-full flex-col overflow-hidden rounded-3xl bg-white/95 shadow-sm">
+                    className="flex h-[70svh] flex-col overflow-hidden rounded-3xl bg-white/95 shadow-sm">
                     <img
                       src={slide.src}
-                      className="h-full w-full object-cover select-none transition-opacity"
+                      className="object-cover object-center select-none transition-opacity"
                       decoding="async"
                       loading="lazy"
                       sizes="(max-width: 640px) 85vw, (max-width: 1024px) 60vw, 45vw"

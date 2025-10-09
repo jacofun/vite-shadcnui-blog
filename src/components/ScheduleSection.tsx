@@ -46,7 +46,11 @@ export default function ScheduleSection(): JSX.Element {
           transition={{ duration: 0.8, ease: "easeOut" }}
           viewport={{ once: true, amount: 0.3 }} // 只执行一次，30%进入视口就触发
           className="text-base text-muted-foreground">
-          与您一同记录心动细节
+          人的一生有三万多天 <br />
+          很开心这一天 <br />
+          你专门为我们而来 <br />
+          请准备好你的好心情和好胃口 <br />
+          来奔赴这场冬日的聚会的叭~
         </motion.p>
       </div>
 

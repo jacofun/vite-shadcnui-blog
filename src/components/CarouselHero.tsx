@@ -185,11 +185,11 @@ export default function CarouselHero({
         style={{ height: `calc(100vh - ${NAVBAR_RESERVE}px)` }}
       >
         <div className="absolute inset-0 z-0 overflow-hidden touch-pan-y" ref={emblaRef}>
-          <div className="flex h-full">
+          <div className="flex h-[100svh]">
             {images.map((image, index) => (
               <div
                 key={`slide-${image.src}-${index}`}
-                className="h-full flex-[0_0_100%]"
+                className="h-[100svh] flex-[0_0_100%]"
                 aria-hidden="true"
               />
             ))}
@@ -205,7 +205,7 @@ export default function CarouselHero({
               decoding="async"
               loading="lazy"
               className={cn(
-                "absolute inset-0 h-full w-full select-none object-cover transition-opacity",
+                "absolute inset-0 w-full h-[88svh] select-none object-cover transition-opacity",
                 index === activeIndex ? "opacity-100" : "opacity-0",
               )}
               style={{ transitionDuration: `${TRANSITION_DURATION}ms` }}
@@ -213,7 +213,7 @@ export default function CarouselHero({
           ))}
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-3/5 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex h-full bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 px-6 pb-40 text-white select-none sm:px-12 sm:pb-44">
           <div className="max-w-xl space-y-5 text-left">
