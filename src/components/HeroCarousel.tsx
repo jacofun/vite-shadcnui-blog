@@ -126,7 +126,7 @@ export default function HeroCarousel({
                     ))}
                 </div>
             </Carousel>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-6 pb-40 text-white select-none sm:px-12 sm:pb-44">
+            <div className="pointer-events-none absolute w-full inset-x-0 bottom-0 z-20 px-8 pb-10 text-white select-none ">
                 <div className="max-w-xl space-y-5 text-left">
                     <p className="text-xs uppercase tracking-[0.6em] text-white/70 sm:text-sm">
                         Wedding Invitation
@@ -155,39 +155,40 @@ export default function HeroCarousel({
                         </div>
                     </div>
                 </div>
-            </div>
-            <div className="absolute inset-x-0 bottom-0 z-40 px-6 pb-24 sm:px-12 sm:pb-28">
-                <motion.div
-                    initial={{ opacity: 0, y: 50 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    viewport={{ once: true, amount: 0.3 }} // 只执行一次，30%进入视口就触发
-                    className="pointer-events-auto flex max-w-xl flex-wrap items-center gap-3 text-white">
-                    <Button
-                        size="lg"
-                        variant="secondary"
-                        className="bg-white/90 text-black select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.97] active:bg-white"
-                    //todo:跳转日程
-                    >
-                        <CalendarDays className="size-4" />
-                        转到日程
-                    </Button>
-                    <Button
-                        size="lg"
-                        variant="outline"
-                        className="border-white/70 bg-black/30 text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
-                        disabled
-                    //todo: 跳转留言
-                    >
-                        <Heart className="size-4" />
-                        留言
-                        <Badge variant="destructive" className="px-2 py-0.5 text-[10px]">
-                            暂不可用
-                        </Badge>
-                    </Button>
+                <div className="py-6 z-40 mx-auto pb-24 sm:px-12 sm:pb-28">
+                    <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        viewport={{ once: true, amount: 0.3 }} // 只执行一次，30%进入视口就触发
+                        className="pointer-events-auto flex max-w-xl flex-wrap items-center gap-3 text-white">
+                        <Button
+                            size="lg"
+                            variant="secondary"
+                            className="bg-white/90 text-black select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.97] active:bg-white"
+                        //todo:跳转日程
+                        >
+                            <CalendarDays className="size-4" />
+                            转到日程
+                        </Button>
+                        <Button
+                            size="lg"
+                            variant="outline"
+                            className="border-white/70 bg-black/30 text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
+                            disabled
+                        //todo: 跳转留言
+                        >
+                            <Heart className="size-4" />
+                            留言
+                            <Badge variant="destructive" className="px-2 py-0.5 text-[10px]">
+                                暂不可用
+                            </Badge>
+                        </Button>
 
-                </motion.div>
+                    </motion.div>
+                </div>
             </div>
+
         </section>
     )
 }
