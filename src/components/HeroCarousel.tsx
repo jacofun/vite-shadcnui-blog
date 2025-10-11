@@ -9,6 +9,10 @@ import {
 import Fade from "embla-carousel-fade";
 import Autoplay from "embla-carousel-autoplay"
 import { cn } from "@/lib/utils"
+import { CalendarDays, Clock3, Heart, MapPin } from "lucide-react";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { motion } from "framer-motion";
 
 type ImageItem = { src: string; alt?: string; title?: string; subtitle?: string }
 
@@ -34,7 +38,8 @@ export default function HeroCarousel({
     // 自动播放插件
     const autoplayPlugin = useRef(
         Autoplay({
-            delay: 3000,
+            //自动切换间隔
+            delay: 4000,
             stopOnInteraction: false,
             stopOnMouseEnter: false,
         })
@@ -62,14 +67,14 @@ export default function HeroCarousel({
     }, [api])
     return (
         <section
-            className={cn("relative w-full h-[88dvh] overflow-hidden select-none", className)}
+            className={cn("relative w-full h-[90dvh] overflow-hidden select-none", className)}
             aria-roledescription="carousel"
         >
             <Carousel
                 setApi={setApi}
                 opts={{ loop: true, align: "start" }}
                 plugins={[fadePlugin, autoplayPlugin.current]}
-                className={cn("absolute inset-0 h-full w-full [touch-action:pan-x]"
+                className={cn(" select-none absolute inset-0 h-full w-full [touch-action:pan-x]"
                 )}>
                 {/* ✅ 关键：蒙版不拦截事件 */}
                 <div
@@ -91,7 +96,7 @@ export default function HeroCarousel({
                             <img
                                 src={img.src}
                                 alt={img.alt ?? ""}
-                                className="w-full h-full object-cover block"
+                                className="w-full h-full object-cover block select-none"
                                 draggable={false}
                             />
                             {/* 如需文案，这里 z-20，仍可点到箭头 */}
@@ -119,6 +124,67 @@ export default function HeroCarousel({
                     ))}
                 </div>
             </Carousel>
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-6 pb-40 text-white select-none sm:px-12 sm:pb-44">
+                <div className="max-w-xl space-y-5 text-left">
+                    <p className="text-xs uppercase tracking-[0.6em] text-white/70 sm:text-sm">
+                        Wedding Invitation
+                    </p>
+                    <p className="text-xs uppercase tracking-[0.6em] text-white/70 sm:text-sm">
+                        婚礼邀请
+                    </p>
+                    <h1 className="text-2xl font-bold sm:text-5xl">
+                        吴彦骁 & 焦芮
+                    </h1>
+                    <p className="text-base  text-white/80 sm:text-lg">
+                        我们诚挚邀请您，共同见证一段温柔和喜悦。
+                    </p>
+                    <div className="space-y-2 text-sm text-white/85 sm:text-base">
+                        <div className="flex items-center gap-2">
+                            <MapPin className="size-4 text-white/70" />
+                            <span>
+                                宁夏吴忠 · 青铜峡宾馆
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Clock3 className="size-4 text-white/70" />
+                            <span>
+                                2025年10月19日 · 上午11:28
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="absolute inset-x-0 bottom-0 z-40 px-6 pb-24 sm:px-12 sm:pb-28">
+                <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    viewport={{ once: true, amount: 0.3 }} // 只执行一次，30%进入视口就触发
+                    className="pointer-events-auto flex max-w-xl flex-wrap items-center gap-3 text-white">
+                    <Button
+                        size="lg"
+                        variant="secondary"
+                        className="bg-white/90 text-black select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.97] active:bg-white"
+
+                    >
+                        <CalendarDays className="size-4" />
+                        转到日程
+                    </Button>
+                    <Button
+                        size="lg"
+                        variant="outline"
+                        className="border-white/70 bg-black/30 text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
+                        disabled
+                    >
+                        <Heart className="size-4" />
+                        留言
+                        <Badge variant="destructive" className="px-2 py-0.5 text-[10px]">
+                            暂不可用
+                        </Badge>
+                    </Button>
+
+                </motion.div>
+            </div>
         </section>
     )
 }
