@@ -5,11 +5,13 @@ import BottomBar from "@/components/BottomBar";
 import Footer from "@/components/Footer";
 import ScheduleSection from "@/components/ScheduleSection";
 import StorySection from "@/components/StorySection";
+import HeroCarousel from "@/components/HeroCarousel";
 
 export default function MainContent(): JSX.Element {
   return (
     <section className="flex w-full flex-col">
-      <div id="carousel-hero-anchor">
+      <HeroCarousel/>
+      {/* <div id="carousel-hero-anchor">
         <CarouselHero />
       </div>
       <StorySection />
@@ -17,7 +19,7 @@ export default function MainContent(): JSX.Element {
       <div id="footer-anchor">
         <Footer />
       </div>
-      <BottomBar />
+      <BottomBar /> */}
     </section>
   );
 }
