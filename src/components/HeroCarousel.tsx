@@ -1,4 +1,4 @@
-// FullscreenHeroCarousel.tsx
+// HeroCarousel.tsx
 import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import {
     Carousel,
@@ -23,7 +23,7 @@ const mods = import.meta.glob('@/assets/gallery/hero/*.{jpg,png}', {
 
 const defaultImages: ImageItem[] = Object.values(mods).map((src) => ({ src: src as string }))
 
-interface FullscreenHeroCarouselProps {
+interface HeroCarouselProps {
     images?: ImageItem[]
     className?: string
 }
@@ -31,7 +31,7 @@ interface FullscreenHeroCarouselProps {
 export default function HeroCarousel({
     images = defaultImages,
     className,
-}: FullscreenHeroCarouselProps): JSX.Element {
+}: HeroCarouselProps): JSX.Element {
 
     // 渐入渐出插件
     const fadePlugin = useMemo(() => Fade(), []);
@@ -165,7 +165,7 @@ export default function HeroCarousel({
                         size="lg"
                         variant="secondary"
                         className="bg-white/90 text-black select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.97] active:bg-white"
-
+//todo:跳转日程
                     >
                         <CalendarDays className="size-4" />
                         转到日程
@@ -175,6 +175,7 @@ export default function HeroCarousel({
                         variant="outline"
                         className="border-white/70 bg-black/30 text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
                         disabled
+                        //todo: 跳转留言
                     >
                         <Heart className="size-4" />
                         留言
