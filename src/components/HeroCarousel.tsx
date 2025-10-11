@@ -4,8 +4,6 @@ import {
     Carousel,
     CarouselContent,
     CarouselItem,
-    CarouselNext,
-    CarouselPrevious,
     type CarouselApi,
 } from "@/components/ui/carousel"
 import Fade from "embla-carousel-fade";
@@ -14,12 +12,12 @@ import { cn } from "@/lib/utils"
 
 type ImageItem = { src: string; alt?: string; title?: string; subtitle?: string }
 
-const defaultImages: ImageItem[] = [
-    { src: "/images/8.2212215.jpg", alt: "Close-up portrait capturing a candid laugh" },
-    { src: "/images/2Y6A7048.jpg", alt: "Close-up portrait capturing a candid laugh" },
-    { src: "/images/2Y6A7073.jpg", alt: "Bride and groom smiling during an outdoor shoot" },
-    { src: "/images/2Y6A7023.jpg", alt: "Couple walking hand in hand" },
-]
+//读取图片
+const mods = import.meta.glob('@/assets/gallery/hero/*.{jpg,png}', {
+    eager: true, import: 'default', query: '?url'
+})
+
+const defaultImages: ImageItem[] = Object.values(mods).map((src) => ({ src: src as string }))
 
 interface FullscreenHeroCarouselProps {
     images?: ImageItem[]
@@ -38,7 +36,7 @@ export default function HeroCarousel({
         Autoplay({
             delay: 3000,
             stopOnInteraction: false,
-            stopOnMouseEnter: true,
+            stopOnMouseEnter: false,
         })
     )
     // Carousel api
@@ -64,35 +62,36 @@ export default function HeroCarousel({
     }, [api])
     return (
         <section
-            className={cn("w-full h-screen overflow-hidden select-none touch-pan-y", className)}
+            className={cn("relative w-full h-[88dvh] overflow-hidden select-none", className)}
             aria-roledescription="carousel"
         >
             <Carousel
                 setApi={setApi}
                 opts={{ loop: true, align: "start" }}
                 plugins={[fadePlugin, autoplayPlugin.current]}
-                className="relative h-full w-full">
+                className={cn("absolute inset-0 h-full w-full [touch-action:pan-x]"
+                )}>
                 {/* ✅ 关键：蒙版不拦截事件 */}
                 <div
                     className={cn(
-                        "absolute inset-0 z-10 pointer-events-none",
+                        "absolute inset-0 h-full w-full z-10 pointer-events-none",
                         "bg-black/90",
                         "bg-gradient-to-t from-black/90 via-black/40 to-transparent"
                     )}
                     aria-hidden="true"
                 />
 
-                <CarouselContent className="w-full h-full ml-0">
+                <CarouselContent className="absolute inset-0 w-full h-full ml-0">
                     {images.map((img, idx) => (
                         <CarouselItem
                             key={idx}
-                            className="relative pl-0 h-full min-h-full w-full basis-full"
+                            className="pl-0 h-full w-full basis-full"
                         >
                             {/* 背景图（全屏铺满） */}
                             <img
                                 src={img.src}
                                 alt={img.alt ?? ""}
-                                className="inset-0 z-0 w-full h-full object-cover block"
+                                className="w-full h-full object-cover block"
                                 draggable={false}
                             />
                             {/* 如需文案，这里 z-20，仍可点到箭头 */}
@@ -113,15 +112,12 @@ export default function HeroCarousel({
                             className={cn(
                                 "h-2.5 w-2.5 rounded-full transition-all",
                                 i === selected
-                                    ? "bg-white opacity-100 scale-100"
+                                    ? "bg-white w-5 opacity-100 scale-100"
                                     : "bg-white/60 opacity-70 scale-75 hover:opacity-100"
                             )}
                         />
                     ))}
                 </div>
-                {/* 控件层级确保在蒙版之上（蒙版已 pointer-events-none 也无所谓） */}
-                <CarouselPrevious className="left-3 md:left-6 z-20" />
-                <CarouselNext className="right-3 md:right-6 z-20" />
             </Carousel>
         </section>
     )
