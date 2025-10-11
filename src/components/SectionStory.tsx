@@ -64,7 +64,7 @@ export default function SectionStory({
         <section
             id="story"
             data-section="story"
-            className={cn("relative w-full flex items-center gap-6 flex-col h-[90dvh] bg-[#fff1ec] overflow-hidden select-none py-8 [touch-action:auto]", className)}
+            className={cn("relative w-full flex items-center gap-6 flex-col min-h-screen h-auto bg-[#fff1ec] overflow-hidden select-none py-8 [touch-action:auto]", className)}
             aria-roledescription="carousel"
         >
             {/* 文字区域 */}
@@ -95,25 +95,26 @@ export default function SectionStory({
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 viewport={{ once: true, amount: 0.3 }} // 只执行一次，30%进入视口就触发
+                
             >
                 <Carousel
                     setApi={setApi}
-                    opts={{ loop: true, align: "start" }}
+                    opts={{ loop: true, align: "center" }}
                     plugins={[autoplayPlugin.current]}
-                    className={cn(" w-full [touch-action:auto]"
+                    className={cn(" relative w-full [touch-action:auto]"
                     )}>
 
-                    <CarouselContent className="ml-6">
+                    <CarouselContent className="w-full">
                         {images.map((img, idx) => (
                             <CarouselItem
                                 key={idx}
-                                className="basis-[80%] "
+                                className="basis-[85%] w-full "
                             >
                                 {/* 背景图（全屏铺满） */}
                                 <img
                                     src={img.src}
                                     alt={img.alt ?? ""}
-                                    className="w-full h-full object-cover block select-none object-center transition-opacity rounded-3xl"
+                                    className=" w-full h-full object-cover block select-none object-center transition-opacity rounded-3xl"
                                     draggable={false}
                                     decoding="async"
                                     loading="lazy"
@@ -125,7 +126,7 @@ export default function SectionStory({
                     </CarouselContent>
 
                     {/* 底部圆点指示器 */}
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+                    <div className="absolute bottom-1/24 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
                         {Array.from({ length: count }).map((_, i) => (
                             <button
                                 key={i}

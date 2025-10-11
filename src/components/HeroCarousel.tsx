@@ -97,6 +97,8 @@ export default function HeroCarousel({
                                 src={img.src}
                                 alt={img.alt ?? ""}
                                 className="w-full h-full object-cover block select-none"
+                                decoding="async"
+                                loading="lazy"
                                 draggable={false}
                             />
                             {/* 如需文案，这里 z-20，仍可点到箭头 */}
@@ -165,7 +167,7 @@ export default function HeroCarousel({
                         size="lg"
                         variant="secondary"
                         className="bg-white/90 text-black select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.97] active:bg-white"
-//todo:跳转日程
+                    //todo:跳转日程
                     >
                         <CalendarDays className="size-4" />
                         转到日程
@@ -175,7 +177,7 @@ export default function HeroCarousel({
                         variant="outline"
                         className="border-white/70 bg-black/30 text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
                         disabled
-                        //todo: 跳转留言
+                    //todo: 跳转留言
                     >
                         <Heart className="size-4" />
                         留言
