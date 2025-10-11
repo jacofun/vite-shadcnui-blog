@@ -74,7 +74,7 @@ export default function HeroCarousel({
                 setApi={setApi}
                 opts={{ loop: true, align: "start" }}
                 plugins={[fadePlugin, autoplayPlugin.current]}
-                className={cn(" select-none absolute inset-0 h-full w-full [touch-action:pan-x]"
+                className={cn(" select-none absolute inset-0 h-full w-full [touch-action:auto]"
                 )}>
                 {/* ✅ 关键：蒙版不拦截事件 */}
                 <div
