@@ -13,6 +13,7 @@ import { CalendarDays, Clock3, Heart, MapPin } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 type ImageItem = { src: string; alt?: string; title?: string; subtitle?: string }
 
@@ -81,7 +82,7 @@ export default function HeroCarousel({
                     className={cn(
                         "absolute inset-0 h-full w-full z-10 pointer-events-none",
                         "bg-black/90",
-                        "bg-gradient-to-t from-black/90 via-black/40 to-transparent"
+                        "bg-gradient-to-t from-black/90 via-black/50 to-transparent"
                     )}
                     aria-hidden="true"
                 />
@@ -166,7 +167,11 @@ export default function HeroCarousel({
                             size="lg"
                             variant="secondary"
                             className="bg-white/90 text-black select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.97] active:bg-white"
-                        //todo:跳转日程
+                            //todo:跳转日程
+                            onClick={() => toast.error("功能未就绪", { duration: 2500, closeButton: false ,action:{
+                                label:"关闭",
+                                onClick: ()=>{}
+                            }})}
                         >
                             <CalendarDays className="size-4" />
                             转到日程
