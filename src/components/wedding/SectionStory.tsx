@@ -1,5 +1,5 @@
 // HeroCarousel.tsx
-import { useEffect, useMemo, useRef, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import {
     Carousel,
     CarouselContent,
@@ -8,8 +8,6 @@ import {
 } from "@/components/ui/carousel"
 import Autoplay from "embla-carousel-autoplay"
 import { cn } from "@/lib/utils"
-import { CalendarDays, Clock3, Heart, MapPin } from "lucide-react";
-import { Button } from "./ui/button";
 import { motion } from "framer-motion";
 
 type ImageItem = { src: string; alt?: string; title?: string; subtitle?: string }
@@ -68,7 +66,7 @@ export default function SectionStory({
             aria-roledescription="carousel"
         >
             {/* 文字区域 */}
-            <div className="mx-auto text-center w-full max-w-5xl gap-3 px-5">
+            <div className="mx-auto text-center items-center w-full max-w-5xl gap-3 px-5">
                 <span className="text-xs uppercase tracking-[0.5em] text-muted-foreground">
                     Story
                 </span>
@@ -77,14 +75,17 @@ export default function SectionStory({
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     viewport={{ once: true, amount: 0.3 }} // 只执行一次，30%进入视口就触发
-                    className="max-w-2xl space-y-3">
+                    className="w-full space-y-3">
                     <h2
                         className="text-3xl font-semibold tracking-[0.2em] text-foreground sm:text-4xl">
                         遇见
                     </h2>
                     <p
                         className="text-base text-muted-foreground">
-                        婚纱照里的光影，是我们一路走来的缩影。每一次按下快门，都是将相遇的惊喜与相知的暖意留在时间里。
+                        婚纱照里的光影<br/>
+                        是我们一路走来的缩影<br/>
+                        每一次按下快门<br/>
+                        都是将相遇的惊喜与相知的暖意留在时间里。
                     </p>
                 </motion.div>
             </div>

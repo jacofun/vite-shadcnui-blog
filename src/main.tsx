@@ -5,7 +5,7 @@ import App from './App.tsx'
 import { Toaster } from 'sonner'
 import { HelmetProvider } from 'react-helmet-async'
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import MainContent from './pages/MainContent.tsx'
+import WeddingInvitation from './pages/WeddingInvitation.tsx'
 
 
 //路由
@@ -14,7 +14,7 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,   // 顶层框架
     children: [
-      { index: true, element: <MainContent /> },
+      { index: true, element: <WeddingInvitation /> },
 
     ],
   },

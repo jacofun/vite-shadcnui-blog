@@ -1,7 +1,7 @@
 ﻿
 import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, useLocation } from "react-router-dom";
-import Footer from "./components/Footer";
+import Footer from "./components/wedding/Footer";
 
 function App() {
   const location = useLocation();

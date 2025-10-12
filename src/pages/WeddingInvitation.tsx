@@ -1,18 +1,15 @@
 ﻿import type { JSX } from "react";
 
-import BottomBar from "@/components/BottomBar";
-import Footer from "@/components/Footer";
-import ScheduleSection from "@/components/ScheduleSection";
-import StorySection from "@/components/StorySection";
-import HeroCarousel from "@/components/HeroCarousel";
-import SectionStory from "@/components/SectionStory";
+import SectionSchedule from "@/components/wedding/SectionSchedule";
+import HeroCarousel from "@/components/wedding/HeroCarousel";
+import SectionStory from "@/components/wedding/SectionStory";
 import { Helmet } from "react-helmet-async";
 import config from "@/config/config";
 
 export default function MainContent(): JSX.Element {
   return (
     <>
-    {/* 标题 描述 OG图 */}
+      {/* 标题 描述 OG图 */}
       <Helmet>
         <title>{config.data.title}</title>
         <meta name="title" content={config.data.title} />
@@ -30,6 +27,7 @@ export default function MainContent(): JSX.Element {
           <HeroCarousel />
         </div>
         <SectionStory />
+        <SectionSchedule/>
       </section>
     </>
 

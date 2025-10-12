@@ -4,7 +4,7 @@ import { CalendarDays, Heart } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Badge } from "./ui/badge";
+import { Badge } from "../ui/badge";
 
 const HERO_THRESHOLD = 0.3;
 const FOOTER_THRESHOLD = 0.1;

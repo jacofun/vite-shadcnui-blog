@@ -10,8 +10,8 @@ import Fade from "embla-carousel-fade";
 import Autoplay from "embla-carousel-autoplay"
 import { cn } from "@/lib/utils"
 import { CalendarDays, Clock3, Heart, MapPin } from "lucide-react";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -168,10 +168,12 @@ export default function HeroCarousel({
                             variant="secondary"
                             className="bg-white/90 text-black select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.97] active:bg-white"
                             //todo:跳转日程
-                            onClick={() => toast.error("功能未就绪", { duration: 2500, closeButton: false ,action:{
-                                label:"关闭",
-                                onClick: ()=>{}
-                            }})}
+                            onClick={() => {
+                                document.getElementById("schedule")?.scrollIntoView({
+                                    behavior: "smooth", // 平滑滚动
+                                    block: "start",     // 对齐到顶部
+                                });
+                            }}
                         >
                             <CalendarDays className="size-4" />
                             转到日程
@@ -180,7 +182,13 @@ export default function HeroCarousel({
                             size="lg"
                             variant="outline"
                             className="border-white/70 bg-black/30 text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
-                            disabled
+
+                            onClick={() => toast.error("功能未就绪", {
+                                duration: 2500, closeButton: false, action: {
+                                    label: "关闭",
+                                    onClick: () => { }
+                                }
+                            })}
                         //todo: 跳转留言
                         >
                             <Heart className="size-4" />

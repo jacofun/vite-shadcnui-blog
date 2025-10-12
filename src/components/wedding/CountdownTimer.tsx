@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface CountdownTimerProps {
   targetDate: Date;
@@ -76,9 +77,14 @@ export default function CountdownTimer({
       <div className="flex flex-wrap items-baseline justify-center gap-x-6 gap-y-2 font-mono text-foreground md:flex-nowrap">
         {segments.map((segment) => (
           <div key={segment.label} className="flex items-baseline gap-2">
-            <span className="text-base font-semibold tabular-nums">
+            <motion.span
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.1, ease: "easeIn" }}
+              key={segment.value}
+              className="text-base font-semibold tabular-nums">
               {segment.value}
-            </span>
+            </motion.span>
             <span className="text-xs text-muted-foreground">
               {segment.label}
             </span>
