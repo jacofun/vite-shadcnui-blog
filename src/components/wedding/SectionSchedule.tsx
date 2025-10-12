@@ -27,7 +27,7 @@ export default function ScheduleSection(): JSX.Element {
     <section
       id="schedule"
       data-section="schedule"
-      className={cn("relative w-full flex items-center gap-6 flex-col min-h-screen h-auto bg-[#fff1ec] overflow-hidden select-none py-8 [touch-action:auto]")}
+      className={cn("relative w-full flex md:max-w-3/4 mx-auto items-center gap-6 flex-col min-h-screen h-auto bg-[#fff1ec] overflow-hidden select-none py-8 [touch-action:auto]")}
     >
       {/* 文字区域 */}
       <div className="mx-auto text-center items-center w-full max-w-5xl gap-3 px-5">

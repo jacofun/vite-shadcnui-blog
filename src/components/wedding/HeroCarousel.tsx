@@ -68,7 +68,7 @@ export default function HeroCarousel({
     }, [api])
     return (
         <section
-            className={cn("relative w-full h-[90dvh] overflow-hidden select-none", className)}
+            className={cn("relative w-full h-[90dvh] overflow-hidden select-none md:max-w-3/4 mx-auto", className)}
             aria-roledescription="carousel"
         >
             <Carousel
@@ -156,7 +156,7 @@ export default function HeroCarousel({
                         </div>
                     </div>
                 </div>
-                <div className="py-6 z-40 mx-auto pb-24 sm:px-12 sm:pb-28">
+                <div className="py-6 z-40 mx-auto pb-24 sm:pb-28">
                     <motion.div
                         initial={{ opacity: 0, y: 50 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -166,7 +166,7 @@ export default function HeroCarousel({
                         <Button
                             size="lg"
                             variant="secondary"
-                            className="bg-white/90 text-black select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.97] active:bg-white"
+                            className="bg-white/90 text-black sm:text-xl select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.97] active:bg-white"
                             //todo:跳转日程
                             onClick={() => {
                                 document.getElementById("schedule")?.scrollIntoView({
@@ -181,7 +181,7 @@ export default function HeroCarousel({
                         <Button
                             size="lg"
                             variant="outline"
-                            className="border-white/70 bg-black/30 text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
+                            className="border-white/70 bg-black/30 sm:text-xl text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
 
                             onClick={() => toast.error("功能未就绪", {
                                 duration: 2500, closeButton: false, action: {

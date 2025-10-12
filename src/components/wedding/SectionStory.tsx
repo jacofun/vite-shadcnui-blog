@@ -62,7 +62,7 @@ export default function SectionStory({
         <section
             id="story"
             data-section="story"
-            className={cn("relative w-full flex items-center gap-6 flex-col min-h-screen h-auto bg-[#fff1ec] overflow-hidden select-none py-8 [touch-action:auto]", className)}
+            className={cn("relative w-full flex items-center md:max-w-3/4 mx-auto gap-6 flex-col min-h-screen h-auto bg-[#fff1ec] overflow-hidden select-none py-8 [touch-action:auto]", className)}
             aria-roledescription="carousel"
         >
             {/* 文字区域 */}
@@ -102,14 +102,14 @@ export default function SectionStory({
                     setApi={setApi}
                     opts={{ loop: true, align: "center" }}
                     plugins={[autoplayPlugin.current]}
-                    className={cn(" relative w-full [touch-action:auto]"
+                    className={cn(" relative w-full [touch-action:auto] "
                     )}>
 
                     <CarouselContent className="w-full">
                         {images.map((img, idx) => (
                             <CarouselItem
                                 key={idx}
-                                className="basis-[85%] w-full "
+                                className="basis-[85%] w-full sm:basis-[50%] sm:max-w-3/4"
                             >
                                 {/* 背景图（全屏铺满） */}
                                 <img
