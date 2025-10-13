@@ -6,6 +6,16 @@ import {
     CarouselItem,
     type CarouselApi,
 } from "@/components/ui/carousel"
+import {
+    Drawer,
+    DrawerClose,
+    DrawerContent,
+    DrawerDescription,
+    DrawerFooter,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerTrigger,
+} from "@/components/ui/drawer"
 import Fade from "embla-carousel-fade";
 import Autoplay from "embla-carousel-autoplay"
 import { cn } from "@/lib/utils"
@@ -14,6 +24,8 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { Waline } from "../common/Waline";
+import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 
 type ImageItem = { src: string; alt?: string; title?: string; subtitle?: string }
 
@@ -178,26 +190,47 @@ export default function HeroCarousel({
                             <CalendarDays className="size-4" />
                             转到日程
                         </Button>
-                        <Button
-                            size="lg"
-                            variant="outline"
-                            className="border-white/70 bg-black/30 sm:text-xl text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
+                        <Drawer>
+                            <DrawerTrigger>
+                                <Button
+                                    size="lg"
+                                    variant="outline"
+                                    className="border-white/70 bg-black/30 sm:text-xl text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
+                                //todo: 跳转留言
+                                >
+                                    <Heart className="size-4" />
+                                    留言
+                                    <Badge variant="destructive" className="px-2 py-0.5 text-[10px]">
+                                        暂不可用
+                                    </Badge>
+                                </Button>
+                            </DrawerTrigger>
+                            <DrawerContent className="max-h-[90dvh] overflow-hidden max-w-[90dvh]">
 
-                            onClick={() => toast.error("功能未就绪", {
-                                duration: 2500, closeButton: false, action: {
-                                    label: "关闭",
-                                    onClick: () => { }
-                                }
-                            })}
-                        //todo: 跳转留言
-                        >
-                            <Heart className="size-4" />
-                            留言
-                            <Badge variant="destructive" className="px-2 py-0.5 text-[10px]">
-                                暂不可用
-                            </Badge>
-                        </Button>
+                                <div className="mx-auto w-full max-w-sm overflow-hidden flex flex-col">
+                                    {/* 标题区 */}
+                                    <DrawerHeader className="shrink-0">
+                                        <DrawerTitle>评论区 </DrawerTitle>
+                                        <DrawerDescription>来一发评论吧</DrawerDescription>
+                                    </DrawerHeader>
+                                    {/* 滚动区 */}
+                                    <ScrollArea
 
+                                        ata-vaul-no-drag
+                                        className="px-4 py-6 w-full flex flex-col overflow-hidden grow overscroll-contain [touch-action:pan-y]">
+                                        <ScrollBar orientation="vertical" />
+                                        <Waline serverURL="https://waline.yanxiao.me" path={location.pathname}/>
+                                    </ScrollArea>
+                                    {/* 尾部 */}
+                                    <DrawerFooter className="shrink-0">
+                                        <DrawerClose asChild>
+                                            <Button variant="outline">关闭</Button>
+                                        </DrawerClose>
+                                    </DrawerFooter>
+                                </div>
+
+                            </DrawerContent>
+                        </Drawer>
                     </motion.div>
                 </div>
             </div>
