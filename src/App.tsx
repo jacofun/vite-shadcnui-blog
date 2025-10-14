@@ -1,8 +1,7 @@
 ﻿
 import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, useLocation } from "react-router-dom";
-import Footer from "./components/wedding/Footer";
-import { Waline } from "./components/common/Waline";
+import Footer from "./components/common/Footer";
 
 function App() {
   const location = useLocation();
@@ -19,7 +18,6 @@ function App() {
           <Outlet /> {/* 子页面会在这里渲染 */}
         </motion.div>
       </AnimatePresence>
-      <Waline serverURL="https://waline.yanxiao.me" path={location.pathname}/>
       <Footer />
     </>
 

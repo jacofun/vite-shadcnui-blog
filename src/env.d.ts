@@ -1,0 +1,1 @@
+declare module '*?*'  // 让 TS 认识带 query 的导入

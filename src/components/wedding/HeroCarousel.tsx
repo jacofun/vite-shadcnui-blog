@@ -6,16 +6,6 @@ import {
     CarouselItem,
     type CarouselApi,
 } from "@/components/ui/carousel"
-import {
-    Drawer,
-    DrawerClose,
-    DrawerContent,
-    DrawerDescription,
-    DrawerFooter,
-    DrawerHeader,
-    DrawerTitle,
-    DrawerTrigger,
-} from "@/components/ui/drawer"
 import Fade from "embla-carousel-fade";
 import Autoplay from "embla-carousel-autoplay"
 import { cn } from "@/lib/utils"
@@ -24,39 +14,72 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Waline } from "../common/Waline";
-import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 
 type ImageItem = { src: string; alt?: string; title?: string; subtitle?: string }
 
-//读取图片
-const mods = import.meta.glob('@/assets/gallery/hero/*.{jpg,png}', {
-    eager: true, import: 'default', query: '?url'
-})
 
-const defaultImages: ImageItem[] = Object.values(mods).map((src) => ({ src: src as string }))
+
 
 interface HeroCarouselProps {
     images?: ImageItem[]
     className?: string
 }
+// === 批量导入（imagetools 模式）===
+const mods = import.meta.glob('@/assets/gallery/hero/*.{jpg,jpeg,png}', {
+    eager: true,
+    import: 'default',
+    query: {
+        as: 'picture',
+        format: 'avif;webp;jpg',
+        w: '640;828;1080;1440',
+    },
+})
 
+type PictureVariant = {
+    sources?: Array<{ type: string; srcset: string }>
+    img?: { src: string; width: number; height: number }
+}
+
+// 把 glob 结果归一化为统一结构，兼容“字符串 URL / 非 picture 对象”
+const slidesFromFolder = Object.values(mods).map((mod: unknown) => {
+    if (typeof mod === 'string') {
+        // 说明当前条目不是 picture 结构（比如插件未生效或某张图被当作 url）
+        return {
+            src: mod,
+            width: undefined as number | undefined,
+            height: undefined as number | undefined,
+            sources: [] as Array<{ type: string; srcset: string }>,
+        }
+    }
+    const p = mod as PictureVariant
+    // 再防御一次：即便是对象，也可能没有 sources/img
+    return {
+        src: p.img?.src ?? '',
+        width: p.img?.width,
+        height: p.img?.height,
+        sources: Array.isArray(p.sources) ? p.sources : [],
+    }
+})
 export default function HeroCarousel({
-    images = defaultImages,
     className,
 }: HeroCarouselProps): JSX.Element {
 
+
+    // 是否大屏幕（>1024px）
+    const isLargeScreen = typeof window !== "undefined" && window.matchMedia("(min-width: 640px)").matches;
     // 渐入渐出插件
     const fadePlugin = useMemo(() => Fade(), []);
     // 自动播放插件
+    // 自动播放插件
     const autoplayPlugin = useRef(
-        Autoplay({
-            //自动切换间隔
-            delay: 4000,
-            stopOnInteraction: false,
-            stopOnMouseEnter: false,
-        })
-    )
+        isLargeScreen
+            ? undefined // 大屏幕禁用自动播放
+            : Autoplay({
+                delay: 4000,
+                stopOnInteraction: false,
+                stopOnMouseEnter: false,
+            })
+    );
     // Carousel api
     const [api, setApi] = useState<CarouselApi | null>(null)
     const [selected, setSelected] = useState(0)
@@ -80,13 +103,13 @@ export default function HeroCarousel({
     }, [api])
     return (
         <section
-            className={cn("relative w-full h-[90dvh] overflow-hidden select-none md:max-w-3/4 mx-auto", className)}
+            className={cn("relative w-full h-[90svh] sm:h-[60dvh] overflow-hidden select-none md:max-w-3/4 mx-auto", className)}
             aria-roledescription="carousel"
         >
             <Carousel
                 setApi={setApi}
-                opts={{ loop: true, align: "start" }}
-                plugins={[fadePlugin, autoplayPlugin.current]}
+                opts={{ loop: true, align: "start", duration: 10, dragFree: false }}
+                plugins={[fadePlugin, ...(autoplayPlugin.current ? [autoplayPlugin.current] : [])]}
                 className={cn(" select-none absolute inset-0 h-full w-full [touch-action:auto]"
                 )}>
                 {/* ✅ 关键：蒙版不拦截事件 */}
@@ -100,22 +123,23 @@ export default function HeroCarousel({
                 />
 
                 <CarouselContent className="absolute inset-0 w-full h-full ml-0">
-                    {images.map((img, idx) => (
-                        <CarouselItem
-                            key={idx}
-                            className="pl-0 h-full w-full basis-full"
-                        >
-                            {/* 背景图（全屏铺满） */}
-                            <img
-                                src={img.src}
-                                alt={img.alt ?? ""}
-                                className="w-full h-full object-cover block select-none"
-                                decoding="async"
-                                loading="lazy"
-                                draggable={false}
-                            />
-                            {/* 如需文案，这里 z-20，仍可点到箭头 */}
-                            {/* <div className="relative z-20 h-full" /> */}
+                    {slidesFromFolder.map((item, idx) => (
+                        <CarouselItem key={idx} className="pl-0 h-full w-full basis-full">
+                            <picture className="absolute inset-0 block h-full w-full">
+                                {/* 可选链 + 安全遍历，sources 可能为空数组 */}
+                                {item.sources?.map((s) => (
+                                    <source key={s.type} type={s.type} srcSet={s.srcset} sizes="100vw" />
+                                ))}
+                                <img
+                                    src={item.src}                       // 归一化后始终有字符串（可能空串）
+                                    width={item.width}                   // 允许 undefined，浏览器可自行布局
+                                    height={item.height}
+                                    draggable={false}
+                                    className="h-full w-full object-cover"
+                                    loading={idx === 0 ? 'eager' : 'lazy'}
+                                    decoding="async"
+                                />
+                            </picture>
                         </CarouselItem>
                     ))}
                 </CarouselContent>
@@ -190,47 +214,7 @@ export default function HeroCarousel({
                             <CalendarDays className="size-4" />
                             转到日程
                         </Button>
-                        <Drawer>
-                            <DrawerTrigger>
-                                <Button
-                                    size="lg"
-                                    variant="outline"
-                                    className="border-white/70 bg-black/30 sm:text-xl text-white select-none transition-transform focus-visible:ring-white/60 hover:bg-white/10 active:scale-[0.97] active:bg-white/20"
-                                //todo: 跳转留言
-                                >
-                                    <Heart className="size-4" />
-                                    留言
-                                    <Badge variant="destructive" className="px-2 py-0.5 text-[10px]">
-                                        暂不可用
-                                    </Badge>
-                                </Button>
-                            </DrawerTrigger>
-                            <DrawerContent className="max-h-[90dvh] overflow-hidden max-w-[90dvh]">
 
-                                <div className="mx-auto w-full max-w-sm overflow-hidden flex flex-col">
-                                    {/* 标题区 */}
-                                    <DrawerHeader className="shrink-0">
-                                        <DrawerTitle>评论区 </DrawerTitle>
-                                        <DrawerDescription>来一发评论吧</DrawerDescription>
-                                    </DrawerHeader>
-                                    {/* 滚动区 */}
-                                    <ScrollArea
-
-                                        ata-vaul-no-drag
-                                        className="px-4 py-6 w-full flex flex-col overflow-hidden grow overscroll-contain [touch-action:pan-y]">
-                                        <ScrollBar orientation="vertical" />
-                                        <Waline serverURL="https://waline.yanxiao.me" path={location.pathname}/>
-                                    </ScrollArea>
-                                    {/* 尾部 */}
-                                    <DrawerFooter className="shrink-0">
-                                        <DrawerClose asChild>
-                                            <Button variant="outline">关闭</Button>
-                                        </DrawerClose>
-                                    </DrawerFooter>
-                                </div>
-
-                            </DrawerContent>
-                        </Drawer>
                     </motion.div>
                 </div>
             </div>

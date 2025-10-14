@@ -3,8 +3,10 @@ import { Fragment } from "react";
 import { Link } from "react-router-dom";
 
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 
 const NAV_LINKS = [
+  { to: "/", label: "主页" },
   { to: "/articles", label: "文章" },
   { to: "/about", label: "关于我" },
 ];
@@ -15,13 +17,13 @@ export default function Footer(): JSX.Element {
       <div className="mx-auto w-full max-w-5xl px-8 py-6">
         <div className="space-y-3">
           <div className="space-y-2">
-            <p className="text-lg sm:text-3xl font-semibold">彦骁的笔记</p>
+            <p className="text-lg sm:text-3xl font-semibold font-sans">彦骁的笔记</p>
             <Separator className="bg-white/10" />
           </div>
 
 
 
-          <nav className="flex flex-row items-center text-sm sm:text-lg font-medium">
+          <nav className="flex flex-row items-center text-sm sm:text-lg font-semibold font-sans">
             {NAV_LINKS.map((link, idx) => (
               <Fragment key={link.to}>
                 {idx > 0 && (
@@ -30,14 +32,15 @@ export default function Footer(): JSX.Element {
                     className="mx-4 h-4 shrink-0 bg-white/30" // 间距＋高度，避免被压缩
                   />
                 )}
-                <Link
-                  to={link.to}
+                <a
+                  onClick={() =>
+                    toast.info("敬请期待")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="transition hover:text-white/80"
                 >
                   {link.label}
-                </Link>
+                </a>
               </Fragment>
             ))}
           </nav>
