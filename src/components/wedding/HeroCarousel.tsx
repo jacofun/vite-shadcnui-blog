@@ -9,11 +9,13 @@ import {
 import Fade from "embla-carousel-fade";
 import Autoplay from "embla-carousel-autoplay"
 import { cn } from "@/lib/utils"
-import { CalendarDays, Clock3, Heart, MapPin } from "lucide-react";
+import { CalendarDays, Clock3, Heart, MapPin, HeartIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
+import { useWalineLike } from "@/components/hooks/useWalinelike"
+
+
 
 type ImageItem = { src: string; alt?: string; title?: string; subtitle?: string }
 
@@ -63,7 +65,11 @@ const slidesFromFolder = Object.values(mods).map((mod: unknown) => {
 export default function HeroCarousel({
     className,
 }: HeroCarouselProps): JSX.Element {
-
+    const { likedCount, liked, loading, like } = useWalineLike({
+        serverURL: "https://waline.yanxiao.me", // 你的 Waline 服务地址
+        path: typeof window !== "undefined" ? location.pathname : "/",
+        emoji: "❤️", // 或者 "heart" 视你的服务端配置
+    });
 
     // 是否大屏幕（>1024px）
     const isLargeScreen = typeof window !== "undefined" && window.matchMedia("(min-width: 640px)").matches;
@@ -202,7 +208,7 @@ export default function HeroCarousel({
                         <Button
                             size="lg"
                             variant="secondary"
-                            className="bg-white/90 sm:cursor-pointer text-black sm:text-xl select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.97] active:bg-white"
+                            className="bg-white/90 sm:cursor-pointer text-black sm:text-xl select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.90] active:bg-white"
                             //todo:跳转日程
                             onClick={() => {
                                 document.getElementById("schedule")?.scrollIntoView({
@@ -211,10 +217,34 @@ export default function HeroCarousel({
                                 });
                             }}
                         >
-                            <CalendarDays className="size-4" />
+                            <CalendarDays className="size-5" />
                             转到日程
                         </Button>
+                        <Button
+                            size="lg"
+                            variant="outline"
+                            className={cn("border-white/70 bg-black/30 sm:text-xl sm:cursor-pointer text-white select-none transition-transform active:scale-[0.90] hover:bg-white/50 ",
+                                liked && "bg-white/20 ring-1 ring-white/50")}
+                            aria-pressed={liked}
+                            aria-label={liked ? "取消点赞" : "点赞"}
+                            title={liked ? "已点赞" : "点赞一下"}
 
+                            onClick={like}
+                        >
+                            <Heart
+                                className={cn(
+                                    "size-5 transition-transform",
+                                    liked
+                                        // ✅ 已点赞：填充红色、去描边（或保留细描边看你喜好）
+                                        ? "text-red-500 scale-110 [&>path]:fill-current [&>path]:stroke-current [&>path]:stroke-0"
+                                        // 未点赞：空心
+                                        : "text-white [&>path]:fill-none [&>path]:stroke-current"
+                                )}
+                            />
+                            <Badge variant="destructive" className="px-2 py-0.5 text-[10px]">
+                                {likedCount}
+                            </Badge>
+                        </Button>
                     </motion.div>
                 </div>
             </div>
