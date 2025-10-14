@@ -172,7 +172,7 @@ export default function SectionStory({
                                 aria-label={`Go to slide ${i + 1}`}
                                 aria-current={i === selected ? "true" : undefined}
                                 className={cn(
-                                    "h-2.5 w-2.5 rounded-full transition-all",
+                                    "h-2.5 w-2.5 rounded-full transition-all sm:cursor-pointer",
                                     i === selected
                                         ? "bg-white w-5 opacity-100 scale-100"
                                         : "bg-white/60 opacity-70 scale-75 hover:opacity-100"
