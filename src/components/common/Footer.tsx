@@ -37,7 +37,7 @@ export default function Footer(): JSX.Element {
                     toast.info("敬请期待")}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="transition hover:text-white/80"
+                  className="transition hover:text-white/80 sm:cursor-pointer"
                 >
                   {link.label}
                 </a>

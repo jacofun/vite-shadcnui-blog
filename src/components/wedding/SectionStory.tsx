@@ -143,9 +143,9 @@ export default function SectionStory({
                         {slidesFromFolder.map((item, idx) => (
                             <CarouselItem
                                 key={idx}
-                                className="basis-[85%] w-full max-h-[80svh] sm:basis-[50%] sm:max-w-3/4"
+                                className="basis-[85%] w-full max-h-[80svh] sm:basis-[50%] sm:max-w-3/4 "
                             >
-                                <picture className="inset-0 block h-full w-full">
+                                <picture className="inset-0 block h-full w-full sm:cursor-pointer">
                                     <img
                                         src={item.src}
                                         width={item.width} 

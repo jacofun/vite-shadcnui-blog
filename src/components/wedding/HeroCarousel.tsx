@@ -110,7 +110,7 @@ export default function HeroCarousel({
                 setApi={setApi}
                 opts={{ loop: true, align: "start", duration: 10, dragFree: false }}
                 plugins={[fadePlugin, ...(autoplayPlugin.current ? [autoplayPlugin.current] : [])]}
-                className={cn(" select-none absolute inset-0 h-full w-full [touch-action:auto]"
+                className={cn(" select-none absolute inset-0 h-full w-full [touch-action:auto] "
                 )}>
                 {/* ✅ 关键：蒙版不拦截事件 */}
                 <div
@@ -125,7 +125,7 @@ export default function HeroCarousel({
                 <CarouselContent className="absolute inset-0 w-full h-full ml-0">
                     {slidesFromFolder.map((item, idx) => (
                         <CarouselItem key={idx} className="pl-0 h-full w-full basis-full">
-                            <picture className="absolute inset-0 block h-full w-full">
+                            <picture className="absolute inset-0 block h-full w-full sm:cursor-pointer">
                                 {/* 可选链 + 安全遍历，sources 可能为空数组 */}
                                 {item.sources?.map((s) => (
                                     <source key={s.type} type={s.type} srcSet={s.srcset} sizes="100vw" />
