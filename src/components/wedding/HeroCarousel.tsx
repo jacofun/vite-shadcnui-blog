@@ -9,11 +9,11 @@ import {
 import Fade from "embla-carousel-fade";
 import Autoplay from "embla-carousel-autoplay"
 import { cn } from "@/lib/utils"
-import { CalendarDays, Clock3, Heart, MapPin, HeartIcon } from "lucide-react";
+import { CalendarDays, Clock3, Heart, MapPin } from "lucide-react";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { motion } from "framer-motion";
-import { useWalineLike } from "@/components/hooks/useWalinelike"
+import { useWalineLike } from "@/components/hooks/useWalineLike"
 import { toast } from "sonner";
 
 

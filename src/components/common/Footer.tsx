@@ -1,6 +1,5 @@
 ﻿import type { JSX } from "react";
 import { Fragment } from "react";
-import { Link } from "react-router-dom";
 
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";

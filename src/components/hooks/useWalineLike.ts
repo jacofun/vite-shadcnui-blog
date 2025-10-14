@@ -57,7 +57,7 @@ export function useWalineLike(opts: { serverURL: string; path?: string; key?: st
         path,
         type: "reaction0", 
       };
-      const res = await fetch(url.toString(), {
+      await fetch(url.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
