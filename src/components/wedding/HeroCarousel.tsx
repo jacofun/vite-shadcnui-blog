@@ -14,6 +14,7 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { motion } from "framer-motion";
 import { useWalineLike } from "@/components/hooks/useWalinelike"
+import { toast } from "sonner";
 
 
 
@@ -36,6 +37,14 @@ const mods = import.meta.glob('@/assets/gallery/hero/*.{jpg,jpeg,png}', {
         w: '640;828;1080;1440',
     },
 })
+
+const likedMessages = [
+    "谢谢你的祝福噢❤️",
+    "收到你一份爱的点赞～💌",   
+    "爱心+1，幸福加倍 💕",
+    "愿喜悦也传递给你 🎉",
+    "你的祝福抵达啦 ✨"
+  ];
 
 type PictureVariant = {
     sources?: Array<{ type: string; srcset: string }>
@@ -65,12 +74,13 @@ const slidesFromFolder = Object.values(mods).map((mod: unknown) => {
 export default function HeroCarousel({
     className,
 }: HeroCarouselProps): JSX.Element {
-    const { likedCount, liked, loading, like } = useWalineLike({
+    const { likedCount, liked, like } = useWalineLike({
         serverURL: "https://waline.yanxiao.me", // 你的 Waline 服务地址
         path: typeof window !== "undefined" ? location.pathname : "/",
         emoji: "❤️", // 或者 "heart" 视你的服务端配置
     });
 
+    const msg = likedMessages[Math.floor(Math.random() * likedMessages.length)];
     // 是否大屏幕（>1024px）
     const isLargeScreen = typeof window !== "undefined" && window.matchMedia("(min-width: 640px)").matches;
     // 渐入渐出插件
@@ -229,7 +239,7 @@ export default function HeroCarousel({
                             aria-label={liked ? "取消点赞" : "点赞"}
                             title={liked ? "已点赞" : "点赞一下"}
 
-                            onClick={like}
+                            onClick={()=>(like(),toast(msg))}
                         >
                             <Heart
                                 className={cn(
