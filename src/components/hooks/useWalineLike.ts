@@ -33,7 +33,7 @@ export function useWalineLike(opts: { serverURL: string; path?: string; key?: st
           const first = data.data[0];
           val = typeof first.reaction0 === "number" ? first.reaction0 : 0;
         }
-        
+
         setlikedCount(val);
       } catch {
         // 忽略网络错误，保持 0
@@ -49,21 +49,29 @@ export function useWalineLike(opts: { serverURL: string; path?: string; key?: st
 
   // 点赞/取消点赞（按需：你也可以不允许取消）
   const like = useCallback(async () => {
-    setLoading(true);
+    // setLoading(true);
     // 乐观更新
     setLiked(true);
     setlikedCount((c) => c + 1);
+    let val = 0;
     try {
       const url = new URL("/api/article", serverURL);
       const body = {
         path,
-        type: "reaction0", 
+        type: "reaction0",
       };
-      await fetch(url.toString(), {
+      const res = await fetch(url.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      
+      const data = (await res.json()) as Reactions;
+      if (Array.isArray(data.data) && data.data.length > 0) {
+        const first = data.data[0];
+        val = typeof first.reaction0 === "number" ? first.reaction0 : 0;
+      }
+      setlikedCount(val);
     } catch (e) {
       // 回滚乐观更新
       setLiked(false);
