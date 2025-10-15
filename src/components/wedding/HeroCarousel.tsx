@@ -15,6 +15,7 @@ import { Badge } from "../ui/badge";
 import { motion } from "framer-motion";
 import { useWalineLike } from "@/components/hooks/useWalineLike"
 import { toast } from "sonner";
+import { Spinner } from "../ui/spinner";
 
 
 
@@ -39,12 +40,15 @@ const mods = import.meta.glob('@/assets/gallery/hero/*.{jpg,jpeg,png}', {
 })
 
 const likedMessages = [
-    "谢谢你的祝福噢❤️",
-    "收到你一份爱的点赞～💌",   
-    "爱心+1，幸福加倍 💕",
-    "愿喜悦也传递给你 🎉",
-    "你的祝福抵达啦 ✨"
-  ];
+    "谢谢你的祝福噢...❤️",
+    "收到你一份爱的点赞～💌",
+    "爱心+1，幸福加倍~💕",
+    "愿喜悦也传递给你~🎉",
+    "你的祝福抵达啦！✨",
+    "愿你也被温柔以待。💐",
+    "比心成功！📨💘",
+    "小红心已签收~💕"
+];
 
 type PictureVariant = {
     sources?: Array<{ type: string; srcset: string }>
@@ -74,7 +78,7 @@ const slidesFromFolder = Object.values(mods).map((mod: unknown) => {
 export default function HeroCarousel({
     className,
 }: HeroCarouselProps): JSX.Element {
-    const { likedCount, liked, like } = useWalineLike({
+    const { likedCount, liked, loading, like } = useWalineLike({
         serverURL: "https://waline.yanxiao.me", // 你的 Waline 服务地址
         path: typeof window !== "undefined" ? location.pathname : "/",
         emoji: "❤️", // 或者 "heart" 视你的服务端配置
@@ -238,8 +242,9 @@ export default function HeroCarousel({
                             aria-pressed={liked}
                             aria-label={liked ? "取消点赞" : "点赞"}
                             title={liked ? "已点赞" : "点赞一下"}
+                            disabled={loading}
 
-                            onClick={()=>(like(),toast(msg))}
+                            onClick={() => (like(), toast(msg))}
                         >
                             <Heart
                                 className={cn(
@@ -251,9 +256,16 @@ export default function HeroCarousel({
                                         : "text-white [&>path]:fill-none [&>path]:stroke-current"
                                 )}
                             />
-                            <Badge variant="destructive" className="px-2 py-0.5 text-[10px]">
-                                {likedCount}
-                            </Badge>
+                            {/* ✅ 动态显示 Badge */}
+                            {loading ? (
+                                <Badge variant="destructive" className="px-2 py-0.5 text-[10px]">
+                                    <Spinner />
+                                </Badge>
+                            ) : likedCount > 0 ? (
+                                <Badge variant="destructive" className="px-2 py-0.5 text-[10px]">
+                                    {likedCount}
+                                </Badge>
+                            ) : null}
                         </Button>
                     </motion.div>
                 </div>

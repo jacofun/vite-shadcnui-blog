@@ -37,6 +37,7 @@ export function useWalineLike(opts: { serverURL: string; path?: string; key?: st
       } catch {
         // 忽略网络错误，保持 0
       } finally {
+        setLoading(false)
         if (!aborted) setLiked(Boolean(localStorage.getItem(storageKey)));
       }
     })();
