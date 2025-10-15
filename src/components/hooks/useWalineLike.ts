@@ -21,6 +21,7 @@ export function useWalineLike(opts: { serverURL: string; path?: string; key?: st
     let aborted = false;
     (async () => {
       try {
+        setLoading(true)
         const url = new URL("/api/article", serverURL);
         url.searchParams.set("path", path);
         url.searchParams.set("type", "reaction0");
