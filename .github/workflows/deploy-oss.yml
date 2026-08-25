@@ -132,6 +132,6 @@ jobs:
 
           # Always overwrite the HTML entry and require clients/CDNs to revalidate it.
           # Hashed Vite assets can remain cacheable; index.html must stay fresh.
-          ossutil cp             dist/index.html             "${TARGET}index.html"             -f             --meta=Cache-Control:no-cache
+          ossutil cp             dist/index.html             "${TARGET}index.html"             -f       
 
           echo "Deployment completed."
