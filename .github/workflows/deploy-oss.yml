@@ -103,15 +103,12 @@ jobs:
           OSSUTIL_ZIP="ossutil-${OSSUTIL_VERSION}-linux-amd64.zip"
           OSSUTIL_SHA256="3ae4d9fc85a7a6e9f5654d1599766f1a3a42a3692870887b5ae9338d582ef65a"
 
-          curl -fsSLo "${OSSUTIL_ZIP}" \
-            "https://gosspublic.alicdn.com/ossutil/v2/${OSSUTIL_VERSION}/${OSSUTIL_ZIP}"
+          curl -fsSLo "${OSSUTIL_ZIP}"             "https://gosspublic.alicdn.com/ossutil/v2/${OSSUTIL_VERSION}/${OSSUTIL_ZIP}"
 
           echo "${OSSUTIL_SHA256}  ${OSSUTIL_ZIP}" | sha256sum -c -
           unzip -q "${OSSUTIL_ZIP}"
 
-          sudo install -m 0755 \
-            "ossutil-${OSSUTIL_VERSION}-linux-amd64/ossutil" \
-            /usr/local/bin/ossutil
+          sudo install -m 0755             "ossutil-${OSSUTIL_VERSION}-linux-amd64/ossutil"             /usr/local/bin/ossutil
 
           ossutil version
 
@@ -127,10 +124,14 @@ jobs:
           set -euo pipefail
 
           TARGET="${OSS_TARGET%/}/"
-          echo "Deploying dist/ to ${TARGET}"
+          echo "Mirroring dist/ to ${TARGET}"
 
-          # Keep existing remote-only objects by default to avoid accidental deletion.
-          # If OSS_TARGET is dedicated to this site, --delete can be enabled later.
-          ossutil sync dist/ "${TARGET}"
+          # OSS_TARGET is dedicated to this website:
+          # remove remote-only objects so OSS exactly matches the current dist/.
+          ossutil sync dist/ "${TARGET}" --delete -f
+
+          # Always overwrite the HTML entry and require clients/CDNs to revalidate it.
+          # Hashed Vite assets can remain cacheable; index.html must stay fresh.
+          ossutil cp             dist/index.html             "${TARGET}index.html"             -f             --meta=Cache-Control:no-cache
 
           echo "Deployment completed."
