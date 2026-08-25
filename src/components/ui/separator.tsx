@@ -1,26 +1,31 @@
-import * as React from "react"
+﻿import * as React from "react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-type SeparatorProps = React.HTMLAttributes<HTMLDivElement> & {
-  orientation?: "horizontal" | "vertical"
-}
-
-const Separator = React.forwardRef<HTMLDivElement, SeparatorProps>(
-  ({ className, orientation = "horizontal", ...props }, ref) => {
-    return (
-      <div
-        ref={ref}
-        className={cn(
-          "shrink-0 bg-gradient-to-r from-transparent via-primary/40 to-transparent",
-          orientation === "horizontal" ? "h-px w-full" : "h-full w-px",
-          className
-        )}
-        {...props}
-      />
-    )
+const Separator = React.forwardRef<
+  React.ElementRef<"div">,
+  React.ComponentPropsWithoutRef<"div"> & {
+    orientation?: "horizontal" | "vertical";
+    decorative?: boolean;
   }
-)
-Separator.displayName = "Separator"
+>(({ className, orientation = "horizontal", decorative = true, role, ...props }, ref) => {
+  const ariaOrientation = orientation === "vertical" ? "vertical" : "horizontal";
 
-export { Separator }
+  return (
+    <div
+      ref={ref}
+      aria-hidden={decorative ? true : undefined}
+      role={decorative ? "none" : role ?? "separator"}
+      data-orientation={ariaOrientation}
+      className={cn(
+        "shrink-0 bg-border/60",
+        orientation === "horizontal" ? "h-px w-full" : "h-full w-px",
+        className
+      )}
+      {...props}
+    />
+  );
+});
+Separator.displayName = "Separator";
+
+export { Separator };
