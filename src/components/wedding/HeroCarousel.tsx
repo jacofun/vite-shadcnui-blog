@@ -191,7 +191,7 @@ export default function HeroCarousel({
                         吴彦骁 & 焦芮
                     </h1>
                     <p className="text-base  text-white/80 sm:text-lg">
-                        我们诚挚邀请您，共同见证一段温柔和喜悦。
+                        我们诚挚邀请您，共同见证一段温暖和喜悦。
                     </p>
                     <div className="space-y-2 text-sm text-white/85 sm:text-base">
                         <div className="flex items-center gap-2">
