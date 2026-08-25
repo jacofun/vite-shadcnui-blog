@@ -1,75 +1,99 @@
-# React + TypeScript + Vite
+# vite-shadcnui-blog
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+基于 React、TypeScript、Vite 和 Tailwind CSS 构建的静态婚礼邀请站点。项目使用响应式图片、轮播、动画、SEO 元数据和 Waline 互动功能，并通过 GitHub Actions 自动构建后部署到阿里云 OSS。
 
-Currently, two official plugins are available:
+## 技术栈
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- React 19 + TypeScript
+- Vite 7
+- Tailwind CSS 4
+- shadcn/Radix UI 组件
+- Framer Motion
+- Embla Carousel
+- vite-imagetools（AVIF/WebP/JPEG 响应式图片）
+- Waline
+- GitHub Actions + Aliyun OSS
 
-## React Compiler
+## 本地开发
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+要求 Node.js 22 和 pnpm 10，与 CI 环境保持一致。
 
-Note: This will impact Vite dev & build performances.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm install
+pnpm dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+常用命令：
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm lint      # ESLint 静态检查
+pnpm build     # TypeScript 检查并生成 dist/
+pnpm check     # lint + build，提交前推荐执行
+pnpm preview   # 本地预览生产构建
 ```
+
+## 目录结构
+
+```text
+src/
+├── assets/gallery/       # 婚礼图片源文件
+├── components/common/    # 通用组件
+├── components/hooks/     # 页面 hooks
+├── components/ui/        # UI 基础组件
+├── components/wedding/   # 婚礼页面业务组件
+├── config/               # 页面配置
+├── lib/                  # 通用工具
+└── pages/                # 页面入口
+
+public/                    # 不经过 Vite 模块处理的静态资源
+.github/workflows/         # CI/CD 工作流
+```
+
+## 图片构建
+
+`vite-imagetools` 会在构建阶段为图库图片生成多尺寸 AVIF、WebP 和 JPEG 资源。页面通过 `<picture>` / `<source>` 让浏览器选择适合当前设备的格式和尺寸。
+
+新增图库图片时放入：
+
+```text
+src/assets/gallery/hero/
+src/assets/gallery/story/
+```
+
+## 自动部署到阿里云 OSS
+
+工作流文件：
+
+```text
+.github/workflows/deploy-oss.yml
+```
+
+行为：
+
+- 向 `main` 推送：执行 lint、build，并部署 `dist/` 到 OSS。
+- 针对 `main` 的 Pull Request：只执行 lint 和 build，不读取部署密钥，也不部署。
+- 支持在 Actions 页面手动触发部署。
+
+Repository Secrets：
+
+```text
+ALIYUN_OSS_ACCESS_KEY_ID
+ALIYUN_OSS_ACCESS_KEY_SECRET
+```
+
+Repository Variables：
+
+```text
+ALIYUN_OSS_REGION
+ALIYUN_OSS_TARGET
+```
+
+`ALIYUN_OSS_TARGET` 应使用 `oss://bucket/path/` 形式。当前工作流不会删除 OSS 中只存在于远端的文件；如果目标目录确认由本项目独占，可再评估启用 `ossutil sync --delete`。
+
+## 提交前检查
+
+```bash
+pnpm check
+```
+
+只有 lint 和生产构建都通过的代码才应进入 `main`。
