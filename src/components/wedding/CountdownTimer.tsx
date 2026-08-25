@@ -1,4 +1,4 @@
-﻿import type { JSX } from "react";
+import type { JSX } from "react";
 import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -45,8 +45,6 @@ export default function CountdownTimer({
   );
 
   useEffect(() => {
-    let intervalId: number;
-
     const update = () => {
       const next = getTimeParts(targetTimestamp);
       setTimeLeft(next);
@@ -56,7 +54,7 @@ export default function CountdownTimer({
       }
     };
 
-    intervalId = window.setInterval(update, 1000);
+    const intervalId = window.setInterval(update, 1000);
     update();
 
     return () => window.clearInterval(intervalId);
@@ -82,7 +80,8 @@ export default function CountdownTimer({
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.1, ease: "easeIn" }}
               key={segment.value}
-              className="text-base font-semibold tabular-nums">
+              className="text-base font-semibold tabular-nums"
+            >
               {segment.value}
             </motion.span>
             <span className="text-xs text-muted-foreground">
@@ -94,4 +93,3 @@ export default function CountdownTimer({
     </div>
   );
 }
-
