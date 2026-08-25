@@ -1,0 +1,124 @@
+name: Build and Deploy to Aliyun OSS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aliyun-oss-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Verify build output
+        run: |
+          test -d dist
+          test -f dist/index.html
+          echo "Build output:"
+          find dist -maxdepth 2 -type f | sort | head -100
+
+      - name: Install ossutil
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          OSSUTIL_VERSION="2.3.0"
+          OSSUTIL_ZIP="ossutil-${OSSUTIL_VERSION}-linux-amd64.zip"
+          OSSUTIL_SHA256="3ae4d9fc85a7a6e9f5654d1599766f1a3a42a3692870887b5ae9338d582ef65a"
+
+          curl -fsSLo "${OSSUTIL_ZIP}"             "https://gosspublic.alicdn.com/ossutil/v2/${OSSUTIL_VERSION}/${OSSUTIL_ZIP}"
+
+          echo "${OSSUTIL_SHA256}  ${OSSUTIL_ZIP}" | sha256sum -c -
+          unzip -q "${OSSUTIL_ZIP}"
+
+          sudo install -m 0755             "ossutil-${OSSUTIL_VERSION}-linux-amd64/ossutil"             /usr/local/bin/ossutil
+
+          ossutil version
+
+      - name: Validate deployment configuration
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.ALIYUN_OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_OSS_ACCESS_KEY_SECRET }}
+          OSS_REGION: ${{ vars.ALIYUN_OSS_REGION }}
+          OSS_TARGET: ${{ vars.ALIYUN_OSS_TARGET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -n "${OSS_ACCESS_KEY_ID}" || {
+            echo "::error::Missing repository secret ALIYUN_OSS_ACCESS_KEY_ID"
+            exit 1
+          }
+
+          test -n "${OSS_ACCESS_KEY_SECRET}" || {
+            echo "::error::Missing repository secret ALIYUN_OSS_ACCESS_KEY_SECRET"
+            exit 1
+          }
+
+          test -n "${OSS_REGION}" || {
+            echo "::error::Missing repository variable ALIYUN_OSS_REGION"
+            exit 1
+          }
+
+          test -n "${OSS_TARGET}" || {
+            echo "::error::Missing repository variable ALIYUN_OSS_TARGET"
+            exit 1
+          }
+
+          case "${OSS_TARGET}" in
+            oss://*) ;;
+            *)
+              echo "::error::ALIYUN_OSS_TARGET must start with oss://"
+              exit 1
+              ;;
+          esac
+
+      - name: Deploy to Aliyun OSS
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.ALIYUN_OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_OSS_ACCESS_KEY_SECRET }}
+          OSS_REGION: ${{ vars.ALIYUN_OSS_REGION }}
+          OSS_TARGET: ${{ vars.ALIYUN_OSS_TARGET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TARGET="${OSS_TARGET%/}/"
+          echo "Deploying dist/ to ${TARGET}"
+
+          # 默认不删除 OSS 中已有但本次 dist 不包含的文件，避免首次部署误删。
+          # 确认 OSS_TARGET 是该站点的专属目录后，可改为：
+          # ossutil sync dist/ "${TARGET}" --delete
+          ossutil sync dist/ "${TARGET}"
+
+          echo "Deployment completed."
