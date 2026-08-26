@@ -124,36 +124,76 @@ export default function Home(): JSX.Element {
             </motion.div>
 
             <motion.div
-              animate={{ opacity: 1, scale: 1 }}
-              className="relative hidden aspect-square lg:block"
-              initial={{ opacity: 0, scale: 0.92 }}
-              transition={{ delay: 0.15, duration: 0.7 }}
+              className="relative hidden min-h-[350px] lg:block"
+              initial={{ opacity: 0, y: 18 }}
+              transition={{ delay: 0.15, duration: 0.65 }}
+              whileInView={{ opacity: 1, y: 0 }}
             >
-              <motion.div
+              <div className="pointer-events-none absolute inset-x-4 top-10 h-64 rounded-full bg-cyan-400/[0.09] blur-[90px]" />
+              <motion.button
                 animate={
-                  prefersReducedMotion ? undefined : { rotate: 360 }
+                  prefersReducedMotion ? undefined : { y: [0, -6, 0] }
                 }
-                className="absolute inset-8 rounded-full border border-dashed border-cyan-300/20"
+                aria-haspopup="dialog"
+                aria-label="打开终端"
+                className="group relative mx-auto block w-full max-w-[320px] overflow-hidden rounded-2xl border border-white/10 bg-[#0a0e19]/90 p-px text-left shadow-[0_22px_70px_rgba(0,0,0,0.34)] outline-none transition hover:-translate-y-1 hover:border-cyan-300/35 hover:shadow-[0_24px_80px_rgba(8,145,178,0.16)] focus-visible:ring-2 focus-visible:ring-cyan-300/70"
+                onClick={openTerminal}
                 transition={{
-                  duration: 28,
-                  ease: "linear",
-                  repeat: Infinity,
+                  duration: 5.5,
+                  ease: "easeInOut",
+                  repeat: prefersReducedMotion ? 0 : Infinity,
                 }}
-              />
-              <motion.div
-                animate={
-                  prefersReducedMotion ? undefined : { rotate: -360 }
-                }
-                className="absolute inset-20 rounded-full border border-violet-300/20"
-                transition={{
-                  duration: 20,
-                  ease: "linear",
-                  repeat: Infinity,
-                }}
-              />
-              <div className="absolute inset-[34%] rounded-full bg-gradient-to-br from-cyan-300 to-violet-500 shadow-[0_0_90px_rgba(34,211,238,0.25)]" />
-              <div className="absolute left-1/2 top-6 h-8 w-px bg-gradient-to-b from-cyan-300 to-transparent" />
-              <div className="absolute bottom-12 right-10 size-2 rounded-full bg-violet-300 shadow-[0_0_18px_rgba(196,181,253,0.9)]" />
+                type="button"
+              >
+                <div className="relative overflow-hidden rounded-[15px] bg-[#080c15]">
+                  <div className="flex h-10 items-center justify-between border-b border-white/[0.08] bg-white/[0.025] px-4">
+                    <div className="flex items-center gap-1.5">
+                      <span className="size-2 rounded-full bg-rose-300/75" />
+                      <span className="size-2 rounded-full bg-amber-200/75" />
+                      <span className="size-2 rounded-full bg-emerald-300/75" />
+                    </div>
+                    <span className="font-mono text-[10px] tracking-[0.16em] text-slate-500">
+                      YANXIAO / TERMINAL
+                    </span>
+                    <span className="size-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.8)]" />
+                  </div>
+
+                  <div className="space-y-5 px-5 py-6 font-mono text-xs leading-6">
+                    <p className="text-slate-300">
+                      <span className="text-cyan-300">visitor@yanxiao</span>
+                      <span className="text-violet-300">:~</span>
+                      <span className="text-slate-500">$</span>
+                      <span className="ml-2 text-white">help</span>
+                    </p>
+                    <div className="space-y-2 border-l border-cyan-300/20 pl-3 text-slate-500">
+                      <p>
+                        <span className="mr-3 text-cyan-200">notes</span>
+                        浏览笔记
+                      </p>
+                      <p>
+                        <span className="mr-3 text-violet-200">wedding</span>
+                        纪念入口
+                      </p>
+                      <p>
+                        <span className="mr-3 text-slate-300">explore</span>
+                        更多命令
+                      </p>
+                    </div>
+                    <p className="text-slate-600">
+                      click to explore
+                      <span className="ml-1 inline-block h-3 w-1.5 bg-cyan-300/90 align-[-2px] animate-pulse" />
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 border-t border-white/[0.08] bg-white/[0.018] font-mono text-[10px] tracking-[0.12em] text-slate-600">
+                    <span className="px-4 py-3">MODE / PUBLIC</span>
+                    <span className="border-l border-white/[0.08] px-4 py-3 text-right text-cyan-300/65">
+                      READY
+                    </span>
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent opacity-0 transition group-hover:opacity-100" />
+                </div>
+              </motion.button>
             </motion.div>
           </section>
 
