@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import { useState, type JSX } from "react";
 
 import HeroCarousel from "@/components/wedding/HeroCarousel";
 import SectionSchedule from "@/components/wedding/SectionSchedule";
@@ -7,6 +7,8 @@ import config from "@/config/config";
 import { Helmet } from "react-helmet-async";
 
 export default function WeddingInvitation(): JSX.Element {
+  const [isNoticeOpen, setIsNoticeOpen] = useState(true);
+
   return (
     <>
       <Helmet>
@@ -25,10 +27,46 @@ export default function WeddingInvitation(): JSX.Element {
         <meta name="twitter:image" content={config.data.og_image} />
       </Helmet>
 
+      {isNoticeOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-6 backdrop-blur-sm"
+          role="presentation"
+        >
+          <div
+            aria-describedby="page-notice-description"
+            aria-labelledby="page-notice-title"
+            aria-modal="true"
+            className="w-full max-w-sm rounded-2xl border border-white/70 bg-white/95 p-6 text-center shadow-2xl"
+            role="dialog"
+          >
+            <div className="mx-auto mb-4 flex size-10 items-center justify-center rounded-full bg-amber-100 text-lg text-amber-700">
+              !
+            </div>
+            <h2
+              className="text-lg font-semibold tracking-wide text-slate-900"
+              id="page-notice-title"
+            >
+              温馨提示
+            </h2>
+            <p
+              className="mt-3 text-sm leading-6 text-slate-600"
+              id="page-notice-description"
+            >
+              页面尚未完善，所展示的信息可能不准确。
+            </p>
+            <button
+              autoFocus
+              className="mt-6 w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+              onClick={() => setIsNoticeOpen(false)}
+              type="button"
+            >
+              我知道了
+            </button>
+          </div>
+        </div>
+      )}
+
       <section className="flex w-full flex-col">
-        <p className="border-b border-amber-200/60 bg-gradient-to-r from-amber-50 via-rose-50 to-amber-50 px-4 py-2 text-center text-xs tracking-[0.28em] text-amber-900/70">
-          岁月留影 · 2024.12.24
-        </p>
         <div id="carousel-hero-anchor">
           <HeroCarousel />
         </div>
