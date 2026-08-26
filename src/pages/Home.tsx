@@ -241,37 +241,6 @@ export default function Home(): JSX.Element {
               })}
             </div>
           </section>
-
-          <section className="py-20">
-            <div className="grid gap-5 rounded-3xl border border-white/10 bg-white/[0.03] p-7 sm:p-10 lg:grid-cols-[1.15fr_0.85fr]">
-              <div>
-                <p className="font-mono text-xs tracking-[0.18em] text-violet-300">
-                  ABOUT
-                </p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">
-                  关于本站
-                </h2>
-                <p className="mt-4 max-w-xl text-sm leading-7 text-slate-400">
-                  我从事企业级应用开发与工程管理，也关注金融市场。
-                  本站用于整理技术实践、业务理解和学习记录。
-                </p>
-              </div>
-              <div className="flex items-end lg:justify-end">
-                <Link
-                  className="group flex w-full items-center justify-between rounded-2xl border border-rose-300/15 bg-rose-300/[0.05] px-5 py-4 text-sm text-rose-100 transition hover:border-rose-300/30 hover:bg-rose-300/[0.09] lg:max-w-sm"
-                  to="/wedding"
-                >
-                  <span>
-                    <span className="block font-medium">婚礼邀请函</span>
-                    <span className="mt-1 block text-xs text-slate-500">
-                      保留的一份纪念页面
-                    </span>
-                  </span>
-                  <Heart className="size-5 text-rose-300" />
-                </Link>
-              </div>
-            </div>
-          </section>
         </div>
       </main>
     </>
