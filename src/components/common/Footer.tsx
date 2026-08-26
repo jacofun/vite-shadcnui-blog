@@ -1,56 +1,51 @@
-﻿import type { JSX } from "react";
-import { Fragment } from "react";
+import type { JSX } from "react";
+import { Heart, Terminal } from "lucide-react";
+import { Link } from "react-router-dom";
 
-import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
-
-const NAV_LINKS = [
-  { to: "/", label: "主页" },
-  { to: "/articles", label: "文章" },
-  { to: "/about", label: "关于我" },
+const navLinks = [
+  { href: "/#notes", label: "笔记" },
+  { href: "/#about", label: "关于" },
 ];
 
 export default function Footer(): JSX.Element {
   return (
-    <footer className="bg-[#1d1d1f] text-white">
-      <div className="mx-auto w-full max-w-5xl px-8 py-6">
-        <div className="space-y-3">
-          <div className="space-y-2">
-            <p className="text-lg sm:text-3xl font-semibold font-sans">彦骁的笔记</p>
-            <Separator className="bg-white/10" />
-          </div>
+    <footer className="border-t border-white/10 bg-[#05070d] text-slate-400">
+      <div className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-8 lg:px-10">
+        <div className="flex flex-col justify-between gap-8 border-b border-white/10 pb-8 sm:flex-row sm:items-center">
+          <Link className="flex items-center gap-3 text-white" to="/">
+            <span className="flex size-9 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10">
+              <Terminal className="size-4 text-cyan-300" />
+            </span>
+            <span className="text-sm font-semibold tracking-[0.14em]">
+              彦骁的笔记
+            </span>
+          </Link>
 
-
-
-          <nav className="flex flex-row items-center text-sm sm:text-lg font-semibold font-sans">
-            {NAV_LINKS.map((link, idx) => (
-              <Fragment key={link.to}>
-                {idx > 0 && (
-                  <Separator
-                    orientation="vertical"
-                    className="mx-4 h-4 shrink-0 bg-white/30" // 间距＋高度，避免被压缩
-                  />
-                )}
-                <a
-                  onClick={() =>
-                    toast.info("敬请期待")}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="transition hover:text-white/80 sm:cursor-pointer"
-                >
-                  {link.label}
-                </a>
-              </Fragment>
+          <nav className="flex flex-wrap items-center gap-6 text-sm">
+            {navLinks.map((link) => (
+              <a
+                className="transition hover:text-white"
+                href={link.href}
+                key={link.href}
+              >
+                {link.label}
+              </a>
             ))}
+            <Link
+              className="inline-flex items-center gap-1.5 transition hover:text-rose-200"
+              to="/wedding"
+            >
+              <Heart className="size-3.5" />
+              婚礼纪念
+            </Link>
           </nav>
+        </div>
 
-
-
-          {/* 备案、版权区域 */}
-          <div className="flex flex-col w-full items-center space-y-1 text-xs sm:text-sm text-white/60">
-            <p >© 2025 yanxiao.me </p>
+        <div className="flex flex-col justify-between gap-4 pt-6 text-xs text-slate-600 sm:flex-row sm:items-center">
+          <p>© 2026 yanxiao.me</p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-5">
             <a
-              className="transition hover:text-white/80 "
+              className="transition hover:text-slate-300"
               href="https://beian.miit.gov.cn"
               rel="noopener noreferrer"
               target="_blank"
@@ -58,15 +53,16 @@ export default function Footer(): JSX.Element {
               宁ICP备2025009266号-1
             </a>
             <a
-              className="transition hover:text-white/80 flex"
+              className="inline-flex items-center gap-1.5 transition hover:text-slate-300"
               href="https://beian.mps.gov.cn/#/query/webSearch?code=64010602001156"
               rel="noopener noreferrer"
               target="_blank"
             >
               <img
+                alt="公安备案"
+                className="size-3.5 opacity-70"
                 src="/images/beian.png"
-                alt="beian"
-                className="size-4" />
+              />
               宁公网安备64010602001156号
             </a>
           </div>

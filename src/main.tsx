@@ -1,34 +1,30 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { Toaster } from 'sonner'
-import { HelmetProvider } from 'react-helmet-async'
-import { createBrowserRouter, redirect, RouterProvider } from "react-router-dom";
-import WeddingInvitation from './pages/WeddingInvitation.tsx'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { createHashRouter, RouterProvider } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
+import { Toaster } from "sonner";
 
+import App from "./App.tsx";
+import "./index.css";
+import Home from "./pages/Home.tsx";
+import WeddingInvitation from "./pages/WeddingInvitation.tsx";
 
-//路由
-const router = createBrowserRouter([
+const router = createHashRouter([
   {
     path: "/",
-    element: <App />,   // 顶层框架
+    element: <App />,
     children: [
-      { index: true, element: <WeddingInvitation /> },
-
+      { index: true, element: <Home /> },
+      { path: "wedding", element: <WeddingInvitation /> },
     ],
   },
-  {
-    path: "/index.html",
-    loader: () => redirect("/"), // v6.4+ 的数据路由写法
-  }
 ]);
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <HelmetProvider>
       <RouterProvider router={router} />
       <Toaster richColors position="top-center" />
     </HelmetProvider>
-  </StrictMode>
-)
+  </StrictMode>,
+);
