@@ -1,6 +1,16 @@
-import type { JSX } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useState,
+  type JSX,
+} from "react";
 import { BookOpen, Heart, House, Terminal } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+
+const TerminalDialog = lazy(
+  () => import("@/components/terminal/TerminalDialog"),
+);
 
 const navigation = [
   { icon: House, label: "首页", to: "/" },
@@ -10,54 +20,88 @@ const navigation = [
 
 export default function SiteHeader(): JSX.Element {
   const location = useLocation();
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.code === "Backquote") {
+        event.preventDefault();
+        setIsTerminalOpen((value) => !value);
+      }
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#070a12]/85 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-8 lg:px-10">
-        <Link className="flex items-center gap-3" to="/">
-          <span className="flex size-9 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10">
-            <Terminal className="size-4 text-cyan-300" />
-          </span>
-          <span className="text-sm font-semibold tracking-[0.16em] text-white">
-            YANXIAO.ME
-          </span>
-        </Link>
+    <>
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#070a12]/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-8 lg:px-10">
+          <div className="flex items-center gap-3">
+            <button
+              aria-haspopup="dialog"
+              aria-label="打开终端"
+              className="group flex size-9 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 transition hover:border-cyan-300/40 hover:bg-cyan-300/15"
+              onClick={() => setIsTerminalOpen(true)}
+              title="打开终端（Ctrl + `）"
+              type="button"
+            >
+              <Terminal className="size-4 text-cyan-300 transition group-hover:scale-110" />
+            </button>
+            <Link
+              className="text-sm font-semibold tracking-[0.16em] text-white transition hover:text-cyan-100"
+              to="/"
+            >
+              YANXIAO.ME
+            </Link>
+          </div>
 
-        <nav
-          aria-label="主导航"
-          className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.035] p-1"
-        >
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              item.to === "/"
-                ? location.pathname === "/"
-                : location.pathname.startsWith(item.to);
-            const isWedding = item.to === "/wedding";
+          <nav
+            aria-label="主导航"
+            className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.035] p-1"
+          >
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              const isActive =
+                item.to === "/"
+                  ? location.pathname === "/"
+                  : location.pathname.startsWith(item.to);
+              const isWedding = item.to === "/wedding";
 
-            return (
-              <Link
-                aria-current={isActive ? "page" : undefined}
-                aria-label={item.label}
-                className={`flex size-8 items-center justify-center rounded-lg transition ${
-                  isActive
-                    ? isWedding
-                      ? "bg-rose-300/15 text-rose-200"
-                      : "bg-white/10 text-white"
-                    : isWedding
-                      ? "text-slate-500 hover:bg-rose-300/10 hover:text-rose-200"
-                      : "text-slate-500 hover:bg-white/[0.06] hover:text-slate-200"
-                }`}
-                key={item.to}
-                title={item.label}
-                to={item.to}
-              >
-                <Icon className="size-4" />
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
-    </header>
+              return (
+                <Link
+                  aria-current={isActive ? "page" : undefined}
+                  aria-label={item.label}
+                  className={`flex size-8 items-center justify-center rounded-lg transition ${
+                    isActive
+                      ? isWedding
+                        ? "bg-rose-300/15 text-rose-200"
+                        : "bg-white/10 text-white"
+                      : isWedding
+                        ? "text-slate-500 hover:bg-rose-300/10 hover:text-rose-200"
+                        : "text-slate-500 hover:bg-white/[0.06] hover:text-slate-200"
+                  }`}
+                  key={item.to}
+                  title={item.label}
+                  to={item.to}
+                >
+                  <Icon className="size-4" />
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </header>
+
+      {isTerminalOpen && (
+        <Suspense fallback={null}>
+          <TerminalDialog
+            onOpenChange={setIsTerminalOpen}
+            open={isTerminalOpen}
+          />
+        </Suspense>
+      )}
+    </>
   );
 }
