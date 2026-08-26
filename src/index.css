@@ -118,12 +118,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    background: #070a12;
+  }
+
   body {
-    @apply bg-background text-foreground;
-    background-image: radial-gradient(circle at 20% 20%, oklch(0.96 0.05 350), transparent 55%),
-      radial-gradient(circle at 80% 10%, oklch(0.94 0.08 10 / 0.8), transparent 55%),
-      radial-gradient(circle at 50% 85%, oklch(0.97 0.06 340 / 0.7), transparent 65%);
-    background-attachment: fixed;
+    @apply text-foreground;
   }
 }
 
