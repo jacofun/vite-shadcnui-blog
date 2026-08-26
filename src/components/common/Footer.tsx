@@ -2,11 +2,6 @@ import type { JSX } from "react";
 import { Heart, Terminal } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const navLinks = [
-  { href: "/#notes", label: "笔记" },
-  { href: "/#about", label: "关于" },
-];
-
 export default function Footer(): JSX.Element {
   return (
     <footer className="border-t border-white/10 bg-[#05070d] text-slate-400">
@@ -17,20 +12,17 @@ export default function Footer(): JSX.Element {
               <Terminal className="size-4 text-cyan-300" />
             </span>
             <span className="text-sm font-semibold tracking-[0.14em]">
-              彦骁的笔记
+              YANXIAO.ME
             </span>
           </Link>
 
           <nav className="flex flex-wrap items-center gap-6 text-sm">
-            {navLinks.map((link) => (
-              <a
-                className="transition hover:text-white"
-                href={link.href}
-                key={link.href}
-              >
-                {link.label}
-              </a>
-            ))}
+            <Link className="transition hover:text-white" to="/">
+              首页
+            </Link>
+            <Link className="transition hover:text-white" to="/notes">
+              笔记
+            </Link>
             <Link
               className="inline-flex items-center gap-1.5 transition hover:text-rose-200"
               to="/wedding"

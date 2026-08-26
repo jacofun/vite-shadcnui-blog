@@ -7,6 +7,9 @@ import { Toaster } from "sonner";
 import App from "./App.tsx";
 import "./index.css";
 import Home from "./pages/Home.tsx";
+import NoteDetail from "./pages/NoteDetail.tsx";
+import Notes from "./pages/Notes.tsx";
+import NotFound from "./pages/NotFound.tsx";
 import WeddingInvitation from "./pages/WeddingInvitation.tsx";
 
 const router = createHashRouter([
@@ -15,7 +18,10 @@ const router = createHashRouter([
     element: <App />,
     children: [
       { index: true, element: <Home /> },
+      { path: "notes", element: <Notes /> },
+      { path: "notes/:slug", element: <NoteDetail /> },
       { path: "wedding", element: <WeddingInvitation /> },
+      { path: "*", element: <NotFound /> },
     ],
   },
 ]);

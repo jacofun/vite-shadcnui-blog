@@ -1,238 +1,276 @@
-import type { JSX } from "react";
-import { motion } from "framer-motion";
+import type { JSX, MouseEvent } from "react";
 import {
-  ArrowUpRight,
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+} from "framer-motion";
+import {
+  ArrowRight,
   BookOpen,
-  BrainCircuit,
   Code2,
   Heart,
   LineChart,
   Sparkles,
-  Terminal,
 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 
-const noteTracks = [
-  {
+import SiteHeader from "@/components/common/SiteHeader";
+import { formatNoteDate, noteCategories, notes } from "@/lib/notes";
+
+const categoryDetails = {
+  工程与架构: {
     icon: Code2,
-    index: "01",
-    title: "工程与架构",
-    description: "记录企业级 Java、云原生、平台工程与系统设计中的实践和判断。",
-    tags: ["Java", "Cloud Native", "Architecture"],
-    tone: "from-cyan-400/20 to-blue-500/5",
+    description: "Java、云原生、平台工程与系统设计。",
+    color: "cyan",
   },
-  {
+  金融市场: {
     icon: LineChart,
-    index: "02",
-    title: "金融市场",
-    description: "整理市场机制、交易观察与风险管理，保留分析过程中的证据链。",
-    tags: ["Markets", "Trading", "Risk"],
-    tone: "from-violet-400/20 to-fuchsia-500/5",
+    description: "市场机制、交易观察与风险管理。",
+    color: "violet",
   },
-  {
-    icon: BrainCircuit,
-    index: "03",
-    title: "学习与思考",
-    description: "沉淀语言学习、工程管理以及人工智能时代的持续思考。",
-    tags: ["Learning", "AI", "Management"],
-    tone: "from-amber-300/20 to-orange-500/5",
+  学习与思考: {
+    icon: BookOpen,
+    description: "语言学习、工程管理与阶段性思考。",
+    color: "amber",
   },
-];
+} as const;
 
 export default function Home(): JSX.Element {
+  const prefersReducedMotion = useReducedMotion();
+  const pointerX = useMotionValue(-300);
+  const pointerY = useMotionValue(-300);
+  const smoothX = useSpring(pointerX, { stiffness: 120, damping: 24 });
+  const smoothY = useSpring(pointerY, { stiffness: 120, damping: 24 });
+  const spotlight = useMotionTemplate`radial-gradient(520px circle at ${smoothX}px ${smoothY}px, rgba(34, 211, 238, 0.10), transparent 68%)`;
+
+  const handlePointerMove = (event: MouseEvent<HTMLElement>) => {
+    if (prefersReducedMotion) {
+      return;
+    }
+
+    const bounds = event.currentTarget.getBoundingClientRect();
+    pointerX.set(event.clientX - bounds.left);
+    pointerY.set(event.clientY - bounds.top);
+  };
+
+  const recentNotes = notes.slice(0, 4);
+
   return (
     <>
       <Helmet>
         <title>彦骁的笔记</title>
         <meta
+          content="技术、金融市场和学习记录。"
           name="description"
-          content="彦骁的个人数字花园，记录技术、金融市场与持续学习。"
-        />
-        <meta property="og:title" content="彦骁的笔记" />
-        <meta
-          property="og:description"
-          content="记录技术、金融市场与持续学习。"
         />
       </Helmet>
 
-      <main className="relative min-h-screen overflow-hidden bg-[#070a12] text-slate-100">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.045)_1px,transparent_1px)] bg-[size:56px_56px]" />
-        <div className="pointer-events-none absolute -left-40 top-10 size-[32rem] rounded-full bg-cyan-500/10 blur-[120px]" />
-        <div className="pointer-events-none absolute -right-40 top-64 size-[36rem] rounded-full bg-violet-500/10 blur-[140px]" />
+      <main
+        className="relative min-h-screen overflow-hidden bg-[#070a12] text-slate-100"
+        onMouseMove={handlePointerMove}
+      >
+        <SiteHeader />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.04)_1px,transparent_1px)] bg-[size:56px_56px]" />
+        <motion.div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: spotlight }}
+        />
+        <div className="pointer-events-none absolute -right-48 top-32 size-[34rem] rounded-full bg-violet-500/[0.08] blur-[130px]" />
 
-        <div className="relative mx-auto max-w-6xl px-6 pb-24 pt-6 sm:px-8 lg:px-10">
-          <header className="flex items-center justify-between border-b border-white/10 pb-5">
-            <a className="flex items-center gap-3" href="#top" aria-label="返回顶部">
-              <span className="flex size-9 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10">
-                <Terminal className="size-4 text-cyan-300" />
-              </span>
-              <span className="text-sm font-semibold tracking-[0.16em] text-white">
-                YANXIAO.LOG
-              </span>
-            </a>
-            <nav className="hidden items-center gap-8 text-sm text-slate-400 sm:flex">
-              <a className="transition hover:text-white" href="#notes">
-                笔记
-              </a>
-              <a className="transition hover:text-white" href="#about">
-                关于
-              </a>
-              <Link className="transition hover:text-white" to="/wedding">
-                纪念
-              </Link>
-            </nav>
-          </header>
-
-          <section
-            className="flex min-h-[680px] flex-col justify-center py-24 sm:min-h-[720px]"
-            id="top"
-          >
+        <div className="relative mx-auto max-w-6xl px-6 pb-24 sm:px-8 lg:px-10">
+          <section className="grid min-h-[620px] items-center gap-16 py-24 lg:grid-cols-[1fr_340px]">
             <motion.div
               animate={{ opacity: 1, y: 0 }}
-              initial={{ opacity: 0, y: 24 }}
-              transition={{ duration: 0.7 }}
+              initial={{ opacity: 0, y: 22 }}
+              transition={{ duration: 0.65 }}
             >
-              <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/[0.06] px-3 py-1.5 text-xs tracking-wide text-cyan-200">
-                <span className="size-1.5 animate-pulse rounded-full bg-cyan-300" />
-                DIGITAL GARDEN · 持续生长
-              </div>
-
-              <p className="mb-5 font-mono text-sm tracking-[0.22em] text-slate-500">
-                HELLO, WORLD. I AM YANXIAO.
+              <p className="mb-5 font-mono text-xs tracking-[0.2em] text-cyan-300">
+                YANXIAO.ME / NOTES
               </p>
-              <h1 className="max-w-4xl text-5xl font-semibold leading-[1.08] tracking-[-0.05em] text-white sm:text-7xl lg:text-8xl">
-                彦骁的
-                <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent">
-                  笔记
-                </span>
+              <h1 className="text-5xl font-semibold leading-[1.08] tracking-[-0.05em] text-white sm:text-7xl">
+                彦骁的笔记
               </h1>
-              <p className="mt-8 max-w-2xl text-base leading-8 text-slate-400 sm:text-lg">
-                记录技术实践、金融市场与持续学习。
-                <br className="hidden sm:block" />
-                把零散经验整理成可以反复调用的知识。
+              <p className="mt-7 text-xl text-slate-300">
+                技术、金融市场和学习记录
               </p>
-
-              <div className="mt-10 flex flex-wrap gap-4">
-                <a
+              <p className="mt-4 max-w-xl text-sm leading-7 text-slate-500 sm:text-base">
+                把实际问题、解决过程和形成的结论写下来。
+              </p>
+              <div className="mt-9 flex flex-wrap gap-3">
+                <Link
                   className="group inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-medium text-slate-950 transition hover:bg-cyan-100"
-                  href="#notes"
+                  to="/notes"
                 >
-                  浏览笔记方向
-                  <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                </a>
-                <a
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-5 py-3 text-sm font-medium text-slate-200 transition hover:border-white/30 hover:bg-white/[0.08]"
-                  href="#about"
+                  浏览全部笔记
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <Link
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-5 py-3 text-sm text-slate-200 transition hover:border-white/30 hover:bg-white/[0.08]"
+                  to="/wedding"
                 >
-                  了解我
-                </a>
+                  <Heart className="size-4 text-rose-300" />
+                  婚礼纪念
+                </Link>
               </div>
+            </motion.div>
+
+            <motion.div
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative hidden aspect-square lg:block"
+              initial={{ opacity: 0, scale: 0.92 }}
+              transition={{ delay: 0.15, duration: 0.7 }}
+            >
+              <motion.div
+                animate={
+                  prefersReducedMotion ? undefined : { rotate: 360 }
+                }
+                className="absolute inset-8 rounded-full border border-dashed border-cyan-300/20"
+                transition={{
+                  duration: 28,
+                  ease: "linear",
+                  repeat: Infinity,
+                }}
+              />
+              <motion.div
+                animate={
+                  prefersReducedMotion ? undefined : { rotate: -360 }
+                }
+                className="absolute inset-20 rounded-full border border-violet-300/20"
+                transition={{
+                  duration: 20,
+                  ease: "linear",
+                  repeat: Infinity,
+                }}
+              />
+              <div className="absolute inset-[34%] rounded-full bg-gradient-to-br from-cyan-300 to-violet-500 shadow-[0_0_90px_rgba(34,211,238,0.25)]" />
+              <div className="absolute left-1/2 top-6 h-8 w-px bg-gradient-to-b from-cyan-300 to-transparent" />
+              <div className="absolute bottom-12 right-10 size-2 rounded-full bg-violet-300 shadow-[0_0_18px_rgba(196,181,253,0.9)]" />
             </motion.div>
           </section>
 
-          <section className="scroll-mt-8 py-20" id="notes">
-            <div className="mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <section className="py-20">
+            <div className="mb-9 flex items-end justify-between gap-4">
               <div>
-                <p className="mb-3 font-mono text-xs tracking-[0.22em] text-cyan-300">
-                  KNOWLEDGE STREAMS
+                <p className="mb-2 font-mono text-xs tracking-[0.18em] text-slate-600">
+                  RECENT NOTES
                 </p>
-                <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                  笔记方向
-                </h2>
+                <h2 className="text-3xl font-semibold text-white">最近更新</h2>
               </div>
-              <p className="max-w-md text-sm leading-6 text-slate-500">
-                页面仍在建设中，内容将按主题逐步整理并开放。
-              </p>
+              <Link
+                className="hidden items-center gap-2 text-sm text-slate-500 transition hover:text-cyan-300 sm:flex"
+                to="/notes"
+              >
+                查看全部
+                <ArrowRight className="size-4" />
+              </Link>
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-3">
-              {noteTracks.map((track, index) => {
-                const Icon = track.icon;
-                return (
-                  <motion.article
-                    className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] p-6 transition hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.055]"
-                    initial={{ opacity: 0, y: 20 }}
-                    key={track.title}
-                    transition={{ delay: index * 0.1, duration: 0.5 }}
-                    viewport={{ once: true, margin: "-80px" }}
-                    whileInView={{ opacity: 1, y: 0 }}
+            <div className="divide-y divide-white/10 border-y border-white/10">
+              {recentNotes.map((note, index) => (
+                <motion.div
+                  initial={{ opacity: 0, x: -14 }}
+                  key={note.slug}
+                  transition={{ delay: index * 0.06 }}
+                  viewport={{ once: true }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                >
+                  <Link
+                    className="group grid gap-3 py-6 transition sm:grid-cols-[110px_1fr_auto] sm:items-center"
+                    to={`/notes/${note.slug}`}
                   >
-                    <div
-                      className={`pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b ${track.tone} opacity-60`}
-                    />
-                    <div className="relative">
-                      <div className="mb-14 flex items-center justify-between">
-                        <span className="flex size-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06]">
-                          <Icon className="size-5 text-slate-200" />
-                        </span>
-                        <span className="font-mono text-xs text-slate-600">
-                          {track.index}
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-semibold text-white">
-                        {track.title}
+                    <time className="font-mono text-xs text-slate-600">
+                      {formatNoteDate(note.updated)}
+                    </time>
+                    <div>
+                      <h3 className="font-medium text-slate-200 transition group-hover:text-cyan-200">
+                        {note.title}
                       </h3>
-                      <p className="mt-3 min-h-20 text-sm leading-6 text-slate-400">
-                        {track.description}
+                      <p className="mt-1 line-clamp-1 text-sm text-slate-600">
+                        {note.summary}
                       </p>
-                      <div className="mt-6 flex flex-wrap gap-2">
-                        {track.tags.map((tag) => (
-                          <span
-                            className="rounded-md border border-white/10 px-2 py-1 font-mono text-[10px] tracking-wide text-slate-500"
-                            key={tag}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
                     </div>
-                  </motion.article>
+                    <span className="flex items-center gap-2 text-xs text-slate-600">
+                      {note.category}
+                      <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+
+          <section className="py-20">
+            <div className="mb-9">
+              <p className="mb-2 font-mono text-xs tracking-[0.18em] text-slate-600">
+                CATEGORIES
+              </p>
+              <h2 className="text-3xl font-semibold text-white">笔记分类</h2>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {noteCategories.map((category) => {
+                const detail =
+                  categoryDetails[category as keyof typeof categoryDetails];
+                const Icon = detail?.icon ?? Sparkles;
+                const count = notes.filter(
+                  (note) => note.category === category,
+                ).length;
+
+                return (
+                  <Link
+                    className="group rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition duration-300 hover:-translate-y-1 hover:border-cyan-300/20 hover:bg-white/[0.055]"
+                    key={category}
+                    to={`/notes?category=${encodeURIComponent(category)}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <span className="flex size-10 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                        <Icon className="size-5 text-slate-300" />
+                      </span>
+                      <span className="font-mono text-xs text-slate-600">
+                        {String(count).padStart(2, "0")}
+                      </span>
+                    </div>
+                    <h3 className="mt-9 text-lg font-medium text-white">
+                      {category}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      {detail?.description ?? "持续整理中的笔记。"}
+                    </p>
+                  </Link>
                 );
               })}
             </div>
           </section>
 
-          <section className="scroll-mt-8 py-20" id="about">
-            <div className="grid gap-10 rounded-3xl border border-white/10 bg-white/[0.035] p-7 sm:p-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+          <section className="py-20">
+            <div className="grid gap-5 rounded-3xl border border-white/10 bg-white/[0.03] p-7 sm:p-10 lg:grid-cols-[1.15fr_0.85fr]">
               <div>
-                <div className="mb-5 flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-300 to-violet-500 text-slate-950">
-                  <Sparkles className="size-5" />
-                </div>
-                <p className="font-mono text-xs tracking-[0.22em] text-violet-300">
-                  ABOUT THIS SPACE
+                <p className="font-mono text-xs tracking-[0.18em] text-violet-300">
+                  ABOUT
                 </p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">
-                  一个持续迭代的数字花园
+                <h2 className="mt-3 text-2xl font-semibold text-white">
+                  关于本站
                 </h2>
-                <p className="mt-5 max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
-                  我从事企业级应用开发与工程管理，也长期关注金融市场。
-                  这里用于整理工作实践、学习记录和形成中的观点，让知识脱离短期记忆，进入可以检索和复用的系统。
+                <p className="mt-4 max-w-xl text-sm leading-7 text-slate-400">
+                  我从事企业级应用开发与工程管理，也关注金融市场。
+                  本站用于整理技术实践、业务理解和学习记录。
                 </p>
               </div>
-
-              <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#090d17] p-6">
-                <div>
-                  <div className="flex items-center gap-2 font-mono text-xs tracking-[0.16em] text-slate-500">
-                    <BookOpen className="size-4" />
-                    ARCHIVE / MEMORY
-                  </div>
-                  <h3 className="mt-6 text-xl font-semibold text-white">
-                    一份被保留的邀请
-                  </h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-500">
-                    婚礼邀请函作为过往页面保留在这里，记录一段重要的人生时刻。
-                  </p>
-                </div>
+              <div className="flex items-end lg:justify-end">
                 <Link
-                  className="group mt-10 flex items-center justify-between rounded-xl border border-rose-300/15 bg-rose-300/[0.06] px-4 py-3 text-sm text-rose-100 transition hover:border-rose-300/30 hover:bg-rose-300/[0.1]"
+                  className="group flex w-full items-center justify-between rounded-2xl border border-rose-300/15 bg-rose-300/[0.05] px-5 py-4 text-sm text-rose-100 transition hover:border-rose-300/30 hover:bg-rose-300/[0.09] lg:max-w-sm"
                   to="/wedding"
                 >
-                  <span className="flex items-center gap-2">
-                    <Heart className="size-4" />
-                    查看婚礼邀请函
+                  <span>
+                    <span className="block font-medium">婚礼邀请函</span>
+                    <span className="mt-1 block text-xs text-slate-500">
+                      保留的一份纪念页面
+                    </span>
                   </span>
-                  <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  <Heart className="size-5 text-rose-300" />
                 </Link>
               </div>
             </div>
