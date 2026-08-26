@@ -1,4 +1,4 @@
-import { useCallback, useState, type JSX } from "react";
+import { useCallback, useEffect, useRef, useState, type JSX } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Maximize2, Minimize2, X } from "lucide-react";
 
@@ -14,17 +14,51 @@ export default function TerminalDialog({
   open,
 }: TerminalDialogProps): JSX.Element {
   const [isMaximized, setIsMaximized] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
   const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+
+    const syncViewport = () => {
+      const content = contentRef.current;
+
+      if (!content) {
+        return;
+      }
+
+      content.style.setProperty(
+        "--terminal-viewport-height",
+        `${viewport?.height ?? window.innerHeight}px`,
+      );
+      content.style.setProperty(
+        "--terminal-viewport-top",
+        `${viewport?.offsetTop ?? 0}px`,
+      );
+    };
+
+    syncViewport();
+    viewport?.addEventListener("resize", syncViewport);
+    viewport?.addEventListener("scroll", syncViewport);
+    window.addEventListener("resize", syncViewport);
+
+    return () => {
+      viewport?.removeEventListener("resize", syncViewport);
+      viewport?.removeEventListener("scroll", syncViewport);
+      window.removeEventListener("resize", syncViewport);
+    };
+  }, []);
 
   return (
     <DialogPrimitive.Root onOpenChange={onOpenChange} open={open}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out data-[state=open]:fade-in" />
         <DialogPrimitive.Content
+          ref={contentRef}
           className={`fixed z-[100] flex overflow-hidden border border-white/10 bg-[#070a12] shadow-[0_30px_100px_rgba(0,0,0,0.65)] outline-none transition-all duration-300 ${
             isMaximized
-              ? "inset-0 h-dvh w-screen rounded-none"
-              : "inset-x-3 top-1/2 h-[min(680px,calc(100dvh-1.5rem))] -translate-y-1/2 rounded-2xl sm:left-1/2 sm:w-[min(900px,calc(100vw-3rem))] sm:-translate-x-1/2"
+              ? "inset-x-0 top-[var(--terminal-viewport-top,0px)] h-[var(--terminal-viewport-height,100dvh)] w-screen rounded-none"
+              : "inset-x-3 top-[calc(var(--terminal-viewport-top,0px)+0.75rem)] h-[min(680px,calc(var(--terminal-viewport-height,100dvh)-1.5rem))] rounded-2xl sm:left-1/2 sm:top-1/2 sm:w-[min(900px,calc(100vw-3rem))] sm:-translate-x-1/2 sm:-translate-y-1/2"
           }`}
         >
           <div className="flex min-h-0 w-full flex-col">
