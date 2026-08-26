@@ -76,6 +76,12 @@ export default function XtermView({
       terminal.loadAddon(fitAddon);
       terminal.open(container);
 
+      const isTouchDevice =
+        window.matchMedia("(pointer: coarse)").matches ||
+        navigator.maxTouchPoints > 0;
+      const focusTerminal = () => terminal.focus();
+      container.addEventListener("pointerdown", focusTerminal);
+
       const history: string[] = [];
       let historyIndex = 0;
       let input = "";
@@ -244,10 +250,14 @@ export default function XtermView({
       resizeObserver.observe(container);
       window.requestAnimationFrame(() => {
         fitAddon.fit();
-        terminal.focus();
+
+        if (!isTouchDevice) {
+          terminal.focus();
+        }
       });
 
       cleanup = () => {
+        container.removeEventListener("pointerdown", focusTerminal);
         dataSubscription.dispose();
         resizeObserver.disconnect();
         terminal.dispose();
