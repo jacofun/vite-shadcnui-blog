@@ -69,7 +69,7 @@ export default function Home(): JSX.Element {
       </Helmet>
 
       <main
-        className="relative min-h-screen overflow-hidden bg-[#070a12] text-slate-100"
+        className="relative min-h-screen overflow-x-clip bg-[#070a12] text-slate-100"
         onMouseMove={handlePointerMove}
       >
         <SiteHeader />
