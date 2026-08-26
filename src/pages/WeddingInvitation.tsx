@@ -7,8 +7,6 @@ import config from "@/config/config";
 import { Helmet } from "react-helmet-async";
 
 export default function WeddingInvitation(): JSX.Element {
-  const [isNoticeOpen, setIsNoticeOpen] = useState(true);
-
   return (
     <>
       <Helmet>
