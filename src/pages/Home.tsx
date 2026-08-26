@@ -13,11 +13,13 @@ import {
   Heart,
   LineChart,
   Sparkles,
+  Terminal,
 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 
 import SiteHeader from "@/components/common/SiteHeader";
+import { openTerminal } from "@/lib/terminal";
 import { formatNoteDate, noteCategories, notes } from "@/lib/notes";
 
 const categoryDetails = {
@@ -107,6 +109,18 @@ export default function Home(): JSX.Element {
                   浏览全部笔记
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </Link>
+                <button
+                  aria-haspopup="dialog"
+                  className="group inline-flex items-center gap-2 rounded-xl border border-cyan-300/25 bg-cyan-300/[0.08] px-5 py-3 text-sm font-medium text-cyan-100 transition hover:border-cyan-200/50 hover:bg-cyan-300/[0.14]"
+                  onClick={openTerminal}
+                  type="button"
+                >
+                  <Terminal className="size-4 transition group-hover:scale-110" />
+                  进入终端
+                  <span className="hidden border-l border-cyan-200/20 pl-2 font-mono text-[10px] tracking-wide text-cyan-200/65 sm:inline">
+                    Ctrl + `
+                  </span>
+                </button>
                 <Link
                   className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-5 py-3 text-sm text-slate-200 transition hover:border-white/30 hover:bg-white/[0.08]"
                   to="/wedding"

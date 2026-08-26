@@ -8,6 +8,8 @@ import {
 import { BookOpen, Heart, House, Terminal } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
+import { terminalOpenEvent } from "@/lib/terminal";
+
 const TerminalDialog = lazy(
   () => import("@/components/terminal/TerminalDialog"),
 );
@@ -30,8 +32,15 @@ export default function SiteHeader(): JSX.Element {
       }
     };
 
+    const handleTerminalOpen = () => setIsTerminalOpen(true);
+
     window.addEventListener("keydown", handleShortcut);
-    return () => window.removeEventListener("keydown", handleShortcut);
+    window.addEventListener(terminalOpenEvent, handleTerminalOpen);
+
+    return () => {
+      window.removeEventListener("keydown", handleShortcut);
+      window.removeEventListener(terminalOpenEvent, handleTerminalOpen);
+    };
   }, []);
 
   return (
