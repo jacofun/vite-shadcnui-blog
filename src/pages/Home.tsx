@@ -10,7 +10,6 @@ import {
   ArrowRight,
   BookOpen,
   Code2,
-  Heart,
   LineChart,
   Sparkles,
   Terminal,
@@ -121,13 +120,6 @@ export default function Home(): JSX.Element {
                     Ctrl + `
                   </span>
                 </button>
-                <Link
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-5 py-3 text-sm text-slate-200 transition hover:border-white/30 hover:bg-white/[0.08]"
-                  to="/wedding"
-                >
-                  <Heart className="size-4 text-rose-300" />
-                  婚礼纪念
-                </Link>
               </div>
             </motion.div>
 
