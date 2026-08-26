@@ -91,7 +91,10 @@ export default function Home(): JSX.Element {
                 YANXIAO.ME / NOTES
               </p>
               <h1 className="text-5xl font-semibold leading-[1.08] tracking-[-0.05em] text-white sm:text-7xl">
-                彦骁的笔记
+                {"彦骁的"}
+                <span className="bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-400 bg-clip-text text-transparent">
+                  笔记
+                </span>
               </h1>
               <p className="mt-7 text-xl text-slate-300">
                 技术、金融市场和学习记录
