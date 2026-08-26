@@ -228,7 +228,12 @@ export default function XtermView({
           return;
         }
 
-        const printable = data.replace(/[\u0000-\u001f\u007f]/g, "");
+        const printable = Array.from(data)
+          .filter((character) => {
+            const codePoint = character.codePointAt(0) ?? 0;
+            return codePoint >= 32 && codePoint !== 127;
+          })
+          .join("");
         input += printable;
         terminal.write(printable);
       });
