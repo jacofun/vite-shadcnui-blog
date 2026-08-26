@@ -50,8 +50,7 @@ export default function TerminalDialog({
         0,
         Math.min(680, viewportHeight - 24),
       );
-      const dialogTop =
-        viewportTop + Math.max(12, (viewportHeight - dialogHeight) / 2);
+      const dialogTop = viewportTop + viewportHeight / 2;
 
       content.style.setProperty(
         "--terminal-viewport-height",
