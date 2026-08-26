@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { Heart, Terminal } from "lucide-react";
+import { AlertTriangle, Heart, Terminal } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const scrollToTop = () => {
@@ -48,6 +48,13 @@ export default function Footer(): JSX.Element {
               婚礼纪念
             </Link>
           </nav>
+        </div>
+
+        <div className="flex items-start gap-2 border-b border-white/10 py-4 text-[11px] leading-5 text-amber-100/60">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-300/70" />
+          <p>
+            本站部分内容由 AI 生成或辅助整理，信息可能有误，请注意甄别。
+          </p>
         </div>
 
         <div className="flex flex-col justify-between gap-4 pt-6 text-xs text-slate-600 sm:flex-row sm:items-center">

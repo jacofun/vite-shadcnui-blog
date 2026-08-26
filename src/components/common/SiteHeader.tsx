@@ -1,10 +1,11 @@
 import type { JSX } from "react";
-import { Heart, Terminal } from "lucide-react";
+import { BookOpen, Heart, House, Terminal } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const navigation = [
-  { label: "首页", to: "/" },
-  { label: "笔记", to: "/notes" },
+  { icon: House, label: "首页", to: "/" },
+  { icon: BookOpen, label: "笔记", to: "/notes" },
+  { icon: Heart, label: "婚礼纪念", to: "/wedding" },
 ];
 
 export default function SiteHeader(): JSX.Element {
@@ -22,34 +23,39 @@ export default function SiteHeader(): JSX.Element {
           </span>
         </Link>
 
-        <nav className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.035] p-1 text-sm">
+        <nav
+          aria-label="主导航"
+          className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.035] p-1"
+        >
           {navigation.map((item) => {
+            const Icon = item.icon;
             const isActive =
               item.to === "/"
                 ? location.pathname === "/"
                 : location.pathname.startsWith(item.to);
+            const isWedding = item.to === "/wedding";
 
             return (
               <Link
-                className={`rounded-lg px-3 py-2 transition ${
+                aria-current={isActive ? "page" : undefined}
+                aria-label={item.label}
+                className={`flex size-8 items-center justify-center rounded-lg transition ${
                   isActive
-                    ? "bg-white/10 text-white"
-                    : "text-slate-500 hover:text-slate-200"
+                    ? isWedding
+                      ? "bg-rose-300/15 text-rose-200"
+                      : "bg-white/10 text-white"
+                    : isWedding
+                      ? "text-slate-500 hover:bg-rose-300/10 hover:text-rose-200"
+                      : "text-slate-500 hover:bg-white/[0.06] hover:text-slate-200"
                 }`}
                 key={item.to}
+                title={item.label}
                 to={item.to}
               >
-                {item.label}
+                <Icon className="size-4" />
               </Link>
             );
           })}
-          <Link
-            aria-label="婚礼纪念"
-            className="rounded-lg p-2 text-slate-500 transition hover:bg-rose-300/10 hover:text-rose-200"
-            to="/wedding"
-          >
-            <Heart className="size-4" />
-          </Link>
         </nav>
       </div>
     </header>

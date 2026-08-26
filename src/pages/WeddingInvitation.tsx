@@ -1,10 +1,11 @@
 import type { JSX } from "react";
+import { Helmet } from "react-helmet-async";
 
+import SiteHeader from "@/components/common/SiteHeader";
 import HeroCarousel from "@/components/wedding/HeroCarousel";
 import SectionSchedule from "@/components/wedding/SectionSchedule";
 import SectionStory from "@/components/wedding/SectionStory";
 import config from "@/config/config";
-import { Helmet } from "react-helmet-async";
 
 export default function WeddingInvitation(): JSX.Element {
   return (
@@ -25,6 +26,7 @@ export default function WeddingInvitation(): JSX.Element {
         <meta name="twitter:image" content={config.data.og_image} />
       </Helmet>
 
+      <SiteHeader />
       <section className="flex w-full flex-col">
         <div id="carousel-hero-anchor">
           <HeroCarousel />
