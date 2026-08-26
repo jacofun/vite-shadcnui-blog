@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type JSX,
+} from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Maximize2, Minimize2, X } from "lucide-react";
 
@@ -7,6 +14,16 @@ import XtermView from "./XtermView";
 type TerminalDialogProps = {
   onOpenChange: (open: boolean) => void;
   open: boolean;
+};
+
+type TerminalLayoutStyle = CSSProperties & {
+  "--terminal-dialog-height": string;
+  "--terminal-dialog-top": string;
+};
+
+const initialTerminalLayoutStyle: TerminalLayoutStyle = {
+  "--terminal-dialog-height": "min(680px, calc(100dvh - 1.5rem))",
+  "--terminal-dialog-top": "50%",
 };
 
 export default function TerminalDialog({
@@ -27,24 +44,54 @@ export default function TerminalDialog({
         return;
       }
 
+      const viewportHeight = viewport?.height ?? window.innerHeight;
+      const viewportTop = viewport?.offsetTop ?? 0;
+      const dialogHeight = Math.max(
+        0,
+        Math.min(680, viewportHeight - 24),
+      );
+      const dialogTop =
+        viewportTop + Math.max(12, (viewportHeight - dialogHeight) / 2);
+
       content.style.setProperty(
         "--terminal-viewport-height",
-        `${viewport?.height ?? window.innerHeight}px`,
+        `${viewportHeight}px`,
       );
       content.style.setProperty(
         "--terminal-viewport-top",
-        `${viewport?.offsetTop ?? 0}px`,
+        `${viewportTop}px`,
+      );
+      content.style.setProperty(
+        "--terminal-dialog-height",
+        `${dialogHeight}px`,
+      );
+      content.style.setProperty(
+        "--terminal-dialog-top",
+        `${dialogTop}px`,
       );
     };
 
-    syncViewport();
+    let delayedSyncId: number | undefined;
+    const scheduleViewportSync = () => {
+      syncViewport();
+      window.requestAnimationFrame(syncViewport);
+      window.clearTimeout(delayedSyncId);
+      delayedSyncId = window.setTimeout(syncViewport, 320);
+    };
+
+    scheduleViewportSync();
     viewport?.addEventListener("resize", syncViewport);
     viewport?.addEventListener("scroll", syncViewport);
+    window.addEventListener("focusin", scheduleViewportSync);
+    window.addEventListener("focusout", scheduleViewportSync);
     window.addEventListener("resize", syncViewport);
 
     return () => {
+      window.clearTimeout(delayedSyncId);
       viewport?.removeEventListener("resize", syncViewport);
       viewport?.removeEventListener("scroll", syncViewport);
+      window.removeEventListener("focusin", scheduleViewportSync);
+      window.removeEventListener("focusout", scheduleViewportSync);
       window.removeEventListener("resize", syncViewport);
     };
   }, []);
@@ -55,10 +102,11 @@ export default function TerminalDialog({
         <DialogPrimitive.Overlay className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out data-[state=open]:fade-in" />
         <DialogPrimitive.Content
           ref={contentRef}
-          className={`fixed z-[100] flex overflow-hidden border border-white/10 bg-[#070a12] shadow-[0_30px_100px_rgba(0,0,0,0.65)] outline-none transition-all duration-300 ${
+          style={initialTerminalLayoutStyle}
+          className={`fixed z-[100] flex -translate-y-1/2 overflow-hidden border border-white/10 bg-[#070a12] shadow-[0_30px_100px_rgba(0,0,0,0.65)] outline-none transition-all duration-300 ${
             isMaximized
-              ? "inset-x-0 top-[var(--terminal-viewport-top,0px)] h-[var(--terminal-viewport-height,100dvh)] w-screen rounded-none"
-              : "inset-x-3 top-[calc(var(--terminal-viewport-top,0px)+0.75rem)] h-[min(680px,calc(var(--terminal-viewport-height,100dvh)-1.5rem))] rounded-2xl sm:left-1/2 sm:top-1/2 sm:w-[min(900px,calc(100vw-3rem))] sm:-translate-x-1/2 sm:-translate-y-1/2"
+              ? "inset-x-0 top-[var(--terminal-viewport-top,0px)] h-[var(--terminal-viewport-height,100dvh)] w-screen translate-y-0 rounded-none"
+              : "inset-x-3 top-[var(--terminal-dialog-top)] h-[var(--terminal-dialog-height)] rounded-2xl sm:left-1/2 sm:w-[min(900px,calc(100vw-3rem))] sm:-translate-x-1/2"
           }`}
         >
           <div className="flex min-h-0 w-full flex-col">
