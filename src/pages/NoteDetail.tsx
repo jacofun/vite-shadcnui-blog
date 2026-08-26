@@ -13,9 +13,8 @@ import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
 
 import SiteHeader from "@/components/common/SiteHeader";
-import MarkdownRenderer, {
-  extractMarkdownHeadings,
-} from "@/components/notes/MarkdownRenderer";
+import MarkdownRenderer from "@/components/notes/MarkdownRenderer";
+import { extractMarkdownHeadings } from "@/lib/markdown";
 import {
   formatNoteDate,
   getNoteBySlug,

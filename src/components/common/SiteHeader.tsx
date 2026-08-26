@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { BookOpen, Heart, Terminal } from "lucide-react";
+import { Heart, Terminal } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const navigation = [
