@@ -9,6 +9,7 @@ import { ArrowRight, Search, X } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams } from "react-router-dom";
 
+import AiDisclaimer from "@/components/common/AiDisclaimer";
 import SiteHeader from "@/components/common/SiteHeader";
 import {
   formatNoteDate,
@@ -84,6 +85,7 @@ export default function Notes(): JSX.Element {
 
       <main className="min-h-screen bg-[#070a12] text-slate-100">
         <SiteHeader />
+        <AiDisclaimer />
         <div className="mx-auto max-w-5xl px-6 pb-24 pt-16 sm:px-8">
           <div className="max-w-2xl">
             <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">

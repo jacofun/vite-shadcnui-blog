@@ -17,6 +17,7 @@ import {
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 
+import AiDisclaimer from "@/components/common/AiDisclaimer";
 import SiteHeader from "@/components/common/SiteHeader";
 import { formatNoteDate, noteCategories, notes } from "@/lib/notes";
 
@@ -73,6 +74,7 @@ export default function Home(): JSX.Element {
         onMouseMove={handlePointerMove}
       >
         <SiteHeader />
+        <AiDisclaimer />
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.04)_1px,transparent_1px)] bg-[size:56px_56px]" />
         <motion.div
           className="pointer-events-none absolute inset-0"
@@ -95,9 +97,6 @@ export default function Home(): JSX.Element {
               </h1>
               <p className="mt-7 text-xl text-slate-300">
                 技术、金融市场和学习记录
-              </p>
-              <p className="mt-4 max-w-xl text-sm leading-7 text-slate-500 sm:text-base">
-                把实际问题、解决过程和形成的结论写下来。
               </p>
               <div className="mt-9 flex flex-wrap gap-3">
                 <Link

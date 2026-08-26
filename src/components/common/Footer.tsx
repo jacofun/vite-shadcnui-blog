@@ -2,12 +2,20 @@ import type { JSX } from "react";
 import { Heart, Terminal } from "lucide-react";
 import { Link } from "react-router-dom";
 
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+};
+
 export default function Footer(): JSX.Element {
   return (
     <footer className="border-t border-white/10 bg-[#05070d] text-slate-400">
       <div className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-8 lg:px-10">
         <div className="flex flex-col justify-between gap-8 border-b border-white/10 pb-8 sm:flex-row sm:items-center">
-          <Link className="flex items-center gap-3 text-white" to="/">
+          <Link
+            className="flex items-center gap-3 text-white"
+            onClick={scrollToTop}
+            to="/"
+          >
             <span className="flex size-9 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10">
               <Terminal className="size-4 text-cyan-300" />
             </span>
@@ -17,14 +25,23 @@ export default function Footer(): JSX.Element {
           </Link>
 
           <nav className="flex flex-wrap items-center gap-6 text-sm">
-            <Link className="transition hover:text-white" to="/">
+            <Link
+              className="transition hover:text-white"
+              onClick={scrollToTop}
+              to="/"
+            >
               首页
             </Link>
-            <Link className="transition hover:text-white" to="/notes">
+            <Link
+              className="transition hover:text-white"
+              onClick={scrollToTop}
+              to="/notes"
+            >
               笔记
             </Link>
             <Link
               className="inline-flex items-center gap-1.5 transition hover:text-rose-200"
+              onClick={scrollToTop}
               to="/wedding"
             >
               <Heart className="size-3.5" />
