@@ -1,11 +1,4 @@
-import type { JSX, MouseEvent } from "react";
-import {
-  motion,
-  useMotionTemplate,
-  useMotionValue,
-  useReducedMotion,
-  useSpring,
-} from "framer-motion";
+import type { JSX } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -39,23 +32,6 @@ const categoryDetails = {
 } as const;
 
 export default function Home(): JSX.Element {
-  const prefersReducedMotion = useReducedMotion();
-  const pointerX = useMotionValue(-300);
-  const pointerY = useMotionValue(-300);
-  const smoothX = useSpring(pointerX, { stiffness: 120, damping: 24 });
-  const smoothY = useSpring(pointerY, { stiffness: 120, damping: 24 });
-  const spotlight = useMotionTemplate`radial-gradient(520px circle at ${smoothX}px ${smoothY}px, rgba(34, 211, 238, 0.10), transparent 68%)`;
-
-  const handlePointerMove = (event: MouseEvent<HTMLElement>) => {
-    if (prefersReducedMotion) {
-      return;
-    }
-
-    const bounds = event.currentTarget.getBoundingClientRect();
-    pointerX.set(event.clientX - bounds.left);
-    pointerY.set(event.clientY - bounds.top);
-  };
-
   const recentNotes = notes.slice(0, 4);
 
   return (
@@ -68,24 +44,14 @@ export default function Home(): JSX.Element {
         />
       </Helmet>
 
-      <main
-        className="relative min-h-screen overflow-x-clip bg-[#070a12] text-slate-100"
-        onMouseMove={handlePointerMove}
-      >
+      <main className="relative min-h-screen overflow-x-clip bg-[#070a12] text-slate-100">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.04)_1px,transparent_1px)] bg-[size:56px_56px]" />
-        <motion.div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: spotlight }}
-        />
-        <div className="pointer-events-none absolute -right-48 top-32 size-[34rem] rounded-full bg-violet-500/[0.08] blur-[130px]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(520px_circle_at_18%_12%,rgba(34,211,238,0.09),transparent_68%)]" />
+        <div className="pointer-events-none absolute -right-48 top-32 size-[34rem] rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.08)_0%,rgba(139,92,246,0)_68%)]" />
 
         <div className="relative mx-auto max-w-6xl px-6 pb-24 sm:px-8 lg:px-10">
           <section className="grid min-h-[620px] items-center gap-16 py-24 lg:grid-cols-[1fr_340px]">
-            <motion.div
-              animate={{ opacity: 1, y: 0 }}
-              initial={{ opacity: 0, y: 22 }}
-              transition={{ duration: 0.65 }}
-            >
+            <div>
               <p className="mb-5 font-mono text-xs tracking-[0.2em] text-cyan-300">
                 YANXIAO.ME / NOTES
               </p>
@@ -119,28 +85,15 @@ export default function Home(): JSX.Element {
                   </span>
                 </button>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              className="relative hidden min-h-[350px] lg:block"
-              initial={{ opacity: 0, y: 18 }}
-              transition={{ delay: 0.15, duration: 0.65 }}
-              whileInView={{ opacity: 1, y: 0 }}
-            >
-              <div className="pointer-events-none absolute inset-x-4 top-10 h-64 rounded-full bg-cyan-400/[0.09] blur-[90px]" />
-              <motion.button
-                animate={
-                  prefersReducedMotion ? undefined : { y: [0, -6, 0] }
-                }
+            <div className="terminal-preview-float relative hidden min-h-[350px] lg:block">
+              <div className="pointer-events-none absolute inset-x-4 top-10 h-64 rounded-full bg-[radial-gradient(ellipse,rgba(34,211,238,0.09)_0%,rgba(34,211,238,0)_70%)]" />
+              <button
                 aria-haspopup="dialog"
                 aria-label="打开终端"
                 className="group relative mx-auto block w-full max-w-[320px] overflow-hidden rounded-2xl border border-white/10 bg-[#0a0e19]/90 p-px text-left shadow-[0_22px_70px_rgba(0,0,0,0.34)] outline-none transition hover:-translate-y-1 hover:border-cyan-300/35 hover:shadow-[0_24px_80px_rgba(8,145,178,0.16)] focus-visible:ring-2 focus-visible:ring-cyan-300/70"
                 onClick={openTerminal}
-                transition={{
-                  duration: 5.5,
-                  ease: "easeInOut",
-                  repeat: prefersReducedMotion ? 0 : Infinity,
-                }}
                 type="button"
               >
                 <div className="relative overflow-hidden rounded-[15px] bg-[#080c15]">
@@ -191,8 +144,8 @@ export default function Home(): JSX.Element {
                   </div>
                   <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent opacity-0 transition group-hover:opacity-100" />
                 </div>
-              </motion.button>
-            </motion.div>
+              </button>
+            </div>
           </section>
 
           <section className="py-20">
@@ -213,14 +166,8 @@ export default function Home(): JSX.Element {
             </div>
 
             <div className="divide-y divide-white/10 border-y border-white/10">
-              {recentNotes.map((note, index) => (
-                <motion.div
-                  initial={{ opacity: 0, x: -14 }}
-                  key={note.slug}
-                  transition={{ delay: index * 0.06 }}
-                  viewport={{ once: true }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                >
+              {recentNotes.map((note) => (
+                <div key={note.slug}>
                   <Link
                     className="group grid gap-3 py-6 transition sm:grid-cols-[110px_1fr_auto] sm:items-center"
                     to={`/notes/${note.slug}`}
@@ -241,7 +188,7 @@ export default function Home(): JSX.Element {
                       <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
                     </span>
                   </Link>
-                </motion.div>
+                </div>
               ))}
             </div>
           </section>

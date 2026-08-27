@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import { Helmet } from "react-helmet-async";
+import { Toaster } from "sonner";
 
 import HeroCarousel from "@/components/wedding/HeroCarousel";
 import SectionSchedule from "@/components/wedding/SectionSchedule";
@@ -32,6 +33,7 @@ export default function WeddingInvitation(): JSX.Element {
         <SectionStory />
         <SectionSchedule />
       </section>
+      <Toaster richColors position="top-center" />
     </>
   );
 }

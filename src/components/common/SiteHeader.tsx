@@ -89,7 +89,7 @@ export default function SiteHeader(): JSX.Element {
   return (
     <>
       <header
-        className="sticky top-0 z-[110] border-b border-white/10 bg-[#070a12]/85 backdrop-blur-xl"
+        className="sticky top-0 z-[110] border-b border-white/10 bg-[#070a12]/95 lg:bg-[#070a12]/85 lg:backdrop-blur-xl"
         data-site-header
       >
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-8 lg:px-10">
