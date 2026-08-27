@@ -151,7 +151,8 @@ export default function XtermView(): JSX.Element {
         window.matchMedia("(pointer: coarse)").matches ||
         navigator.maxTouchPoints > 0;
       const focusTerminal = () => terminal.focus();
-      container.addEventListener("pointerdown", focusTerminal);
+      const focusEventType = isTouchDevice ? "click" : "pointerdown";
+      container.addEventListener(focusEventType, focusTerminal);
 
       const history = readStoredHistory();
       let historyIndex = history.length;
@@ -345,9 +346,25 @@ export default function XtermView(): JSX.Element {
         terminal.write(printable);
       });
 
-      const resizeObserver = new ResizeObserver(() => {
-        window.requestAnimationFrame(() => fitAddon.fit());
-      });
+      let fitFrameId: number | undefined;
+      let fitDelayId: number | undefined;
+      const fitTerminal = () => {
+        if (fitFrameId !== undefined) {
+          window.cancelAnimationFrame(fitFrameId);
+        }
+        fitFrameId = window.requestAnimationFrame(() => fitAddon.fit());
+      };
+      const scheduleFit = () => {
+        window.clearTimeout(fitDelayId);
+
+        if (isTouchDevice) {
+          fitDelayId = window.setTimeout(fitTerminal, 180);
+          return;
+        }
+
+        fitTerminal();
+      };
+      const resizeObserver = new ResizeObserver(scheduleFit);
       resizeObserver.observe(container);
       window.requestAnimationFrame(() => {
         fitAddon.fit();
@@ -357,9 +374,13 @@ export default function XtermView(): JSX.Element {
       cleanup = () => {
         saveSnapshot();
         window.clearTimeout(snapshotSaveId);
+        window.clearTimeout(fitDelayId);
+        if (fitFrameId !== undefined) {
+          window.cancelAnimationFrame(fitFrameId);
+        }
         window.removeEventListener("beforeunload", saveSnapshot);
         window.removeEventListener("pagehide", saveSnapshot);
-        container.removeEventListener("pointerdown", focusTerminal);
+        container.removeEventListener(focusEventType, focusTerminal);
         dataSubscription.dispose();
         writeParsedSubscription.dispose();
         resizeObserver.disconnect();

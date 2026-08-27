@@ -29,7 +29,7 @@ export default function AiDisclaimer(): JSX.Element {
         <motion.aside
           animate={{ opacity: 1, y: 0 }}
           aria-label="AI 内容提示"
-          className="fixed inset-x-0 top-0 z-[80] border-b border-amber-300/25 bg-[#16130b]/95 shadow-[0_12px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+          className="fixed inset-x-0 top-16 z-[80] border-b border-amber-300/25 bg-[#16130b]/95 shadow-[0_12px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl"
           exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -48 }}
           initial={{ opacity: 0, y: prefersReducedMotion ? 0 : -48 }}
           role="status"
