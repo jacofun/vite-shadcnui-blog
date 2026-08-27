@@ -16,14 +16,14 @@ type TerminalDialogProps = {
   open: boolean;
 };
 
-type TerminalLayoutStyle = CSSProperties & {
-  "--terminal-dialog-height": string;
-  "--terminal-dialog-top": string;
+type TerminalPanelStyle = CSSProperties & {
+  "--terminal-panel-height": string;
+  "--terminal-panel-top": string;
 };
 
-const initialTerminalLayoutStyle: TerminalLayoutStyle = {
-  "--terminal-dialog-height": "min(680px, calc(100dvh - 1.5rem))",
-  "--terminal-dialog-top": "50%",
+const initialTerminalPanelStyle: TerminalPanelStyle = {
+  "--terminal-panel-height": "min(560px, calc(100dvh - 4rem))",
+  "--terminal-panel-top": "4rem",
 };
 
 export default function TerminalDialog({
@@ -40,33 +40,24 @@ export default function TerminalDialog({
     const syncViewport = () => {
       const content = contentRef.current;
 
-      if (!content) {
-        return;
-      }
+      if (!content) return;
 
-      const viewportHeight = viewport?.height ?? window.innerHeight;
       const viewportTop = viewport?.offsetTop ?? 0;
-      const dialogHeight = Math.max(
-        0,
-        Math.min(680, viewportHeight - 24),
-      );
-      const dialogTop = viewportTop + viewportHeight / 2;
+      const viewportHeight = viewport?.height ?? window.innerHeight;
+      const viewportBottom = viewportTop + viewportHeight;
+      const headerBottom =
+        document.querySelector<HTMLElement>("[data-site-header]")
+          ?.getBoundingClientRect().bottom ?? 64;
+      const panelTop = Math.max(viewportTop, headerBottom);
+      const availableHeight = Math.max(0, viewportBottom - panelTop);
+      const panelHeight = isMaximized
+        ? availableHeight
+        : Math.min(560, availableHeight);
 
+      content.style.setProperty("--terminal-panel-top", `${panelTop}px`);
       content.style.setProperty(
-        "--terminal-viewport-height",
-        `${viewportHeight}px`,
-      );
-      content.style.setProperty(
-        "--terminal-viewport-top",
-        `${viewportTop}px`,
-      );
-      content.style.setProperty(
-        "--terminal-dialog-height",
-        `${dialogHeight}px`,
-      );
-      content.style.setProperty(
-        "--terminal-dialog-top",
-        `${dialogTop}px`,
+        "--terminal-panel-height",
+        `${panelHeight}px`,
       );
     };
 
@@ -93,23 +84,22 @@ export default function TerminalDialog({
       window.removeEventListener("focusout", scheduleViewportSync);
       window.removeEventListener("resize", syncViewport);
     };
-  }, []);
+  }, [isMaximized]);
 
   return (
     <DialogPrimitive.Root onOpenChange={onOpenChange} open={open}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out data-[state=open]:fade-in" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[90] bg-black/35 backdrop-blur-[2px] data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out data-[state=open]:fade-in" />
         <DialogPrimitive.Content
+          className="fixed left-1/2 top-[var(--terminal-panel-top)] z-[100] flex w-full max-w-6xl -translate-x-1/2 overflow-hidden rounded-b-2xl border-x border-b border-white/10 bg-[#070a12] shadow-[0_30px_100px_rgba(0,0,0,0.65)] outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:slide-out-to-top-4 data-[state=open]:slide-in-from-top-4"
           onOpenAutoFocus={(event) => event.preventDefault()}
           ref={contentRef}
-          style={initialTerminalLayoutStyle}
-          className={`fixed z-[100] flex -translate-y-1/2 overflow-hidden border border-white/10 bg-[#070a12] shadow-[0_30px_100px_rgba(0,0,0,0.65)] outline-none transition-all duration-300 ${
-            isMaximized
-              ? "inset-x-0 top-[var(--terminal-viewport-top,0px)] h-[var(--terminal-viewport-height,100dvh)] w-screen translate-y-0 rounded-none"
-              : "inset-x-3 top-[var(--terminal-dialog-top)] h-[var(--terminal-dialog-height)] rounded-2xl sm:left-1/2 sm:w-[min(900px,calc(100vw-3rem))] sm:-translate-x-1/2"
-          }`}
+          style={initialTerminalPanelStyle}
         >
-          <div className="flex min-h-0 w-full flex-col">
+          <div
+            className="flex min-h-0 w-full flex-col"
+            style={{ height: "var(--terminal-panel-height)" }}
+          >
             <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/10 bg-white/[0.025] px-4">
               <div className="flex items-center gap-2">
                 <button
@@ -121,7 +111,7 @@ export default function TerminalDialog({
                   <X className="size-2.5 text-rose-950 opacity-0 transition group-hover:opacity-100" />
                 </button>
                 <button
-                  aria-label="最小化终端"
+                  aria-label="收起终端"
                   className="group flex size-3.5 items-center justify-center rounded-full bg-amber-300/80 transition hover:bg-amber-200"
                   onClick={close}
                   type="button"
@@ -129,7 +119,9 @@ export default function TerminalDialog({
                   <Minimize2 className="size-2.5 text-amber-950 opacity-0 transition group-hover:opacity-100" />
                 </button>
                 <button
-                  aria-label={isMaximized ? "还原终端" : "最大化终端"}
+                  aria-label={
+                    isMaximized ? "还原终端高度" : "最大化终端高度"
+                  }
                   className="group flex size-3.5 items-center justify-center rounded-full bg-emerald-400/80 transition hover:bg-emerald-300"
                   onClick={() => setIsMaximized((value) => !value)}
                   type="button"
@@ -148,7 +140,7 @@ export default function TerminalDialog({
               输入命令浏览彦骁的笔记并探索隐藏内容。
             </DialogPrimitive.Description>
             <div className="min-h-0 flex-1">
-              <XtermView onRequestClose={close} />
+              <XtermView />
             </div>
           </div>
         </DialogPrimitive.Content>

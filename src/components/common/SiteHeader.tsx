@@ -1,6 +1,7 @@
 import {
   lazy,
   Suspense,
+  useCallback,
   useEffect,
   useState,
   type JSX,
@@ -20,19 +21,54 @@ const navigation = [
   { icon: Heart, label: "婚礼纪念", to: "/wedding" },
 ];
 
+const terminalOpenStorageKey = "yanxiao-terminal-open";
+
+function readStoredTerminalOpen(): boolean {
+  try {
+    return window.sessionStorage.getItem(terminalOpenStorageKey) === "true";
+  } catch {
+    return false;
+  }
+}
+
 export default function SiteHeader(): JSX.Element {
   const location = useLocation();
-  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(
+    readStoredTerminalOpen,
+  );
+
+  const updateTerminalOpen = useCallback((open: boolean) => {
+    setIsTerminalOpen(open);
+
+    try {
+      window.sessionStorage.setItem(terminalOpenStorageKey, String(open));
+    } catch {
+      // The terminal remains usable when session storage is unavailable.
+    }
+  }, []);
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
       if (event.ctrlKey && event.code === "Backquote") {
         event.preventDefault();
-        setIsTerminalOpen((value) => !value);
+        setIsTerminalOpen((value) => {
+          const nextValue = !value;
+
+          try {
+            window.sessionStorage.setItem(
+              terminalOpenStorageKey,
+              String(nextValue),
+            );
+          } catch {
+            // The shortcut remains usable when session storage is unavailable.
+          }
+
+          return nextValue;
+        });
       }
     };
 
-    const handleTerminalOpen = () => setIsTerminalOpen(true);
+    const handleTerminalOpen = () => updateTerminalOpen(true);
 
     window.addEventListener("keydown", handleShortcut);
     window.addEventListener(terminalOpenEvent, handleTerminalOpen);
@@ -41,19 +77,23 @@ export default function SiteHeader(): JSX.Element {
       window.removeEventListener("keydown", handleShortcut);
       window.removeEventListener(terminalOpenEvent, handleTerminalOpen);
     };
-  }, []);
+  }, [updateTerminalOpen]);
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#070a12]/85 backdrop-blur-xl">
+      <header
+        className="sticky top-0 z-[110] border-b border-white/10 bg-[#070a12]/85 backdrop-blur-xl"
+        data-site-header
+      >
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-8 lg:px-10">
           <div className="flex items-center gap-3">
             <button
               aria-haspopup="dialog"
-              aria-label="打开终端"
+              aria-expanded={isTerminalOpen}
+              aria-label={isTerminalOpen ? "收起终端" : "打开终端"}
               className="group flex size-9 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 transition hover:border-cyan-300/40 hover:bg-cyan-300/15"
-              onClick={() => setIsTerminalOpen(true)}
-              title="打开终端（Ctrl + `）"
+              onClick={() => updateTerminalOpen(!isTerminalOpen)}
+              title={`${isTerminalOpen ? "收起" : "打开"}终端（Ctrl + \`）`}
               type="button"
             >
               <Terminal className="size-4 text-cyan-300 transition group-hover:scale-110" />
@@ -106,7 +146,7 @@ export default function SiteHeader(): JSX.Element {
       {isTerminalOpen && (
         <Suspense fallback={null}>
           <TerminalDialog
-            onOpenChange={setIsTerminalOpen}
+            onOpenChange={updateTerminalOpen}
             open={isTerminalOpen}
           />
         </Suspense>

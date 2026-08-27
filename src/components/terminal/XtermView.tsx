@@ -6,25 +6,58 @@ import "@xterm/xterm/css/xterm.css";
 import { commandRegistry } from "./commands";
 import { tokenizeCommand } from "./commandRegistry";
 
-type XtermViewProps = {
-  onRequestClose: () => void;
-};
+const prompt = "\x1b[36mvisitor@yanxiao\x1b[0m:\x1b[35m~\x1b[0m$ ";
+const historyStorageKey = "yanxiao-terminal-history";
+const inputStorageKey = "yanxiao-terminal-input";
+const maximumStoredHistory = 100;
 
-const prompt =
-  "\x1b[36mvisitor@yanxiao\x1b[0m:\x1b[35m~\x1b[0m$ ";
+function readStoredHistory(): string[] {
+  try {
+    const value: unknown = JSON.parse(
+      window.sessionStorage.getItem(historyStorageKey) ?? "[]",
+    );
+    return Array.isArray(value)
+      ? value.filter((entry): entry is string => typeof entry === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
 
-export default function XtermView({
-  onRequestClose,
-}: XtermViewProps): JSX.Element {
+function readStoredInput(): string {
+  try {
+    return window.sessionStorage.getItem(inputStorageKey) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function storeHistory(history: string[]): void {
+  try {
+    window.sessionStorage.setItem(
+      historyStorageKey,
+      JSON.stringify(history.slice(-maximumStoredHistory)),
+    );
+  } catch {
+    // The terminal remains usable when session storage is unavailable.
+  }
+}
+
+function storeInput(input: string): void {
+  try {
+    window.sessionStorage.setItem(inputStorageKey, input);
+  } catch {
+    // The terminal remains usable when session storage is unavailable.
+  }
+}
+
+export default function XtermView(): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const container = containerRef.current;
-
-    if (!container) {
-      return;
-    }
+    if (!container) return;
 
     let disposed = false;
     let cleanup = () => undefined;
@@ -34,10 +67,7 @@ export default function XtermView({
         import("@xterm/xterm"),
         import("@xterm/addon-fit"),
       ]);
-
-      if (disposed) {
-        return;
-      }
+      if (disposed) return;
 
       const terminal = new Terminal({
         allowTransparency: true,
@@ -82,25 +112,31 @@ export default function XtermView({
       const focusTerminal = () => terminal.focus();
       container.addEventListener("pointerdown", focusTerminal);
 
-      const history: string[] = [];
-      let historyIndex = 0;
-      let input = "";
+      const history = readStoredHistory();
+      let historyIndex = history.length;
+      let input = readStoredInput();
       let running = false;
 
       const writePrompt = () => terminal.write(prompt);
       const replaceInput = (value: string) => {
         input = value;
+        storeInput(input);
         terminal.write(`\x1b[2K\r${prompt}${input}`);
       };
 
       terminal.writeln("\x1b[36mYANXIAO.ME TERMINAL\x1b[0m  v0.1.0");
       terminal.writeln("输入 \x1b[36mhelp\x1b[0m 查看命令，按 Tab 补全。");
+      if (history.length > 0) {
+        terminal.writeln(`已恢复 ${history.length} 条本标签页命令历史。`);
+      }
       terminal.writeln("");
       writePrompt();
+      terminal.write(input);
 
       const executeInput = async () => {
         const rawInput = input.trim();
         input = "";
+        storeInput(input);
         terminal.write("\r\n");
 
         if (!rawInput) {
@@ -109,6 +145,10 @@ export default function XtermView({
         }
 
         history.push(rawInput);
+        if (history.length > maximumStoredHistory) {
+          history.splice(0, history.length - maximumStoredHistory);
+        }
+        storeHistory(history);
         historyIndex = history.length;
         const [commandName, ...args] = tokenizeCommand(rawInput);
 
@@ -118,38 +158,28 @@ export default function XtermView({
         }
 
         const command = commandRegistry.resolve(commandName);
-
         if (!command) {
           const suggestion = commandRegistry.suggest(commandName);
           terminal.writeln(`command not found: ${commandName}`);
-          if (suggestion) {
-            terminal.writeln(`Did you mean: ${suggestion}?`);
-          }
+          if (suggestion) terminal.writeln(`Did you mean: ${suggestion}?`);
           writePrompt();
           return;
         }
 
         running = true;
-
         try {
           const result = await command.execute(
-            {
-              commands: commandRegistry.list(),
-              history: [...history],
-            },
+            { commands: commandRegistry.list(), history: [...history] },
             args,
           );
 
-          if (result.clear) {
-            terminal.clear();
-          }
-
+          if (result.clear) terminal.clear();
           result.output?.forEach((line) => terminal.writeln(line));
 
           if (result.navigateTo) {
             window.setTimeout(() => {
               navigate(result.navigateTo ?? "/");
-              onRequestClose();
+              writePrompt();
             }, 180);
             return;
           }
@@ -159,47 +189,40 @@ export default function XtermView({
         } finally {
           running = false;
         }
-
         writePrompt();
       };
 
       const dataSubscription = terminal.onData((data) => {
-        if (running) {
-          return;
-        }
-
+        if (running) return;
         if (data === "\r") {
           void executeInput();
           return;
         }
-
         if (data === "\u007f") {
           if (input) {
             input = Array.from(input).slice(0, -1).join("");
+            storeInput(input);
             terminal.write("\b \b");
           }
           return;
         }
-
         if (data === "\u0003") {
           input = "";
+          storeInput(input);
           terminal.write("^C\r\n");
           writePrompt();
           return;
         }
-
         if (data === "\u000c") {
           terminal.clear();
           writePrompt();
           return;
         }
-
         if (data === "\t") {
           const matches = commandRegistry
             .list(true)
             .map((command) => command.name)
             .filter((name) => name.startsWith(input.toLowerCase()));
-
           if (matches.length === 1) {
             replaceInput(matches[0] ?? input);
           } else if (matches.length > 1) {
@@ -210,7 +233,6 @@ export default function XtermView({
           }
           return;
         }
-
         if (data === "\x1b[A") {
           if (historyIndex > 0) {
             historyIndex -= 1;
@@ -218,7 +240,6 @@ export default function XtermView({
           }
           return;
         }
-
         if (data === "\x1b[B") {
           if (historyIndex < history.length - 1) {
             historyIndex += 1;
@@ -229,10 +250,7 @@ export default function XtermView({
           }
           return;
         }
-
-        if (data.startsWith("\x1b")) {
-          return;
-        }
+        if (data.startsWith("\x1b")) return;
 
         const printable = Array.from(data)
           .filter((character) => {
@@ -241,6 +259,7 @@ export default function XtermView({
           })
           .join("");
         input += printable;
+        storeInput(input);
         terminal.write(printable);
       });
 
@@ -250,10 +269,7 @@ export default function XtermView({
       resizeObserver.observe(container);
       window.requestAnimationFrame(() => {
         fitAddon.fit();
-
-        if (!isTouchDevice) {
-          terminal.focus();
-        }
+        if (!isTouchDevice) terminal.focus();
       });
 
       cleanup = () => {
@@ -265,12 +281,11 @@ export default function XtermView({
     };
 
     void initialize();
-
     return () => {
       disposed = true;
       cleanup();
     };
-  }, [navigate, onRequestClose]);
+  }, [navigate]);
 
   return (
     <div
