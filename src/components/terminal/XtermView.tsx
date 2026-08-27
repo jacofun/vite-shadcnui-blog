@@ -9,7 +9,13 @@ import { tokenizeCommand } from "./commandRegistry";
 const prompt = "\x1b[36mvisitor@yanxiao\x1b[0m:\x1b[35m~\x1b[0m$ ";
 const historyStorageKey = "yanxiao-terminal-history";
 const inputStorageKey = "yanxiao-terminal-input";
+const snapshotStorageKey = "yanxiao-terminal-snapshot";
 const maximumStoredHistory = 100;
+
+type TerminalSnapshot = {
+  data: string;
+  input: string;
+};
 
 function readStoredHistory(): string[] {
   try {
@@ -32,6 +38,29 @@ function readStoredInput(): string {
   }
 }
 
+function readStoredSnapshot(): TerminalSnapshot | null {
+  try {
+    const value: unknown = JSON.parse(
+      window.sessionStorage.getItem(snapshotStorageKey) ?? "null",
+    );
+
+    if (
+      value &&
+      typeof value === "object" &&
+      "data" in value &&
+      "input" in value &&
+      typeof value.data === "string" &&
+      typeof value.input === "string"
+    ) {
+      return { data: value.data, input: value.input };
+    }
+  } catch {
+    // Ignore malformed or unavailable session storage.
+  }
+
+  return null;
+}
+
 function storeHistory(history: string[]): void {
   try {
     window.sessionStorage.setItem(
@@ -51,6 +80,14 @@ function storeInput(input: string): void {
   }
 }
 
+function clearStoredSnapshot(): void {
+  try {
+    window.sessionStorage.removeItem(snapshotStorageKey);
+  } catch {
+    // Clearing the terminal still works when session storage is unavailable.
+  }
+}
+
 export default function XtermView(): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -63,10 +100,12 @@ export default function XtermView(): JSX.Element {
     let cleanup = () => undefined;
 
     const initialize = async () => {
-      const [{ Terminal }, { FitAddon }] = await Promise.all([
-        import("@xterm/xterm"),
-        import("@xterm/addon-fit"),
-      ]);
+      const [{ Terminal }, { FitAddon }, { SerializeAddon }] =
+        await Promise.all([
+          import("@xterm/xterm"),
+          import("@xterm/addon-fit"),
+          import("@xterm/addon-serialize"),
+        ]);
       if (disposed) return;
 
       const terminal = new Terminal({
@@ -103,7 +142,9 @@ export default function XtermView(): JSX.Element {
         },
       });
       const fitAddon = new FitAddon();
+      const serializeAddon = new SerializeAddon();
       terminal.loadAddon(fitAddon);
+      terminal.loadAddon(serializeAddon);
       terminal.open(container);
 
       const isTouchDevice =
@@ -116,6 +157,33 @@ export default function XtermView(): JSX.Element {
       let historyIndex = history.length;
       let input = readStoredInput();
       let running = false;
+      let snapshotSaveId: number | undefined;
+
+      const saveSnapshot = () => {
+        window.clearTimeout(snapshotSaveId);
+
+        try {
+          const snapshot: TerminalSnapshot = {
+            data: serializeAddon.serialize(),
+            input,
+          };
+          window.sessionStorage.setItem(
+            snapshotStorageKey,
+            JSON.stringify(snapshot),
+          );
+        } catch {
+          // The terminal remains usable when session storage is unavailable.
+        }
+      };
+      const scheduleSnapshotSave = () => {
+        window.clearTimeout(snapshotSaveId);
+        snapshotSaveId = window.setTimeout(saveSnapshot, 120);
+      };
+      const clearScreen = () => {
+        window.clearTimeout(snapshotSaveId);
+        clearStoredSnapshot();
+        terminal.clear();
+      };
 
       const writePrompt = () => terminal.write(prompt);
       const replaceInput = (value: string) => {
@@ -124,14 +192,28 @@ export default function XtermView(): JSX.Element {
         terminal.write(`\x1b[2K\r${prompt}${input}`);
       };
 
-      terminal.writeln("\x1b[36mYANXIAO.ME TERMINAL\x1b[0m  v0.1.0");
-      terminal.writeln("输入 \x1b[36mhelp\x1b[0m 查看命令，按 Tab 补全。");
-      if (history.length > 0) {
-        terminal.writeln(`已恢复 ${history.length} 条本标签页命令历史。`);
+      const writeParsedSubscription = terminal.onWriteParsed(
+        scheduleSnapshotSave,
+      );
+      window.addEventListener("beforeunload", saveSnapshot);
+      window.addEventListener("pagehide", saveSnapshot);
+
+      const storedSnapshot = readStoredSnapshot();
+      if (storedSnapshot) {
+        terminal.write(storedSnapshot.data, () => {
+          if (storedSnapshot.input !== input) {
+            terminal.write(`\x1b[2K\r${prompt}${input}`);
+          }
+        });
+      } else {
+        terminal.writeln("\x1b[36mYANXIAO.ME TERMINAL\x1b[0m  v0.2.0");
+        terminal.writeln(
+          "输入 \x1b[36mhelp\x1b[0m 查看命令，按 Tab 补全。",
+        );
+        terminal.writeln("");
+        writePrompt();
+        terminal.write(input);
       }
-      terminal.writeln("");
-      writePrompt();
-      terminal.write(input);
 
       const executeInput = async () => {
         const rawInput = input.trim();
@@ -173,7 +255,7 @@ export default function XtermView(): JSX.Element {
             args,
           );
 
-          if (result.clear) terminal.clear();
+          if (result.clear) clearScreen();
           result.output?.forEach((line) => terminal.writeln(line));
 
           if (result.navigateTo) {
@@ -214,7 +296,7 @@ export default function XtermView(): JSX.Element {
           return;
         }
         if (data === "\u000c") {
-          terminal.clear();
+          clearScreen();
           writePrompt();
           return;
         }
@@ -273,8 +355,13 @@ export default function XtermView(): JSX.Element {
       });
 
       cleanup = () => {
+        saveSnapshot();
+        window.clearTimeout(snapshotSaveId);
+        window.removeEventListener("beforeunload", saveSnapshot);
+        window.removeEventListener("pagehide", saveSnapshot);
         container.removeEventListener("pointerdown", focusTerminal);
         dataSubscription.dispose();
+        writeParsedSubscription.dispose();
         resizeObserver.disconnect();
         terminal.dispose();
       };

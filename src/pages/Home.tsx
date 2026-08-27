@@ -17,7 +17,6 @@ import {
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 
-import SiteHeader from "@/components/common/SiteHeader";
 import { openTerminal } from "@/lib/terminal";
 import { formatNoteDate, noteCategories, notes } from "@/lib/notes";
 
@@ -73,7 +72,6 @@ export default function Home(): JSX.Element {
         className="relative min-h-screen overflow-x-clip bg-[#070a12] text-slate-100"
         onMouseMove={handlePointerMove}
       >
-        <SiteHeader />
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.04)_1px,transparent_1px)] bg-[size:56px_56px]" />
         <motion.div
           className="pointer-events-none absolute inset-0"

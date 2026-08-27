@@ -3,8 +3,6 @@ import { ArrowLeft, Search } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link, useLocation } from "react-router-dom";
 
-import SiteHeader from "@/components/common/SiteHeader";
-
 export default function NotFound(): JSX.Element {
   const location = useLocation();
 
@@ -15,7 +13,6 @@ export default function NotFound(): JSX.Element {
       </Helmet>
 
       <main className="min-h-screen bg-[#070a12] text-slate-100">
-        <SiteHeader />
         <div className="mx-auto flex min-h-[70vh] max-w-4xl items-center px-6 py-20 sm:px-8">
           <div className="w-full">
             <p className="font-mono text-sm tracking-[0.18em] text-rose-300">

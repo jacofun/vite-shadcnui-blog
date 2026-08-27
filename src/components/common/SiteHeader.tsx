@@ -36,8 +36,15 @@ export default function SiteHeader(): JSX.Element {
   const [isTerminalOpen, setIsTerminalOpen] = useState(
     readStoredTerminalOpen,
   );
+  const [hasTerminalMounted, setHasTerminalMounted] = useState(
+    isTerminalOpen,
+  );
 
   const updateTerminalOpen = useCallback((open: boolean) => {
+    if (open) {
+      setHasTerminalMounted(true);
+    }
+
     setIsTerminalOpen(open);
 
     try {
@@ -143,7 +150,7 @@ export default function SiteHeader(): JSX.Element {
         </div>
       </header>
 
-      {isTerminalOpen && (
+      {hasTerminalMounted && (
         <Suspense fallback={null}>
           <TerminalDialog
             onOpenChange={updateTerminalOpen}

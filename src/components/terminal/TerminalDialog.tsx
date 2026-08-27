@@ -88,10 +88,15 @@ export default function TerminalDialog({
 
   return (
     <DialogPrimitive.Root onOpenChange={onOpenChange} open={open}>
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-[90] bg-black/35 backdrop-blur-[2px] data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out data-[state=open]:fade-in" />
+      <DialogPrimitive.Portal forceMount>
+        <DialogPrimitive.Overlay
+          className="fixed inset-0 z-[90] bg-black/35 backdrop-blur-[2px] data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0 data-[state=open]:animate-in data-[state=open]:fade-in"
+          forceMount
+        />
         <DialogPrimitive.Content
-          className="fixed left-1/2 top-[var(--terminal-panel-top)] z-[100] flex w-full max-w-6xl -translate-x-1/2 overflow-hidden rounded-b-2xl border-x border-b border-white/10 bg-[#070a12] shadow-[0_30px_100px_rgba(0,0,0,0.65)] outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:slide-out-to-top-4 data-[state=open]:slide-in-from-top-4"
+          aria-hidden={!open}
+          className="fixed left-1/2 top-[var(--terminal-panel-top)] z-[100] flex w-full max-w-6xl -translate-x-1/2 overflow-hidden rounded-b-2xl border-x border-b border-white/10 bg-[#070a12] shadow-[0_30px_100px_rgba(0,0,0,0.65)] outline-none data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0 data-[state=open]:animate-in data-[state=open]:slide-in-from-top-4"
+          forceMount
           onOpenAutoFocus={(event) => event.preventDefault()}
           ref={contentRef}
           style={initialTerminalPanelStyle}

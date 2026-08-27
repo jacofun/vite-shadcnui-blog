@@ -12,7 +12,6 @@ import {
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
 
-import SiteHeader from "@/components/common/SiteHeader";
 import MarkdownRenderer from "@/components/notes/MarkdownRenderer";
 import { extractMarkdownHeadings } from "@/lib/markdown";
 import {
@@ -90,8 +89,6 @@ export default function NoteDetail(): JSX.Element {
           className="fixed left-0 top-0 z-[60] h-0.5 bg-gradient-to-r from-cyan-300 to-violet-400 transition-[width]"
           style={{ width: `${Math.min(progress, 100)}%` }}
         />
-        <SiteHeader />
-
         <div className="mx-auto grid max-w-6xl gap-14 px-6 pb-24 pt-12 sm:px-8 lg:grid-cols-[minmax(0,760px)_220px] lg:px-10">
           <article>
             <Link

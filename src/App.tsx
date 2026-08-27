@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 
 import AiDisclaimer from "./components/common/AiDisclaimer";
 import Footer from "./components/common/Footer";
+import SiteHeader from "./components/common/SiteHeader";
 
 function App() {
   const { pathname } = useLocation();
@@ -16,6 +17,7 @@ function App() {
   return (
     <div className="min-h-screen bg-[#070a12]">
       {showAiDisclaimer && <AiDisclaimer />}
+      <SiteHeader />
       <Outlet />
       <Footer />
     </div>
