@@ -35,6 +35,18 @@ export default function TerminalDialog({
   const close = useCallback(() => onOpenChange(false), [onOpenChange]);
 
   useEffect(() => {
+    if (open) return;
+
+    const activeElement = document.activeElement;
+    if (
+      activeElement instanceof HTMLElement &&
+      contentRef.current?.contains(activeElement)
+    ) {
+      activeElement.blur();
+    }
+  }, [open]);
+
+  useEffect(() => {
     const viewport = window.visualViewport;
 
     const syncViewport = () => {
@@ -87,16 +99,17 @@ export default function TerminalDialog({
   }, [isMaximized]);
 
   return (
-    <DialogPrimitive.Root onOpenChange={onOpenChange} open={open}>
+    <DialogPrimitive.Root modal={false} onOpenChange={onOpenChange} open={open}>
       <DialogPrimitive.Portal forceMount>
         <DialogPrimitive.Overlay
-          className="fixed inset-0 z-[90] bg-black/35 backdrop-blur-[2px] data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0 data-[state=open]:animate-in data-[state=open]:fade-in"
+          className="fixed inset-0 z-[90] bg-black/35 backdrop-blur-[2px] data-[state=closed]:invisible data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0 data-[state=open]:animate-in data-[state=open]:fade-in"
           forceMount
         />
         <DialogPrimitive.Content
           aria-hidden={!open}
-          className="fixed left-1/2 top-[var(--terminal-panel-top)] z-[100] flex w-full max-w-6xl -translate-x-1/2 overflow-hidden rounded-b-2xl border-x border-b border-white/10 bg-[#070a12] shadow-[0_30px_100px_rgba(0,0,0,0.65)] outline-none data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0 data-[state=open]:animate-in data-[state=open]:slide-in-from-top-4"
+          className="fixed left-1/2 top-[var(--terminal-panel-top)] z-[100] flex w-full max-w-6xl -translate-x-1/2 overflow-hidden rounded-b-2xl border-x border-b border-white/10 bg-[#070a12] shadow-[0_30px_100px_rgba(0,0,0,0.65)] outline-none data-[state=closed]:invisible data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0 data-[state=open]:animate-in data-[state=open]:slide-in-from-top-4"
           forceMount
+          inert={!open}
           onOpenAutoFocus={(event) => event.preventDefault()}
           ref={contentRef}
           style={initialTerminalPanelStyle}
