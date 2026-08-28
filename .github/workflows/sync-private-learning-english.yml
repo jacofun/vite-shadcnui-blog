@@ -20,11 +20,15 @@ concurrency:
   group: private-learning-english-oss
   cancel-in-progress: false
 
+env:
+  OSS_OBJECT_PREFIX: private/english-learning/6minuteenglish
+  PUBLIC_PATH_PREFIX: /private/english-learning/6minuteenglish
+
 jobs:
   sync:
     name: Download BBC resources and sync to private OSS
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -50,20 +54,12 @@ jobs:
           else
             if [[ "${EVENT_BEFORE}" =~ ^0+$ ]]; then
               mapfile -t JOB_FILES < <(
-                git diff-tree \
-                  --no-commit-id \
-                  --name-only \
-                  --diff-filter=AM \
-                  -r "${EVENT_AFTER}" |
+                git diff-tree --no-commit-id --name-only --diff-filter=AM -r "${EVENT_AFTER}" |
                   grep -E "${JOB_PATTERN}" || true
               )
             else
               mapfile -t JOB_FILES < <(
-                git diff \
-                  --name-only \
-                  --diff-filter=AM \
-                  "${EVENT_BEFORE}" \
-                  "${EVENT_AFTER}" |
+                git diff --name-only --diff-filter=AM "${EVENT_BEFORE}" "${EVENT_AFTER}" |
                   grep -E "${JOB_PATTERN}" || true
               )
             fi
@@ -72,7 +68,6 @@ jobs:
               echo "::error::Each push must add or update exactly one lesson job JSON; found ${#JOB_FILES[@]}."
               exit 1
             fi
-
             JOB_FILE="${JOB_FILES[0]}"
           fi
 
@@ -109,7 +104,8 @@ jobs:
             (.transcriptSource | type == "string") and
             (.reason | type == "string" and length > 0 and length <= 1000) and
             (.difficulty | type == "string" and length > 0 and length <= 20) and
-            (.tags | type == "array" and length <= 20 and all(.[]; type == "string" and length > 0 and length <= 50))
+            (.tags | type == "array" and length <= 20 and
+              all(.[]; type == "string" and length > 0 and length <= 50))
           ' "${JOB_FILE}" >/dev/null || {
             echo "::error::Lesson job does not match schema version 1."
             exit 1
@@ -170,28 +166,33 @@ jobs:
             echo "::error::Missing secret ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_ID"
             exit 1
           }
-
           test -n "${OSS_ACCESS_KEY_SECRET}" || {
             echo "::error::Missing secret ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_SECRET"
             exit 1
           }
-
           test -n "${OSS_REGION}" || {
             echo "::error::Missing variable ALIYUN_PRIVATE_LEARNING_OSS_REGION"
             exit 1
           }
-
           test -n "${OSS_TARGET}" || {
             echo "::error::Missing variable ALIYUN_PRIVATE_LEARNING_OSS_TARGET"
             exit 1
           }
 
-          if [[ ! "${OSS_TARGET}" =~ ^oss://[^/]+/learning-assets/?$ ]]; then
-            echo "::error::ALIYUN_PRIVATE_LEARNING_OSS_TARGET must look like oss://bucket-name/learning-assets"
+          if [[ ! "${OSS_TARGET}" =~ ^oss://[^/]+/?$ ]]; then
+            echo "::error::ALIYUN_PRIVATE_LEARNING_OSS_TARGET must be a bucket root such as oss://bucket-name"
             exit 1
           fi
 
-      - name: Download and verify BBC resources
+      - name: Install transcript tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends poppler-utils
+          pdftotext -v
+
+      - name: Download, extract and verify BBC resources
         id: resources
         env:
           JOB_FILE: ${{ steps.lesson_job.outputs.job_file }}
@@ -206,39 +207,14 @@ jobs:
           AUDIO_SOURCE="$(jq -r '.audioSource' "${JOB_FILE}")"
           TRANSCRIPT_SOURCE="$(jq -r '.transcriptSource' "${JOB_FILE}")"
 
-          curl \
-            --fail \
-            --silent \
-            --show-error \
-            --location \
-            --proto '=https' \
-            --proto-redir '=https' \
-            --tlsv1.2 \
-            --retry 4 \
-            --retry-all-errors \
-            --connect-timeout 20 \
-            --max-time 300 \
-            --output "${WORK_DIR}/audio.mp3" \
-            "${AUDIO_SOURCE}"
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 --retry 4 --retry-all-errors --connect-timeout 20 --max-time 300 --output "${WORK_DIR}/audio.mp3" "${AUDIO_SOURCE}"
 
-          curl \
-            --fail \
-            --silent \
-            --show-error \
-            --location \
-            --proto '=https' \
-            --proto-redir '=https' \
-            --tlsv1.2 \
-            --retry 4 \
-            --retry-all-errors \
-            --connect-timeout 20 \
-            --max-time 120 \
-            --output "${WORK_DIR}/transcript.pdf" \
-            "${TRANSCRIPT_SOURCE}"
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 --retry 4 --retry-all-errors --connect-timeout 20 --max-time 120 --output "${WORK_DIR}/transcript.pdf" "${TRANSCRIPT_SOURCE}"
 
           AUDIO_SIZE="$(stat -c '%s' "${WORK_DIR}/audio.mp3")"
-          TRANSCRIPT_SIZE="$(stat -c '%s' "${WORK_DIR}/transcript.pdf")"
+          PDF_SIZE="$(stat -c '%s' "${WORK_DIR}/transcript.pdf")"
           AUDIO_MIME="$(file --brief --mime-type "${WORK_DIR}/audio.mp3")"
+          PDF_MIME="$(file --brief --mime-type "${WORK_DIR}/transcript.pdf")"
 
           if (( AUDIO_SIZE < 131072 || AUDIO_SIZE > 104857600 )); then
             echo "::error::Unexpected MP3 size: ${AUDIO_SIZE} bytes"
@@ -253,8 +229,8 @@ jobs:
               ;;
           esac
 
-          if (( TRANSCRIPT_SIZE < 1024 || TRANSCRIPT_SIZE > 20971520 )); then
-            echo "::error::Unexpected transcript size: ${TRANSCRIPT_SIZE} bytes"
+          if (( PDF_SIZE < 1024 || PDF_SIZE > 20971520 )); then
+            echo "::error::Unexpected transcript PDF size: ${PDF_SIZE} bytes"
             exit 1
           fi
 
@@ -263,19 +239,37 @@ jobs:
             exit 1
           fi
 
-          AUDIO_SHA256="$(sha256sum "${WORK_DIR}/audio.mp3" | cut -d ' ' -f 1)"
-          TRANSCRIPT_SHA256="$(sha256sum "${WORK_DIR}/transcript.pdf" | cut -d ' ' -f 1)"
-          SYNCED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          if [[ "${PDF_MIME}" != "application/pdf" ]]; then
+            echo "::error::Unexpected transcript MIME type: ${PDF_MIME}"
+            exit 1
+          fi
 
-          jq -n \
-            --slurpfile job "${JOB_FILE}" \
-            --arg syncedAt "${SYNCED_AT}" \
-            --arg objectPrefix "/learning-assets/episodes/${EPISODE_ID}" \
-            --arg audioSha256 "${AUDIO_SHA256}" \
-            --argjson audioBytes "${AUDIO_SIZE}" \
-            --arg transcriptSha256 "${TRANSCRIPT_SHA256}" \
-            --argjson transcriptBytes "${TRANSCRIPT_SIZE}" \
-            '{
+          pdftotext -layout -enc UTF-8 -nopgbrk "${WORK_DIR}/transcript.pdf" "${WORK_DIR}/transcript.txt"
+          sed -i 's/\r$//' "${WORK_DIR}/transcript.txt"
+
+          TEXT_SIZE="$(stat -c '%s' "${WORK_DIR}/transcript.txt")"
+          if (( TEXT_SIZE < 200 || TEXT_SIZE > 5242880 )); then
+            echo "::error::Unexpected extracted transcript size: ${TEXT_SIZE} bytes"
+            exit 1
+          fi
+
+          iconv -f UTF-8 -t UTF-8 "${WORK_DIR}/transcript.txt" >/dev/null || {
+            echo "::error::Extracted transcript is not valid UTF-8."
+            exit 1
+          }
+
+          if ! grep -Eq '[[:alpha:]]' "${WORK_DIR}/transcript.txt"; then
+            echo "::error::Extracted transcript does not contain readable text."
+            exit 1
+          fi
+
+          AUDIO_SHA256="$(sha256sum "${WORK_DIR}/audio.mp3" | cut -d ' ' -f 1)"
+          PDF_SHA256="$(sha256sum "${WORK_DIR}/transcript.pdf" | cut -d ' ' -f 1)"
+          TEXT_SHA256="$(sha256sum "${WORK_DIR}/transcript.txt" | cut -d ' ' -f 1)"
+          SYNCED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          OBJECT_PREFIX="${PUBLIC_PATH_PREFIX}/${EPISODE_ID}"
+
+          jq -n --slurpfile job "${JOB_FILE}" --arg syncedAt "${SYNCED_AT}" --arg objectPrefix "${OBJECT_PREFIX}" --arg audioSha256 "${AUDIO_SHA256}" --argjson audioBytes "${AUDIO_SIZE}" --arg pdfSha256 "${PDF_SHA256}" --argjson pdfBytes "${PDF_SIZE}" --arg textSha256 "${TEXT_SHA256}" --argjson textBytes "${TEXT_SIZE}" '{
               schemaVersion: 1,
               episodeId: $job[0].episodeId,
               title: $job[0].title,
@@ -296,11 +290,17 @@ jobs:
                   bytes: $audioBytes,
                   sha256: $audioSha256
                 },
-                transcript: {
+                transcriptPdf: {
                   path: ($objectPrefix + "/transcript.pdf"),
                   contentType: "application/pdf",
-                  bytes: $transcriptBytes,
-                  sha256: $transcriptSha256
+                  bytes: $pdfBytes,
+                  sha256: $pdfSha256
+                },
+                transcriptText: {
+                  path: ($objectPrefix + "/transcript.txt"),
+                  contentType: "text/plain; charset=utf-8",
+                  bytes: $textBytes,
+                  sha256: $textSha256
                 }
               }
             }' > "${WORK_DIR}/metadata.json"
@@ -309,8 +309,9 @@ jobs:
 
           echo "work_dir=${WORK_DIR}" >> "${GITHUB_OUTPUT}"
           echo "audio_bytes=${AUDIO_SIZE}" >> "${GITHUB_OUTPUT}"
-          echo "transcript_bytes=${TRANSCRIPT_SIZE}" >> "${GITHUB_OUTPUT}"
-          echo "Downloaded and verified BBC resources."
+          echo "pdf_bytes=${PDF_SIZE}" >> "${GITHUB_OUTPUT}"
+          echo "text_bytes=${TEXT_SIZE}" >> "${GITHUB_OUTPUT}"
+          echo "Downloaded and verified the BBC resources and extracted UTF-8 text."
 
       - name: Install ossutil
         shell: bash
@@ -321,16 +322,10 @@ jobs:
           OSSUTIL_ZIP="ossutil-${OSSUTIL_VERSION}-linux-amd64.zip"
           OSSUTIL_SHA256="3ae4d9fc85a7a6e9f5654d1599766f1a3a42a3692870887b5ae9338d582ef65a"
 
-          curl -fsSLo "${OSSUTIL_ZIP}" \
-            "https://gosspublic.alicdn.com/ossutil/v2/${OSSUTIL_VERSION}/${OSSUTIL_ZIP}"
-
+          curl -fsSLo "${OSSUTIL_ZIP}" "https://gosspublic.alicdn.com/ossutil/v2/${OSSUTIL_VERSION}/${OSSUTIL_ZIP}"
           echo "${OSSUTIL_SHA256}  ${OSSUTIL_ZIP}" | sha256sum -c -
           unzip -q "${OSSUTIL_ZIP}"
-
-          sudo install -m 0755 \
-            "ossutil-${OSSUTIL_VERSION}-linux-amd64/ossutil" \
-            /usr/local/bin/ossutil
-
+          sudo install -m 0755 "ossutil-${OSSUTIL_VERSION}-linux-amd64/ossutil" /usr/local/bin/ossutil
           ossutil version
 
       - name: Upload lesson resources to private OSS
@@ -345,14 +340,20 @@ jobs:
         run: |
           set -euo pipefail
 
-          TARGET="${OSS_TARGET%/}"
-          EPISODE_TARGET="${TARGET}/episodes/${EPISODE_ID}"
+          BUCKET_TARGET="${OSS_TARGET%/}"
+          LESSON_ROOT="${BUCKET_TARGET}/${OSS_OBJECT_PREFIX}"
+          EPISODE_TARGET="${LESSON_ROOT}/${EPISODE_ID}"
 
-          ossutil cp "${WORK_DIR}/audio.mp3" "${EPISODE_TARGET}/audio.mp3" -f
-          ossutil cp "${WORK_DIR}/transcript.pdf" "${EPISODE_TARGET}/transcript.pdf" -f
-          ossutil cp "${WORK_DIR}/metadata.json" "${EPISODE_TARGET}/metadata.json" -f
+          ossutil cp "${WORK_DIR}/audio.mp3" "${EPISODE_TARGET}/audio.mp3" --content-type "audio/mpeg" -f
+          ossutil cp "${WORK_DIR}/transcript.pdf" "${EPISODE_TARGET}/transcript.pdf" --content-type "application/pdf" --content-disposition "inline" -f
+          ossutil cp "${WORK_DIR}/transcript.txt" "${EPISODE_TARGET}/transcript.txt" --content-type "text/plain; charset=utf-8" --content-disposition "inline" -f
+          ossutil cp "${WORK_DIR}/metadata.json" "${EPISODE_TARGET}/metadata.json" --content-type "application/json; charset=utf-8" -f
 
-          echo "Uploaded episode resources before publishing the index entry."
+          ossutil stat "${EPISODE_TARGET}/audio.mp3" >/dev/null
+          ossutil stat "${EPISODE_TARGET}/transcript.pdf" >/dev/null
+          ossutil stat "${EPISODE_TARGET}/transcript.txt" >/dev/null
+          ossutil stat "${EPISODE_TARGET}/metadata.json" >/dev/null
+          echo "Uploaded and verified all episode resources before publishing the index entry."
 
       - name: Update private lesson index
         env:
@@ -360,14 +361,14 @@ jobs:
           OSS_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_SECRET }}
           OSS_REGION: ${{ vars.ALIYUN_PRIVATE_LEARNING_OSS_REGION }}
           OSS_TARGET: ${{ vars.ALIYUN_PRIVATE_LEARNING_OSS_TARGET }}
-          EPISODE_ID: ${{ steps.validate.outputs.episode_id }}
           WORK_DIR: ${{ steps.resources.outputs.work_dir }}
         shell: bash
         run: |
           set -euo pipefail
 
-          TARGET="${OSS_TARGET%/}"
-          INDEX_OBJECT="${TARGET}/index.json"
+          BUCKET_TARGET="${OSS_TARGET%/}"
+          LESSON_ROOT="${BUCKET_TARGET}/${OSS_OBJECT_PREFIX}"
+          INDEX_OBJECT="${LESSON_ROOT}/index.json"
           LOCAL_INDEX="${WORK_DIR}/index.json"
           UPDATED_INDEX="${WORK_DIR}/index.updated.json"
           INDEX_ENTRY="${WORK_DIR}/index-entry.json"
@@ -381,6 +382,7 @@ jobs:
 
           jq -e '
             type == "object" and
+            .schemaVersion == 1 and
             (.episodes | type == "array")
           ' "${LOCAL_INDEX}" >/dev/null || {
             echo "::error::Existing private lesson index is invalid."
@@ -398,22 +400,18 @@ jobs:
             metadataPath: (.objectPrefix + "/metadata.json")
           }' "${WORK_DIR}/metadata.json" > "${INDEX_ENTRY}"
 
-          jq \
-            --slurpfile entry "${INDEX_ENTRY}" \
-            --arg updatedAt "${UPDATED_AT}" \
-            '.schemaVersion = 1 |
+          jq --slurpfile entry "${INDEX_ENTRY}" --arg updatedAt "${UPDATED_AT}" '.schemaVersion = 1 |
              .updatedAt = $updatedAt |
              .episodes = (
                ([.episodes[] | select(.episodeId != $entry[0].episodeId)] + [$entry[0]]) |
                sort_by(.recommendedDate) |
                reverse
-             )' \
-            "${LOCAL_INDEX}" > "${UPDATED_INDEX}"
+             )' "${LOCAL_INDEX}" > "${UPDATED_INDEX}"
 
           jq -e . "${UPDATED_INDEX}" >/dev/null
-          ossutil cp "${UPDATED_INDEX}" "${INDEX_OBJECT}" -f
-
-          echo "Published private lesson index after all episode objects were uploaded."
+          ossutil cp "${UPDATED_INDEX}" "${INDEX_OBJECT}" --content-type "application/json; charset=utf-8" -f
+          ossutil stat "${INDEX_OBJECT}" >/dev/null
+          echo "Published the private lesson index after all episode objects were uploaded."
 
       - name: Write job summary
         if: always()
@@ -422,7 +420,8 @@ jobs:
           EPISODE_ID: ${{ steps.validate.outputs.episode_id }}
           RECOMMENDED_DATE: ${{ steps.validate.outputs.recommended_date }}
           AUDIO_BYTES: ${{ steps.resources.outputs.audio_bytes }}
-          TRANSCRIPT_BYTES: ${{ steps.resources.outputs.transcript_bytes }}
+          PDF_BYTES: ${{ steps.resources.outputs.pdf_bytes }}
+          TEXT_BYTES: ${{ steps.resources.outputs.text_bytes }}
         shell: bash
         run: |
           {
@@ -432,6 +431,8 @@ jobs:
             echo "- Episode: \`${EPISODE_ID:-unresolved}\`"
             echo "- Recommended date: \`${RECOMMENDED_DATE:-unresolved}\`"
             echo "- Audio bytes: \`${AUDIO_BYTES:-unavailable}\`"
-            echo "- Transcript bytes: \`${TRANSCRIPT_BYTES:-unavailable}\`"
+            echo "- Transcript PDF bytes: \`${PDF_BYTES:-unavailable}\`"
+            echo "- Transcript text bytes: \`${TEXT_BYTES:-unavailable}\`"
+            echo "- OSS path: \`${OSS_OBJECT_PREFIX}/${EPISODE_ID:-unresolved}/\`"
             echo "- Result: \`${{ job.status }}\`"
           } >> "${GITHUB_STEP_SUMMARY}"
