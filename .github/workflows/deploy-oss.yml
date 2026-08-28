@@ -167,8 +167,8 @@ jobs:
             exit 1
           }
 
-          if [[ ! "${OSS_TARGET}" =~ ^oss://[^/]+/?$ ]]; then
-            echo "::error::ALIYUN_PRIVATE_LEARNING_OSS_TARGET must be a bucket root such as oss://bucket-name"
+          if [[ ! "${OSS_TARGET}" =~ ^oss://[^/]+(/learning-assets)?/?$ ]]; then
+            echo "::error::ALIYUN_PRIVATE_LEARNING_OSS_TARGET must identify the private bucket or its /learning-assets prefix"
             exit 1
           fi
 
@@ -227,7 +227,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          TARGET="${OSS_TARGET%/}/functions"
+          BUCKET_NAME="${OSS_TARGET#oss://}"
+          BUCKET_NAME="${BUCKET_NAME%%/*}"
+          TARGET="oss://${BUCKET_NAME}/functions"
           ZIP_TARGET="${TARGET}/private-auth.zip"
           SHA_TARGET="${TARGET}/private-auth.sha256"
 
