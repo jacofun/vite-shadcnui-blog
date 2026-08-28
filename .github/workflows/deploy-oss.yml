@@ -41,6 +41,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install and test private authentication function
+        run: |
+          set -euo pipefail
+          npm ci --prefix functions/private-auth
+          npm test --prefix functions/private-auth
+
       - name: Lint
         run: pnpm lint
 
@@ -53,6 +59,46 @@ jobs:
           test -f dist/index.html
           echo "Build output:"
           find dist -maxdepth 2 -type f | sort | head -100
+
+      - name: Package private authentication function
+        id: private_function
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SOURCE_DIR="functions/private-auth"
+          PACKAGE_DIR="${RUNNER_TEMP}/private-auth-package"
+          ARTIFACT_DIR="${RUNNER_TEMP}/private-auth-artifact"
+
+          mkdir -p "${PACKAGE_DIR}" "${ARTIFACT_DIR}"
+          cp "${SOURCE_DIR}/index.js" "${PACKAGE_DIR}/index.js"
+          cp "${SOURCE_DIR}/package.json" "${PACKAGE_DIR}/package.json"
+          cp "${SOURCE_DIR}/package-lock.json" "${PACKAGE_DIR}/package-lock.json"
+          cp -R "${SOURCE_DIR}/node_modules" "${PACKAGE_DIR}/node_modules"
+
+          (
+            cd "${PACKAGE_DIR}"
+            zip -q -r "${ARTIFACT_DIR}/private-auth.zip" \
+              index.js package.json package-lock.json node_modules
+          )
+          (
+            cd "${ARTIFACT_DIR}"
+            sha256sum private-auth.zip > private-auth.sha256
+          )
+
+          ZIP_LIST="${ARTIFACT_DIR}/private-auth.files.txt"
+          unzip -Z1 "${ARTIFACT_DIR}/private-auth.zip" > "${ZIP_LIST}"
+          grep -Fx 'index.js' "${ZIP_LIST}" >/dev/null
+          grep -Fx 'package.json' "${ZIP_LIST}" >/dev/null
+          grep -E '^node_modules/' "${ZIP_LIST}" >/dev/null
+          if grep -Eq '(^|/)\.\.(/|$)' "${ZIP_LIST}"; then
+            echo "::error::Function ZIP contains an unsafe path."
+            exit 1
+          fi
+
+          echo "artifact_dir=${ARTIFACT_DIR}" >> "${GITHUB_OUTPUT}"
+          echo "Function artifact:"
+          cat "${ARTIFACT_DIR}/private-auth.sha256"
 
       - name: Validate deployment configuration
         if: github.event_name != 'pull_request'
@@ -92,6 +138,39 @@ jobs:
               exit 1
               ;;
           esac
+
+      - name: Validate private function artifact configuration
+        if: github.event_name != 'pull_request'
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_SECRET }}
+          OSS_REGION: ${{ vars.ALIYUN_PRIVATE_LEARNING_OSS_REGION }}
+          OSS_TARGET: ${{ vars.ALIYUN_PRIVATE_LEARNING_OSS_TARGET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -n "${OSS_ACCESS_KEY_ID}" || {
+            echo "::error::Missing secret ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_ID"
+            exit 1
+          }
+          test -n "${OSS_ACCESS_KEY_SECRET}" || {
+            echo "::error::Missing secret ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_SECRET"
+            exit 1
+          }
+          test -n "${OSS_REGION}" || {
+            echo "::error::Missing variable ALIYUN_PRIVATE_LEARNING_OSS_REGION"
+            exit 1
+          }
+          test -n "${OSS_TARGET}" || {
+            echo "::error::Missing variable ALIYUN_PRIVATE_LEARNING_OSS_TARGET"
+            exit 1
+          }
+
+          if [[ ! "${OSS_TARGET}" =~ ^oss://[^/]+/?$ ]]; then
+            echo "::error::ALIYUN_PRIVATE_LEARNING_OSS_TARGET must be a bucket root such as oss://bucket-name"
+            exit 1
+          fi
 
       - name: Install ossutil
         if: github.event_name != 'pull_request'
@@ -135,3 +214,37 @@ jobs:
           ossutil cp             dist/index.html             "${TARGET}index.html"             -f       
 
           echo "Deployment completed."
+
+      - name: Upload private authentication function artifact
+        if: github.event_name != 'pull_request'
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_SECRET }}
+          OSS_REGION: ${{ vars.ALIYUN_PRIVATE_LEARNING_OSS_REGION }}
+          OSS_TARGET: ${{ vars.ALIYUN_PRIVATE_LEARNING_OSS_TARGET }}
+          ARTIFACT_DIR: ${{ steps.private_function.outputs.artifact_dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TARGET="${OSS_TARGET%/}/functions"
+          ZIP_TARGET="${TARGET}/private-auth.zip"
+          SHA_TARGET="${TARGET}/private-auth.sha256"
+
+          ossutil cp \
+            "${ARTIFACT_DIR}/private-auth.zip" \
+            "${ZIP_TARGET}" \
+            --content-type "application/zip" \
+            --content-disposition "attachment; filename=private-auth.zip" \
+            -f
+          ossutil stat "${ZIP_TARGET}" >/dev/null
+
+          ossutil cp \
+            "${ARTIFACT_DIR}/private-auth.sha256" \
+            "${SHA_TARGET}" \
+            --content-type "text/plain; charset=utf-8" \
+            --content-disposition "inline" \
+            -f
+          ossutil stat "${SHA_TARGET}" >/dev/null
+
+          echo "Uploaded and verified private authentication function artifacts."

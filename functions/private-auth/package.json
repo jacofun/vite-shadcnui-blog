@@ -1,0 +1,16 @@
+{
+  "name": "yanxiao-private-auth",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@simplewebauthn/server": "13.3.3"
+  }
+}
