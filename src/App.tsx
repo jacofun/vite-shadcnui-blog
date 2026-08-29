@@ -16,8 +16,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#070a12]">
-      {showAiDisclaimer && <AiDisclaimer />}
-      <SiteHeader />
+      <div className="sticky top-0 z-[110]">
+        <SiteHeader />
+        {showAiDisclaimer && <AiDisclaimer />}
+      </div>
       <Outlet />
       <Footer />
     </div>

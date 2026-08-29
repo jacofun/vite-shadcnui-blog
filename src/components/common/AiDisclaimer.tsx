@@ -28,7 +28,7 @@ export default function AiDisclaimer(): JSX.Element | null {
   return (
     <aside
       aria-label="AI 内容提示"
-      className="ai-disclaimer-enter fixed inset-x-0 top-16 z-[80] border-b border-amber-300/25 bg-[#16130b]/95 shadow-[0_12px_40px_rgba(0,0,0,0.3)] lg:bg-[#16130b]/90 lg:backdrop-blur-xl"
+      className="ai-disclaimer-enter absolute inset-x-0 top-full z-[80] border-b border-amber-300/25 bg-[#16130b]/95 shadow-[0_12px_40px_rgba(0,0,0,0.3)] lg:bg-[#16130b]/90 lg:backdrop-blur-xl"
       role="status"
     >
       <div className="mx-auto flex min-h-11 max-w-6xl items-center justify-between gap-4 px-4 py-2 sm:px-8 lg:px-10">
