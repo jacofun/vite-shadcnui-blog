@@ -18,7 +18,7 @@ const TerminalDialog = lazy(
 const navigation = [
   { icon: House, label: "首页", to: "/" },
   { icon: BookOpen, label: "笔记", to: "/notes" },
-  { icon: UserRound, label: "私人学习", to: "/learning/english" },
+  { icon: UserRound, label: "私人资源", to: "/resources" },
   { icon: Heart, label: "婚礼纪念", to: "/wedding" },
 ];
 

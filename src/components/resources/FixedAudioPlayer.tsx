@@ -31,16 +31,12 @@ const mediaStyles = {
 export default function FixedAudioPlayer({ audioUrl, title }: Props): JSX.Element {
   return (
     <aside
-      aria-label="课程音频播放器"
+      aria-label="资源音频播放器"
       className="fixed inset-x-0 bottom-0 z-[100] border-t border-white/10 bg-[#080c15]/95 shadow-[0_-18px_50px_rgba(0,0,0,0.38)] backdrop-blur-xl"
     >
       <div className="mx-auto max-w-6xl px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-8 lg:px-10">
         <p className="truncate px-2 pb-1 text-xs font-medium text-slate-400">{title}</p>
-        <MediaController
-          audio
-          className="block w-full overflow-hidden rounded-xl bg-white/[0.035]"
-          style={mediaStyles}
-        >
+        <MediaController audio className="block w-full overflow-hidden rounded-xl bg-white/[0.035]" style={mediaStyles}>
           <audio key={audioUrl} preload="metadata" slot="media" src={audioUrl} />
           <MediaControlBar className="flex w-full items-center">
             <MediaPlayButton aria-label="播放或暂停" />

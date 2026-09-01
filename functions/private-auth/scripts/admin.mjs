@@ -8,12 +8,12 @@ const usage = `Usage: node scripts/admin.mjs <command> [arguments]
   bootstrap                         Create the one-time owner invitation
   reissue-bootstrap                 Replace a lost/expired invitation before owner enrollment
   import-owner <credentials.json>    Import existing owner public credentials
-  invite [english-learning]         Create a member invitation (no grant by default)
+  invite [private-resources] [english-learning]  Create a member invitation
   list                              List account IDs and invitation hashes (no secrets)
   revoke-invite <invitation-hash>    Revoke an unused invitation
   disable <user-id>                  Disable account and revoke sessions
   enable <user-id>                   Enable account; old sessions stay revoked
-  permissions <user-id> [english-learning]  Replace grants and revoke sessions
+  permissions <user-id> [private-resources] [english-learning]  Replace grants and revoke sessions
   recover <user-id> --confirm-revoke-all   Revoke ALL old Passkeys/sessions; issue recovery invitation
 
 Requires OSS_AUTH_BUCKET, OSS_AUTH_REGION, OSS_AUTH_ENDPOINT and configured
@@ -30,8 +30,8 @@ try {
     const noArgs = ["bootstrap", "reissue-bootstrap", "list"];
     if ((noArgs.includes(command) && args.length) ||
         (["disable", "enable", "revoke-invite", "import-owner"].includes(command) && args.length !== 1) ||
-        (command === "invite" && args.length > 1) ||
-        (command === "permissions" && (args.length < 1 || args.length > 2)) ||
+        (command === "invite" && args.length > 2) ||
+        (command === "permissions" && (args.length < 1 || args.length > 3)) ||
         (command === "recover" && (args.length !== 2 || args[1] !== "--confirm-revoke-all"))) {
       throw new Error("INVALID_ARGUMENTS");
     }

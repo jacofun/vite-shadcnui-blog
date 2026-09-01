@@ -7,22 +7,22 @@ interface Props {
   status: "signed-out" | "forbidden" | "error" | "loading";
 }
 
-export default function PrivateLearningAccessState({ error, status }: Props): JSX.Element {
+export default function PrivateResourceAccessState({ error, status }: Props): JSX.Element {
   const isLoading = status === "loading";
   const isSignedOut = status === "signed-out";
   const title = isLoading
     ? "正在验证访问权限"
     : isSignedOut
-      ? "版权要求，请先登录"
+      ? "私人资源，请先登录"
       : status === "forbidden"
-        ? "当前账户未开通学习权限"
-        : "暂时无法读取学习空间";
+        ? "当前账户未开通私人资源权限"
+        : "暂时无法读取私人资源";
   const description = isLoading
     ? "正在连接私人认证服务…"
     : isSignedOut
-      ? "课程音频与 transcript 仅供个人学习，登录后才能访问。"
+      ? "受版权和隐私限制，登录后才能访问这里的内容。"
       : status === "forbidden"
-        ? "请使用拥有 english-learning 权限的账户。"
+        ? "请使用拥有 private-resources 权限的账户。"
         : error ?? "请稍后重试。";
 
   return (

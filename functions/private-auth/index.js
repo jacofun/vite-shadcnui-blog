@@ -14,9 +14,14 @@ import {
 
 const DEFAULT_COOKIE_NAME = "__Secure-private_auth";
 const DEFAULT_COOKIE_PATH = "/api/private-auth/";
+const DEFAULT_PRIVATE_ROOT = "/private";
 const DEFAULT_PRIVATE_PREFIX = "/private/english-learning/6minuteenglish";
 const TOKEN_AAD = Buffer.from("yanxiao-private-auth:v1", "utf8");
 const EPISODE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/;
+const RESOURCE_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
+const RESOURCE_PATH_SEGMENT_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+const PRIVATE_RESOURCE_PERMISSIONS = new Set(["private-resources", "english-learning"]);
+const MAX_SIGNED_RESOURCES = 12;
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const ALLOWED_TRANSPORTS = new Set([
   "ble",
@@ -98,9 +103,21 @@ function normalizeOrigin(value, name) {
   return url.origin;
 }
 
-function normalizePrivatePrefix(value) {
+function normalizePrivateRoot(value) {
+  const root = value?.trim() || DEFAULT_PRIVATE_ROOT;
+  if (!root.startsWith("/") || root.endsWith("/") || root.includes("..")) {
+    throw new HttpError(500, "CONFIGURATION_ERROR", "PRIVATE_RESOURCE_ROOT is invalid");
+  }
+  return root;
+}
+
+function normalizePrivatePrefix(value, privateRoot) {
   const prefix = value?.trim() || DEFAULT_PRIVATE_PREFIX;
-  if (!prefix.startsWith("/") || prefix.endsWith("/") || prefix.includes("..")) {
+  if (
+    !prefix.startsWith(`${privateRoot}/`) ||
+    prefix.endsWith("/") ||
+    prefix.includes("..")
+  ) {
     throw new HttpError(500, "CONFIGURATION_ERROR", "PRIVATE_RESOURCE_PREFIX is invalid");
   }
   return prefix;
@@ -204,6 +221,7 @@ function loadConfig(env) {
     throw new HttpError(500, "CONFIGURATION_ERROR", "AUTH_COOKIE_NAME or AUTH_COOKIE_PATH is invalid");
   }
 
+  const privateRoot = normalizePrivateRoot(env.PRIVATE_RESOURCE_ROOT);
   return {
     expectedOrigin,
     rpID,
@@ -227,7 +245,8 @@ function loadConfig(env) {
     cdnOrigin,
     cdnAuthKey,
     originVerifyKey,
-    privatePrefix: normalizePrivatePrefix(env.PRIVATE_RESOURCE_PREFIX),
+    privateRoot,
+    privatePrefix: normalizePrivatePrefix(env.PRIVATE_RESOURCE_PREFIX, privateRoot),
     cookieName,
     cookiePath,
   };
@@ -463,7 +482,61 @@ function signCdnPath(path, config, nowSeconds, randomBytesImpl = randomBytes) {
   return `${config.cdnOrigin}${path}?auth_key=${authKey}`;
 }
 
+function normalizePrivateResourcePath(path, config) {
+  if (
+    typeof path !== "string" ||
+    path.length > 768 ||
+    !path.startsWith(`${config.privateRoot}/`) ||
+    path.includes("\\") ||
+    path.includes("%") ||
+    path.includes("?") ||
+    path.includes("#") ||
+    path.includes("//")
+  ) {
+    throw new HttpError(400, "INVALID_RESOURCE_PATH", "Private resource path is invalid");
+  }
+  const segments = path.slice(config.privateRoot.length + 1).split("/");
+  if (!segments.length || segments.some((segment) => !RESOURCE_PATH_SEGMENT_PATTERN.test(segment))) {
+    throw new HttpError(400, "INVALID_RESOURCE_PATH", "Private resource path is invalid");
+  }
+  return path;
+}
+
+function signNamedPaths(paths, config, nowSeconds, randomBytesImpl) {
+  if (!paths || typeof paths !== "object" || Array.isArray(paths)) {
+    throw new HttpError(400, "INVALID_RESOURCE_REQUEST", "paths must be an object");
+  }
+  const entries = Object.entries(paths);
+  if (!entries.length || entries.length > MAX_SIGNED_RESOURCES) {
+    throw new HttpError(400, "INVALID_RESOURCE_REQUEST", "paths must contain 1 to 12 resources");
+  }
+  return Object.fromEntries(entries.map(([name, path]) => {
+    if (!RESOURCE_NAME_PATTERN.test(name)) {
+      throw new HttpError(400, "INVALID_RESOURCE_NAME", "Private resource name is invalid");
+    }
+    return [name, signCdnPath(
+      normalizePrivateResourcePath(path, config),
+      config,
+      nowSeconds,
+      randomBytesImpl,
+    )];
+  }));
+}
+
 function signedResources(body, config, nowSeconds, randomBytesImpl) {
+  if (body.resource === "catalog" && body.paths === undefined && body.episodeId === undefined) {
+    return {
+      catalog: signCdnPath(`${config.privateRoot}/index.json`, config, nowSeconds, randomBytesImpl),
+    };
+  }
+
+  if (body.paths !== undefined) {
+    if (body.resource !== undefined || body.episodeId !== undefined) {
+      throw new HttpError(400, "INVALID_RESOURCE_REQUEST", "paths cannot be combined with legacy resource fields");
+    }
+    return signNamedPaths(body.paths, config, nowSeconds, randomBytesImpl);
+  }
+
   if (body.resource === "index" && body.episodeId === undefined) {
     const path = `${config.privatePrefix}/index.json`;
     return { index: signCdnPath(path, config, nowSeconds, randomBytesImpl) };
@@ -487,6 +560,11 @@ function signedResources(body, config, nowSeconds, randomBytesImpl) {
     name,
     signCdnPath(`${prefix}/${filename}`, config, nowSeconds, randomBytesImpl),
   ]));
+}
+
+function hasPrivateResourceAccess(user) {
+  return user.role === "owner" ||
+    user.permissions.some((permission) => PRIVATE_RESOURCE_PERMISSIONS.has(permission));
 }
 
 export function createHandler({
@@ -1233,8 +1311,8 @@ async function persistentRequest(options) {
   const { user } = persistedSession(state, auth, config, nowSeconds);
   if (route === "session") return jsonResponse(config, 200, sessionResult(auth, user));
   if (route === "sign") {
-    if (!user.permissions.includes("english-learning")) {
-      throw new HttpError(403, "MISSING_PERMISSION", "English learning access has not been granted");
+    if (!hasPrivateResourceAccess(user)) {
+      throw new HttpError(403, "MISSING_PERMISSION", "Private resource access has not been granted");
     }
     return jsonResponse(config, 200, {
       expiresAt: nowSeconds + config.cdnUrlTtlSeconds,
@@ -1276,7 +1354,7 @@ async function persistentRequest(options) {
 export async function administer({ store, command, userId, displayName = "Owner", permissions = [],
   invitationHash, credentials = [], ttlSeconds = 86400, nowSeconds = Math.floor(Date.now() / 1000), randomBytesImpl = randomBytes }) {
   if (!Number.isInteger(ttlSeconds) || ttlSeconds < 300 || ttlSeconds > 604800) throw new Error("Invitation TTL must be 300..604800 seconds");
-  if (!Array.isArray(permissions) || permissions.some((value) => value !== "english-learning")) throw new Error("Invalid permissions");
+  if (!Array.isArray(permissions) || permissions.some((value) => !PRIVATE_RESOURCE_PERMISSIONS.has(value))) throw new Error("Invalid permissions");
   const allowed = ["bootstrap", "reissue-bootstrap", "import-owner", "invite", "revoke-invite", "disable", "enable", "permissions", "recover", "list"];
   if (!allowed.includes(command)) throw new Error("Unknown administrative command");
   const token = randomBytesImpl(INVITATION_TOKEN_BYTES).toString("base64url");
@@ -1291,7 +1369,7 @@ export async function administer({ store, command, userId, displayName = "Owner"
       if (command === "import-owner") {
         if (!credentials.length || credentials.length > MAX_PASSKEYS) throw new Error("Provide 1..8 existing credentials");
         state.users.owner = { id: "owner", displayName: label(displayName, "displayName"), role: "owner",
-          permissions: ["english-learning"], status: "active", version: 1, createdAt: nowSeconds };
+          permissions: ["private-resources", "english-learning"], status: "active", version: 1, createdAt: nowSeconds };
         for (const raw of credentials) {
           const credential = normalizeCredential(raw, "credential");
           const key = hash(credential.id);
@@ -1350,7 +1428,7 @@ export async function administer({ store, command, userId, displayName = "Owner"
     state.invites[tokenHash] = {
       kind: command === "recover" ? "recovery" : "registration", userId: targetId,
       role: ownerEnrollment ? "owner" : "member",
-      permissions: ownerEnrollment ? ["english-learning"] : [...new Set(permissions)],
+      permissions: ownerEnrollment ? ["private-resources", "english-learning"] : [...new Set(permissions)],
       userVersion: user?.version, exp: nowSeconds + ttlSeconds, used: false,
     };
     return { invitationToken: token, invitationHash: tokenHash, userId: targetId, expiresAt: nowSeconds + ttlSeconds };
@@ -1365,4 +1443,5 @@ export const __test = {
   loadConfig,
   parseEvent,
   signCdnPath,
+  signedResources,
 };

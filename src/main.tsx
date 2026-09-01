@@ -1,9 +1,10 @@
 import { lazy, StrictMode, Suspense, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
-import { createHashRouter, RouterProvider } from "react-router-dom";
+import { createHashRouter, Navigate, RouterProvider } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 
 import App from "./App.tsx";
+import LegacyEnglishEpisodeRedirect from "./components/routing/LegacyEnglishEpisodeRedirect.tsx";
 import "./index.css";
 import Home from "./pages/Home.tsx";
 
@@ -11,10 +12,9 @@ const NoteDetail = lazy(() => import("./pages/NoteDetail.tsx"));
 const Notes = lazy(() => import("./pages/Notes.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const PrivateAuth = lazy(() => import("./pages/PrivateAuth.tsx"));
-const EnglishLearning = lazy(() => import("./pages/EnglishLearning.tsx"));
-const EnglishLearningEpisode = lazy(
-  () => import("./pages/EnglishLearningEpisode.tsx"),
-);
+const PrivateResources = lazy(() => import("./pages/PrivateResources.tsx"));
+const PrivateResourceCollection = lazy(() => import("./pages/PrivateResourceCollection.tsx"));
+const PrivateResourceItem = lazy(() => import("./pages/PrivateResourceItem.tsx"));
 const WeddingInvitation = lazy(
   () => import("./pages/WeddingInvitation.tsx"),
 );
@@ -45,11 +45,11 @@ const router = createHashRouter([
       { path: "notes", element: lazyPage(<Notes />) },
       { path: "notes/:slug", element: lazyPage(<NoteDetail />) },
       { path: "auth", element: lazyPage(<PrivateAuth />) },
-      { path: "learning/english", element: lazyPage(<EnglishLearning />) },
-      {
-        path: "learning/english/:episodeId",
-        element: lazyPage(<EnglishLearningEpisode />),
-      },
+      { path: "resources", element: lazyPage(<PrivateResources />) },
+      { path: "resources/:collectionId", element: lazyPage(<PrivateResourceCollection />) },
+      { path: "resources/:collectionId/:itemId", element: lazyPage(<PrivateResourceItem />) },
+      { path: "learning/english", element: <Navigate replace to="/resources/6minuteenglish" /> },
+      { path: "learning/english/:itemId", element: <LegacyEnglishEpisodeRedirect /> },
       { path: "wedding", element: lazyPage(<WeddingInvitation />) },
       { path: "*", element: lazyPage(<NotFound />) },
     ],

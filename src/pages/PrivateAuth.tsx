@@ -176,12 +176,17 @@ export default function PrivateAuth(): JSX.Element {
   };
 
   const isBusy = busyAction !== null;
+  const hasPrivateResourceAccess = session !== null && (
+    session.user.role === "owner" ||
+    session.user.permissions.some((permission) =>
+      permission === "private-resources" || permission === "english-learning")
+  );
 
   return (
     <>
       <Helmet>
         <title>私人内容登录 · 彦骁的笔记</title>
-        <meta content="使用 Passkey 登录彦骁的私人学习栏目。" name="description" />
+        <meta content="使用 Passkey 登录彦骁的私人资源空间。" name="description" />
         <meta content="noindex,nofollow" name="robots" />
       </Helmet>
 
@@ -194,7 +199,7 @@ export default function PrivateAuth(): JSX.Element {
             <div className="rounded-[22px] border border-white/[0.06] bg-[#080c15] p-4 sm:p-6">
               <div className="mb-4">
                 <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">PRIVATE ACCESS</p>
-                <h1 className="mt-1.5 text-xl font-semibold tracking-[-0.03em] text-white">私人学习空间</h1>
+                <h1 className="mt-1.5 text-xl font-semibold tracking-[-0.03em] text-white">私人资源空间</h1>
               </div>
 
               {isCheckingSession ? (
@@ -215,19 +220,19 @@ export default function PrivateAuth(): JSX.Element {
                       <dd className="text-slate-300">{session.user.role === "owner" ? "站点所有者" : "受邀成员"}</dd>
                     </div>
                     <div className="flex justify-between gap-4 py-4">
-                      <dt className="text-slate-600">学习权限</dt>
-                      <dd className={session.user.permissions.includes("english-learning") ? "text-cyan-300" : "text-slate-500"}>
-                        {session.user.permissions.includes("english-learning") ? "已开通" : "未开通"}
+                      <dt className="text-slate-600">私人资源</dt>
+                      <dd className={hasPrivateResourceAccess ? "text-cyan-300" : "text-slate-500"}>
+                        {hasPrivateResourceAccess ? "已开通" : "未开通"}
                       </dd>
                     </div>
                   </dl>
-                  {session.user.permissions.includes("english-learning") && (
+                  {hasPrivateResourceAccess && (
                     <Link
                       className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100"
-                      to="/learning/english"
+                      to="/resources"
                     >
                       <BookOpenText className="size-4" />
-                      进入英语学习
+                      进入私人资源
                     </Link>
                   )}
                   <button

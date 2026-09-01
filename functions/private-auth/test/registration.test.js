@@ -106,6 +106,12 @@ test("owner bootstrap and member invitations enforce server-side roles and grant
   assert.equal((await h.call("register/options", { body: { invitationToken: invite.invitationToken, displayName: "again" } })).statusCode, 403);
   assert.equal((await h.call("register/options", { body: { invitationToken: randomBytes(32).toString("base64url"), displayName: "old format" } })).statusCode, 403);
   assert.equal(JSON.stringify(await h.store.read()).includes(invite.invitationToken), false);
+
+  const resourceInvite = await h.admin("invite", { permissions: ["private-resources"] });
+  const member = await h.register(resourceInvite);
+  const signedCatalog = await h.call("sign", { ...member, body: { resource: "catalog" } });
+  assert.equal(signedCatalog.statusCode, 200);
+  assert.match(json(signedCatalog).resources.catalog, /\/private\/index\.json\?auth_key=/);
 });
 
 test("same registration response is idempotent under retries and CAS conflicts", async () => {

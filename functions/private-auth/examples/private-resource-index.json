@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": null,
+  "collections": [
+    {
+      "collectionId": "6minuteenglish",
+      "title": "6 Minute English",
+      "description": "BBC Learning English 精听、跟读与复述课程",
+      "type": "audio-transcript",
+      "basePath": "/private/english-learning/6minuteenglish",
+      "indexPath": "/private/english-learning/6minuteenglish/index.json",
+      "tags": [
+        "英语学习",
+        "精听",
+        "B1-B2"
+      ]
+    }
+  ]
+}

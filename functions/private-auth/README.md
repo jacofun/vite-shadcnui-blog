@@ -6,7 +6,7 @@ This Node.js Function Compute handler supports two explicitly selected modes:
 - `AUTH_STORE=oss`: invitation-only registration, per-user Passkeys, revocable sessions,
   permission checks and operator-controlled account recovery.
 
-Both modes issue Alibaba Cloud CDN type-A signed URLs for the private English-learning files.
+Both modes issue Alibaba Cloud CDN type-A signed URLs for authenticated private resources.
 The function does not proxy those files. In OSS mode, authentication state is stored in a
 separate private OSS bucket used only by Function Compute; that bucket must not be a CDN origin.
 
@@ -48,6 +48,7 @@ WEBAUTHN_CHALLENGE_TTL_SECONDS=300
 CDN_URL_TTL_SECONDS=3600
 CDN_PUBLIC_ORIGIN=https://yanxiao.me
 PRIVATE_RESOURCE_PREFIX=/private/english-learning/6minuteenglish
+PRIVATE_RESOURCE_ROOT=/private
 AUTH_COOKIE_NAME=__Secure-private_auth
 AUTH_COOKIE_PATH=/api/private-auth/
 ```
@@ -168,13 +169,15 @@ is excluded from the deployment ZIP.
 
 ```bash
 node scripts/admin.mjs bootstrap
-node scripts/admin.mjs invite english-learning
+node scripts/admin.mjs invite private-resources
+node scripts/admin.mjs invite private-resources english-learning
 node scripts/admin.mjs invite
 node scripts/admin.mjs list
 node scripts/admin.mjs revoke-invite <invitation-hash>
 node scripts/admin.mjs disable <user-id>
 node scripts/admin.mjs enable <user-id>
-node scripts/admin.mjs permissions <user-id> english-learning
+node scripts/admin.mjs permissions <user-id> private-resources
+node scripts/admin.mjs permissions <user-id> private-resources english-learning
 node scripts/admin.mjs permissions <user-id>
 ```
 
@@ -220,7 +223,7 @@ All paths are relative to `/api/private-auth/`.
 | `GET passkeys` | Own credential metadata only |
 | `POST passkeys/options` / `POST passkeys/verify` | Add a Passkey after recent authentication |
 | `POST passkeys/rename` / `POST passkeys/remove` | Manage own Passkeys; last key cannot be removed |
-| `POST sign` | Sign fixed private-learning resources; requires `english-learning` permission |
+| `POST sign` | Sign resources under `PRIVATE_RESOURCE_ROOT`; requires private-resource access |
 | `POST logout` | Revoke the current persistent session |
 
 Recent authentication lasts five minutes. WebAuthn verification requires user verification, the
@@ -228,9 +231,35 @@ configured origin and RP ID. Persistent fixed-window limits allow 120 authentica
 minute globally and 20 per platform-reported source IP. IPs are SHA-256 hashed in OSS object names;
 caller-provided forwarding headers are not trusted.
 
-The signing endpoint accepts only the private lesson index or the four fixed files belonging to a
-validated episode ID. Arbitrary paths are rejected. Revocation stops new signed URLs but cannot
-invalidate a URL already issued before its CDN type-A expiry.
+The signing endpoint accepts a fixed catalog request or up to 12 named paths. Every requested path
+must be an absolute, normalized child of `PRIVATE_RESOURCE_ROOT`; traversal, encoded paths, query
+strings, fragments, backslashes and unsafe path segments are rejected. The previous lesson-index
+and episode request formats remain supported while clients migrate. Owners, accounts with the new
+`private-resources` grant and accounts with the legacy `english-learning` grant may sign resources.
+Revocation stops new signed URLs but cannot invalidate a URL already issued before its CDN type-A
+expiry.
+
+The generic private-resource catalog belongs at `/private/index.json` in the CDN-backed private
+content bucket. A deployable copy is provided at `examples/private-resource-index.json`; its
+minimal structure is:
+
+```json
+{
+  "schemaVersion": 1,
+  "updatedAt": null,
+  "collections": [
+    {
+      "collectionId": "6minuteenglish",
+      "title": "6 Minute English",
+      "description": "BBC Learning English 精听、跟读与复述课程",
+      "type": "audio-transcript",
+      "basePath": "/private/english-learning/6minuteenglish",
+      "indexPath": "/private/english-learning/6minuteenglish/index.json",
+      "tags": ["英语学习", "精听", "B1-B2"]
+    }
+  ]
+}
+```
 
 ## Local verification and deployment
 

@@ -14,21 +14,9 @@ export interface PrivateAuthSession {
   user: PrivateAuthUser;
 }
 
-export interface SignedPrivateLearningIndex {
+export interface SignedPrivateResources {
   expiresAt: number;
-  resources: {
-    index: string;
-  };
-}
-
-export interface SignedPrivateLearningEpisode {
-  expiresAt: number;
-  resources: {
-    audio: string;
-    metadata: string;
-    transcriptPdf: string;
-    transcriptText: string;
-  };
+  resources: Record<string, string>;
 }
 
 interface ApiErrorBody {
@@ -133,23 +121,46 @@ export function logoutPrivateAuth(session: PrivateAuthSession): Promise<{ authen
   });
 }
 
-export function signPrivateLearningIndex(
+export function signPrivateResourceCatalog(
   session: PrivateAuthSession,
   signal?: AbortSignal,
-): Promise<SignedPrivateLearningIndex> {
-  return request<SignedPrivateLearningIndex>("sign", {
+): Promise<SignedPrivateResources> {
+  return request<SignedPrivateResources>("sign", {
+    body: { resource: "catalog" },
+    csrfToken: session.csrfToken,
+    signal,
+  });
+}
+
+export function signPrivateResourcePaths(
+  session: PrivateAuthSession,
+  paths: Record<string, string>,
+  signal?: AbortSignal,
+): Promise<SignedPrivateResources> {
+  return request<SignedPrivateResources>("sign", {
+    body: { paths },
+    csrfToken: session.csrfToken,
+    signal,
+  });
+}
+
+export function signLegacyPrivateLearningIndex(
+  session: PrivateAuthSession,
+  signal?: AbortSignal,
+): Promise<SignedPrivateResources> {
+  return request<SignedPrivateResources>("sign", {
     body: { resource: "index" },
     csrfToken: session.csrfToken,
     signal,
   });
 }
 
-export function signPrivateLearningEpisode(
+export function signLegacyPrivateLearningEpisode(
   session: PrivateAuthSession,
   episodeId: string,
   signal?: AbortSignal,
-): Promise<SignedPrivateLearningEpisode> {
-  return request<SignedPrivateLearningEpisode>("sign", {
+): Promise<SignedPrivateResources> {
+  return request<SignedPrivateResources>("sign", {
     body: { episodeId },
     csrfToken: session.csrfToken,
     signal,

@@ -76,6 +76,44 @@ test("creates an Alibaba Cloud CDN type-A signature for the exact resource path"
   );
 });
 
+test("signs a private catalog and validated named resource paths", () => {
+  const config = __test.loadConfig(createEnv());
+  const randomBytesImpl = (size) => Buffer.alloc(size, 6);
+  const catalog = __test.signedResources(
+    { resource: "catalog" },
+    config,
+    NOW,
+    randomBytesImpl,
+  );
+  assert.match(catalog.catalog, /\/private\/index\.json\?auth_key=/);
+
+  const resources = __test.signedResources({
+    paths: {
+      index: "/private/english-learning/6minuteenglish/index.json",
+      audio: "/private/english-learning/6minuteenglish/example/audio.mp3",
+    },
+  }, config, NOW, randomBytesImpl);
+  assert.deepEqual(Object.keys(resources), ["index", "audio"]);
+  assert.match(resources.audio, /\/example\/audio\.mp3\?auth_key=/);
+});
+
+test("rejects unsafe or excessive private resource paths", () => {
+  const config = __test.loadConfig(createEnv());
+  const sign = (paths) => __test.signedResources(
+    { paths },
+    config,
+    NOW,
+    () => Buffer.alloc(16, 4),
+  );
+  assert.throws(() => sign({ file: "/private/../functions/private-auth.zip" }), /path is invalid/);
+  assert.throws(() => sign({ file: "/private/%2e%2e/functions/private-auth.zip" }), /path is invalid/);
+  assert.throws(() => sign({ file: "/functions/private-auth.zip" }), /path is invalid/);
+  assert.throws(() => sign({ "bad.name": "/private/content/file.txt" }), /name is invalid/);
+  assert.throws(() => sign(Object.fromEntries(
+    Array.from({ length: 13 }, (_, index) => [`file${index}`, `/private/content/file${index}.txt`]),
+  )), /1 to 12/);
+});
+
 test("completes challenge, passkey verification, session lookup and resource signing", async () => {
   const env = createEnv();
   const handler = createHandler({
