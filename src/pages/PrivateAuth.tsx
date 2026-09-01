@@ -10,10 +10,8 @@ import {
   ArrowLeft,
   CheckCircle2,
   Fingerprint,
-  KeyRound,
   LogOut,
   RefreshCw,
-  ShieldCheck,
   UserRound,
 } from "lucide-react";
 import { useEffect, useState, type FormEvent, type JSX } from "react";
@@ -190,40 +188,22 @@ export default function PrivateAuth(): JSX.Element {
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.035)_1px,transparent_1px)] bg-[size:52px_52px]" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(600px_circle_at_50%_8%,rgba(34,211,238,0.11),transparent_68%)]" />
 
-        <div className="relative mx-auto grid min-h-[70vh] max-w-5xl items-center gap-12 px-6 py-20 sm:px-8 lg:grid-cols-[1fr_440px] lg:px-10 lg:py-24">
-          <section className="max-w-xl">
-            <p className="font-mono text-xs tracking-[0.2em] text-cyan-300">
-              PRIVATE ACCESS / PASSKEY
-            </p>
-            <h1 className="mt-6 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
-              私人学习空间
-            </h1>
-            <p className="mt-6 max-w-lg text-base leading-8 text-slate-400">
-              受版权要求限制，英语学习内容仅向获得邀请的用户开放。登录不使用密码，身份验证由设备上的 Passkey 完成。
-            </p>
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:max-w-md lg:grid-cols-1 xl:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
-                <ShieldCheck className="size-5 text-cyan-300" />
-                <p className="mt-4 text-sm font-medium text-slate-200">抗钓鱼验证</p>
-                <p className="mt-2 text-xs leading-6 text-slate-600">Passkey 只响应 yanxiao.me 的验证请求。</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
-                <Fingerprint className="size-5 text-violet-300" />
-                <p className="mt-4 text-sm font-medium text-slate-200">本机确认</p>
-                <p className="mt-2 text-xs leading-6 text-slate-600">使用面容、指纹或设备解锁完成登录。</p>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-3xl border border-white/10 bg-[#0a0e18]/95 p-1 shadow-[0_30px_100px_rgba(0,0,0,0.42)]">
+        <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-md items-center px-5 py-10 sm:px-0">
+          <section className="w-full rounded-3xl border border-white/10 bg-[#0a0e18]/95 p-1 shadow-[0_30px_100px_rgba(0,0,0,0.42)]">
             <div className="rounded-[22px] border border-white/[0.06] bg-[#080c15] p-6 sm:p-8">
+              <div className="mb-7">
+                <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">PRIVATE ACCESS</p>
+                <h1 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-white">私人学习空间</h1>
+                <p className="mt-2 text-sm text-slate-500">使用 Passkey 验证身份</p>
+              </div>
+
               {isCheckingSession ? (
-                <div aria-live="polite" className="flex min-h-80 flex-col items-center justify-center text-center">
+                <div aria-live="polite" className="flex min-h-56 flex-col items-center justify-center text-center">
                   <RefreshCw className="size-6 animate-spin text-cyan-300" />
                   <p className="mt-4 text-sm text-slate-500">正在检查登录状态…</p>
                 </div>
               ) : session ? (
-                <div className="min-h-80">
+                <div>
                   <div className="flex size-12 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-300/10">
                     <CheckCircle2 className="size-6 text-emerald-300" />
                   </div>
@@ -266,7 +246,7 @@ export default function PrivateAuth(): JSX.Element {
                         }}
                         type="button"
                       >
-                        {item === "login" ? "Passkey 登录" : "邀请码注册"}
+                        {item === "login" ? "登录" : "注册"}
                       </button>
                     ))}
                   </div>
@@ -274,37 +254,30 @@ export default function PrivateAuth(): JSX.Element {
                   {!supportsWebAuthn && (
                     <div className="mt-5 flex gap-3 rounded-xl border border-amber-300/20 bg-amber-300/[0.06] p-4 text-sm leading-6 text-amber-100">
                       <AlertCircle className="mt-0.5 size-4 shrink-0" />
-                      当前浏览器不支持 WebAuthn，请使用最新版 Safari、Chrome 或 Edge。
+                      当前浏览器不支持 Passkey。
                     </div>
                   )}
 
                   {mode === "login" ? (
-                    <div className="py-8">
-                      <div className="flex size-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10">
-                        <KeyRound className="size-6 text-cyan-300" />
-                      </div>
-                      <h2 className="mt-6 text-xl font-semibold text-white">使用 Passkey 登录</h2>
-                      <p className="mt-3 text-sm leading-7 text-slate-500">
-                        无需输入账号。系统会让你从本机或附近设备中选择已经注册的 Passkey。
-                      </p>
+                    <div className="pt-5">
                       <button
-                        className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100 disabled:cursor-wait disabled:opacity-50"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100 disabled:cursor-wait disabled:opacity-50"
                         disabled={isBusy || !supportsWebAuthn}
                         onClick={handleLogin}
                         type="button"
                       >
                         {busyAction === "login" ? <RefreshCw className="size-4 animate-spin" /> : <Fingerprint className="size-4" />}
-                        验证并登录
+                        使用 Passkey 登录
                       </button>
                     </div>
                   ) : (
-                    <form className="space-y-5 py-7" onSubmit={handleRegister}>
+                    <form className="space-y-4 pt-5" onSubmit={handleRegister}>
                       <div>
                         <label className="text-sm font-medium text-slate-300" htmlFor="invitation-token">邀请码</label>
                         <input
                           autoCapitalize="none"
                           autoComplete="one-time-code"
-                          className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 font-mono text-sm tracking-[0.08em] text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
+                          className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 font-mono text-base tracking-[0.08em] text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
                           id="invitation-token"
                           maxLength={16}
                           minLength={16}
@@ -319,7 +292,7 @@ export default function PrivateAuth(): JSX.Element {
                         <label className="text-sm font-medium text-slate-300" htmlFor="display-name">显示名称</label>
                         <input
                           autoComplete="name"
-                          className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
+                          className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-base text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
                           id="display-name"
                           maxLength={80}
                           onChange={(event) => setDisplayName(event.target.value)}
@@ -331,7 +304,7 @@ export default function PrivateAuth(): JSX.Element {
                       <div>
                         <label className="text-sm font-medium text-slate-300" htmlFor="credential-name">Passkey 名称</label>
                         <input
-                          className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
+                          className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-base text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
                           id="credential-name"
                           maxLength={80}
                           onChange={(event) => setCredentialName(event.target.value)}
