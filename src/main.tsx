@@ -11,6 +11,10 @@ const NoteDetail = lazy(() => import("./pages/NoteDetail.tsx"));
 const Notes = lazy(() => import("./pages/Notes.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const PrivateAuth = lazy(() => import("./pages/PrivateAuth.tsx"));
+const EnglishLearning = lazy(() => import("./pages/EnglishLearning.tsx"));
+const EnglishLearningEpisode = lazy(
+  () => import("./pages/EnglishLearningEpisode.tsx"),
+);
 const WeddingInvitation = lazy(
   () => import("./pages/WeddingInvitation.tsx"),
 );
@@ -41,6 +45,11 @@ const router = createHashRouter([
       { path: "notes", element: lazyPage(<Notes />) },
       { path: "notes/:slug", element: lazyPage(<NoteDetail />) },
       { path: "auth", element: lazyPage(<PrivateAuth />) },
+      { path: "learning/english", element: lazyPage(<EnglishLearning />) },
+      {
+        path: "learning/english/:episodeId",
+        element: lazyPage(<EnglishLearningEpisode />),
+      },
       { path: "wedding", element: lazyPage(<WeddingInvitation />) },
       { path: "*", element: lazyPage(<NotFound />) },
     ],

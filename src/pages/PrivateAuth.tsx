@@ -8,6 +8,7 @@ import {
 import {
   AlertCircle,
   ArrowLeft,
+  BookOpenText,
   CheckCircle2,
   Fingerprint,
   LogOut,
@@ -220,8 +221,17 @@ export default function PrivateAuth(): JSX.Element {
                       </dd>
                     </div>
                   </dl>
+                  {session.user.permissions.includes("english-learning") && (
+                    <Link
+                      className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100"
+                      to="/learning/english"
+                    >
+                      <BookOpenText className="size-4" />
+                      进入英语学习
+                    </Link>
+                  )}
                   <button
-                    className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white disabled:cursor-wait disabled:opacity-50"
+                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white disabled:cursor-wait disabled:opacity-50"
                     disabled={isBusy}
                     onClick={handleLogout}
                     type="button"

@@ -14,6 +14,23 @@ export interface PrivateAuthSession {
   user: PrivateAuthUser;
 }
 
+export interface SignedPrivateLearningIndex {
+  expiresAt: number;
+  resources: {
+    index: string;
+  };
+}
+
+export interface SignedPrivateLearningEpisode {
+  expiresAt: number;
+  resources: {
+    audio: string;
+    metadata: string;
+    transcriptPdf: string;
+    transcriptText: string;
+  };
+}
+
 interface ApiErrorBody {
   code?: string;
   message?: string;
@@ -113,5 +130,28 @@ export function logoutPrivateAuth(session: PrivateAuthSession): Promise<{ authen
   return request<{ authenticated: false }>("logout", {
     body: {},
     csrfToken: session.csrfToken,
+  });
+}
+
+export function signPrivateLearningIndex(
+  session: PrivateAuthSession,
+  signal?: AbortSignal,
+): Promise<SignedPrivateLearningIndex> {
+  return request<SignedPrivateLearningIndex>("sign", {
+    body: { resource: "index" },
+    csrfToken: session.csrfToken,
+    signal,
+  });
+}
+
+export function signPrivateLearningEpisode(
+  session: PrivateAuthSession,
+  episodeId: string,
+  signal?: AbortSignal,
+): Promise<SignedPrivateLearningEpisode> {
+  return request<SignedPrivateLearningEpisode>("sign", {
+    body: { episodeId },
+    csrfToken: session.csrfToken,
+    signal,
   });
 }
