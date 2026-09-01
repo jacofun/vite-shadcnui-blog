@@ -10,6 +10,7 @@ import Home from "./pages/Home.tsx";
 const NoteDetail = lazy(() => import("./pages/NoteDetail.tsx"));
 const Notes = lazy(() => import("./pages/Notes.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const PrivateAuth = lazy(() => import("./pages/PrivateAuth.tsx"));
 const WeddingInvitation = lazy(
   () => import("./pages/WeddingInvitation.tsx"),
 );
@@ -39,6 +40,7 @@ const router = createHashRouter([
       { index: true, element: <Home /> },
       { path: "notes", element: lazyPage(<Notes />) },
       { path: "notes/:slug", element: lazyPage(<NoteDetail />) },
+      { path: "auth", element: lazyPage(<PrivateAuth />) },
       { path: "wedding", element: lazyPage(<WeddingInvitation />) },
       { path: "*", element: lazyPage(<NotFound />) },
     ],

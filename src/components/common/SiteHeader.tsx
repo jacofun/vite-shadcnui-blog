@@ -6,7 +6,7 @@ import {
   useState,
   type JSX,
 } from "react";
-import { BookOpen, Heart, House, Terminal } from "lucide-react";
+import { BookOpen, Heart, House, KeyRound, Terminal } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 import { terminalOpenEvent } from "@/lib/terminal";
@@ -18,6 +18,7 @@ const TerminalDialog = lazy(
 const navigation = [
   { icon: House, label: "首页", to: "/" },
   { icon: BookOpen, label: "笔记", to: "/notes" },
+  { icon: KeyRound, label: "私人内容登录", to: "/auth" },
   { icon: Heart, label: "婚礼纪念", to: "/wedding" },
 ];
 
@@ -109,7 +110,8 @@ export default function SiteHeader(): JSX.Element {
               className="text-sm font-semibold tracking-[0.16em] text-white transition hover:text-cyan-100"
               to="/"
             >
-              YANXIAO.ME
+              <span className="hidden min-[360px]:inline">YANXIAO.ME</span>
+              <span className="min-[360px]:hidden">YX</span>
             </Link>
           </div>
 
