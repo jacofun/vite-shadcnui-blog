@@ -7,7 +7,9 @@ import {
 } from "node:crypto";
 import {
   generateAuthenticationOptions,
+  generateRegistrationOptions,
   verifyAuthenticationResponse,
+  verifyRegistrationResponse,
 } from "@simplewebauthn/server";
 
 const DEFAULT_COOKIE_NAME = "__Secure-private_auth";
@@ -173,6 +175,10 @@ function loadCredentials(env) {
 }
 
 function loadConfig(env) {
+  const storeMode = env.AUTH_STORE || "environment";
+  if (!["environment", "oss"].includes(storeMode)) {
+    throw new HttpError(500, "CONFIGURATION_ERROR", "AUTH_STORE is invalid");
+  }
   const expectedOrigin = normalizeOrigin(
     requiredString(env, "WEBAUTHN_ORIGIN"),
     "WEBAUTHN_ORIGIN",
@@ -201,7 +207,8 @@ function loadConfig(env) {
   return {
     expectedOrigin,
     rpID,
-    credentials: loadCredentials(env),
+    storeMode,
+    credentials: storeMode === "environment" ? loadCredentials(env) : [],
     currentSessionKey: loadSessionKey(env, "SESSION_CURRENT_KEY", true),
     previousSessionKey: loadSessionKey(env, "SESSION_PREVIOUS_KEY", false),
     sessionVersion: env.SESSION_VERSION?.trim() || "1",
@@ -342,7 +349,9 @@ function parseEvent(event) {
     throw new HttpError(413, "REQUEST_TOO_LARGE", "Request body is too large");
   }
 
-  return { method, path, headers, body };
+  // Only trust platform-provided source IP, never a caller's X-Forwarded-For.
+  const sourceIp = parsed.requestContext?.http?.sourceIp;
+  return { method, path, headers, body, sourceIp };
 }
 
 function parseJsonBody(body) {
@@ -357,10 +366,14 @@ function parseJsonBody(body) {
   }
 }
 
-function routeName(path, cookiePath) {
+function routeName(path, cookiePath, persistent = false) {
   const normalized = path.replace(/\/+$/, "") || "/";
   const apiPrefix = cookiePath.replace(/\/+$/, "");
   const knownRoutes = ["challenge", "verify", "session", "sign", "logout"];
+  if (persistent) knownRoutes.push(
+    "register/options", "register/verify", "reauth/challenge", "reauth/verify",
+    "passkeys", "passkeys/options", "passkeys/verify", "passkeys/rename", "passkeys/remove",
+  );
   return knownRoutes.find((route) =>
     normalized === `/${route}` || normalized === `${apiPrefix}/${route}`);
 }
@@ -482,8 +495,11 @@ export function createHandler({
   randomBytesImpl = randomBytes,
   generateAuthenticationOptionsImpl = generateAuthenticationOptions,
   verifyAuthenticationResponseImpl = verifyAuthenticationResponse,
+  generateRegistrationOptionsImpl = generateRegistrationOptions,
+  verifyRegistrationResponseImpl = verifyRegistrationResponse,
+  store,
 } = {}) {
-  return async function privateAuthHandler(event) {
+  return async function privateAuthHandler(event, context = {}) {
     let config;
     try {
       config = loadConfig(env);
@@ -499,16 +515,25 @@ export function createHandler({
         });
       }
 
-      const route = routeName(request.path, config.cookiePath);
+      const route = routeName(request.path, config.cookiePath, config.storeMode === "oss");
       if (!route) throw new HttpError(404, "NOT_FOUND", "Route does not exist");
 
-      const expectedMethod = route === "session" ? "GET" : "POST";
+      const expectedMethod = ["session", "passkeys"].includes(route) ? "GET" : "POST";
       if (request.method !== expectedMethod) {
         throw new HttpError(405, "METHOD_NOT_ALLOWED", "Method is not allowed");
       }
       if (request.method === "POST") requireExpectedOrigin(request, config);
 
       const nowSeconds = now();
+
+      if (config.storeMode === "oss") {
+        const persistentStore = store || await createOssEventStore({ env, context });
+        return await persistentRequest({
+          request, route, config, store: persistentStore, nowSeconds, randomBytesImpl,
+          generateAuthenticationOptionsImpl, verifyAuthenticationResponseImpl,
+          generateRegistrationOptionsImpl, verifyRegistrationResponseImpl,
+        });
+      }
 
       if (route === "challenge") {
         const options = await generateAuthenticationOptionsImpl({
@@ -606,6 +631,728 @@ export function createHandler({
       return jsonResponse(responseConfig, statusCode, { code, message });
     }
   };
+}
+
+// Private, small-group registry. All security transitions append one complete state
+// event to OSS at the expected byte position. The append position is the CAS token,
+// so concurrent FC invocations cannot overwrite each other. Kept in this entrypoint
+// because the existing deployment ZIP includes index.js only.
+const REGISTRY_MAX_BYTES = 60 * 1024;
+const MAX_USERS = 20;
+const MAX_PASSKEYS = 8;
+const RECENT_AUTH_SECONDS = 300;
+const hash = (value) => createHash("sha256").update(value).digest("hex");
+const opaqueId = (random = randomBytes) => random(24).toString("hex");
+
+function emptyRegistry() {
+  return { schemaVersion: 1, users: {}, credentials: {}, invites: {}, challenges: {}, sessions: {}, rates: {} };
+}
+
+function validateRegistry(state) {
+  if (state?.schemaVersion !== 1 || ["users", "credentials", "invites", "challenges", "sessions", "rates"]
+    .some((key) => !state[key] || typeof state[key] !== "object" || Array.isArray(state[key]))) {
+    throw new HttpError(503, "INVALID_AUTH_STORE", "Authentication store is invalid");
+  }
+  return state;
+}
+
+function pruneRegistry(state, nowSeconds) {
+  for (const collection of ["invites", "challenges", "sessions", "rates"]) {
+    for (const [key, value] of Object.entries(state[collection])) {
+      if (value.exp <= nowSeconds) delete state[collection][key];
+    }
+  }
+}
+
+/** Compare-and-swap adapter; tests supply the same atomic contract, never production memory storage. */
+export function createRegistryStore({ readRow, compareAndSwap, takeRateLimit }) {
+  return {
+    async read() {
+      const row = await readRow();
+      if (!row) throw new HttpError(503, "AUTH_STORE_NOT_INITIALIZED", "Initialize the authentication store first");
+      return validateRegistry(row.state);
+    },
+    async mutate(change, { initialize = false } = {}) {
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        const row = await readRow();
+        if (!row && !initialize) {
+          throw new HttpError(503, "AUTH_STORE_NOT_INITIALIZED", "Initialize the authentication store first");
+        }
+        const state = row ? validateRegistry(row.state) : emptyRegistry();
+        // change must be synchronous and side-effect free: a conflict retries it.
+        const result = change(state);
+        if (Buffer.byteLength(JSON.stringify(state)) > REGISTRY_MAX_BYTES) {
+          throw new HttpError(503, "AUTH_STORE_CAPACITY", "Authentication store capacity reached");
+        }
+        if (await compareAndSwap(row?.revision ?? null, state)) return result;
+      }
+      throw new HttpError(409, "AUTH_STORE_CONFLICT", "Concurrent update; retry the same request");
+    },
+    ...(takeRateLimit ? { takeRateLimit } : {}),
+  };
+}
+
+function ossErrorStatus(error) {
+  return error?.status || error?.statusCode || error?.res?.status;
+}
+
+function isOssMissing(error) {
+  return error?.code === "NoSuchKey" || ossErrorStatus(error) === 404;
+}
+
+function isOssAppendConflict(error) {
+  return error?.code === "PositionNotEqualToLength" || ossErrorStatus(error) === 409;
+}
+
+function parseOssRevision(revision) {
+  if (revision === null) return { position: 0, sequence: 0 };
+  const match = /^(0|[1-9][0-9]*):(0|[1-9][0-9]*)$/.exec(revision || "");
+  if (!match) throw new HttpError(503, "INVALID_AUTH_STORE", "Authentication store revision is invalid");
+  const position = Number(match[1]);
+  const sequence = Number(match[2]);
+  if (!Number.isSafeInteger(position) || !Number.isSafeInteger(sequence)) {
+    throw new HttpError(503, "INVALID_AUTH_STORE", "Authentication store revision is invalid");
+  }
+  return { position, sequence };
+}
+
+function parseOssEvents(content, startPosition, startSequence, initialState) {
+  const buffer = Buffer.isBuffer(content) ? content : Buffer.from(content || "");
+  if (buffer.length && buffer[buffer.length - 1] !== 0x0a) {
+    throw new HttpError(503, "INVALID_AUTH_STORE", "Authentication event log is truncated");
+  }
+  let position = startPosition;
+  let sequence = startSequence;
+  let state = initialState;
+  for (const rawLine of buffer.toString("utf8").split("\n")) {
+    if (!rawLine) continue;
+    let event;
+    try {
+      event = JSON.parse(rawLine);
+    } catch {
+      throw new HttpError(503, "INVALID_AUTH_STORE", "Authentication event log contains invalid JSON");
+    }
+    const lineBytes = Buffer.byteLength(`${rawLine}\n`);
+    const nextPosition = position + lineBytes;
+    if (event?.schemaVersion !== 1 || event.previousPosition !== position ||
+        event.nextPosition !== nextPosition || event.sequence !== sequence + 1) {
+      throw new HttpError(503, "INVALID_AUTH_STORE", "Authentication event chain is invalid");
+    }
+    state = validateRegistry(event.state);
+    position = nextPosition;
+    sequence = event.sequence;
+  }
+  return { position, sequence, state };
+}
+
+/**
+ * OSS is the only persistent service. Mounted OSS remains useful for inspection,
+ * but authoritative writes use AppendObject because mount rename/file locking is
+ * not atomic across FC instances.
+ */
+export async function createOssEventStore({ env = process.env, context = {}, sdk, client } = {}) {
+  const OSS = sdk || (client ? null : (await import("ali-oss")).default);
+  const bucket = requiredString(env, "OSS_AUTH_BUCKET");
+  const region = requiredString(env, "OSS_AUTH_REGION");
+  const endpoint = normalizeOrigin(requiredString(env, "OSS_AUTH_ENDPOINT"), "OSS_AUTH_ENDPOINT");
+  const logObject = (env.OSS_AUTH_LOG_OBJECT?.trim() || "fc/private-auth/store/events.jsonl").replace(/^\/+/, "");
+  const snapshotObject = (env.OSS_AUTH_SNAPSHOT_OBJECT?.trim() || "fc/private-auth/snapshots/snapshot-latest.json").replace(/^\/+/, "");
+  const ratePrefix = (env.OSS_AUTH_RATE_PREFIX?.trim() || "fc/private-auth/rate-limits").replace(/^\/+|\/+$/g, "");
+  const snapshotInterval = integerSetting(env, "OSS_AUTH_SNAPSHOT_INTERVAL", 50, { min: 10, max: 1000 });
+  const maxLogBytes = integerSetting(env, "OSS_AUTH_MAX_LOG_BYTES", 536_870_912, { min: 1_048_576, max: 5_000_000_000 });
+  if (!/^[a-z0-9][a-z0-9-]{2,62}$/.test(bucket) || !logObject || !snapshotObject || !ratePrefix ||
+      logObject === snapshotObject || [logObject, snapshotObject, ratePrefix].some((value) => value.includes(".."))) {
+    throw new HttpError(500, "CONFIGURATION_ERROR", "OSS authentication storage paths are invalid");
+  }
+  // FC supplies rotating credentials on each invocation. The CLI uses RAM/STS environment credentials.
+  const credentials = context.credentials || {
+    accessKeyId: env.ALIBABA_CLOUD_ACCESS_KEY_ID,
+    accessKeySecret: env.ALIBABA_CLOUD_ACCESS_KEY_SECRET,
+    securityToken: env.ALIBABA_CLOUD_SECURITY_TOKEN,
+  };
+  if (!client && (!credentials.accessKeyId || !credentials.accessKeySecret)) {
+    throw new HttpError(503, "STORAGE_CREDENTIALS_MISSING", "OSS credentials are not configured");
+  }
+  const oss = client || new OSS({
+    bucket, region, endpoint,
+    accessKeyId: credentials.accessKeyId,
+    accessKeySecret: credentials.accessKeySecret,
+    stsToken: credentials.securityToken,
+    secure: true,
+    timeout: 3_000,
+    retryMax: 0,
+  });
+
+  async function objectLength() {
+    try {
+      const result = await oss.getObjectMeta(logObject);
+      const length = Number(result.res.headers["content-length"]);
+      if (!Number.isSafeInteger(length) || length < 0) throw new Error("Invalid OSS content length");
+      return length;
+    } catch (error) {
+      if (isOssMissing(error)) return null;
+      throw error;
+    }
+  }
+
+  async function loadSnapshot(logLength) {
+    try {
+      const result = await oss.get(snapshotObject);
+      const snapshot = JSON.parse(Buffer.from(result.content).toString("utf8"));
+      if (snapshot?.schemaVersion !== 1 || !Number.isSafeInteger(snapshot.logPosition) ||
+          !Number.isSafeInteger(snapshot.sequence) || snapshot.logPosition < 0 ||
+          snapshot.logPosition > logLength || snapshot.sequence < 0) return null;
+      return { position: snapshot.logPosition, sequence: snapshot.sequence,
+        state: validateRegistry(snapshot.state) };
+    } catch (error) {
+      if (isOssMissing(error) || error instanceof SyntaxError || error instanceof HttpError) return null;
+      throw error;
+    }
+  }
+
+  async function readRow() {
+    const length = await objectLength();
+    if (length === null) return null;
+    const snapshot = await loadSnapshot(length);
+    const base = snapshot || { position: 0, sequence: 0, state: undefined };
+    if (base.position === length) {
+      if (!base.state) throw new HttpError(503, "INVALID_AUTH_STORE", "Authentication event log is empty");
+      return { revision: `${base.position}:${base.sequence}`, state: base.state };
+    }
+    const result = await oss.get(logObject, { headers: { Range: `bytes=${base.position}-` } });
+    const parsed = parseOssEvents(result.content, base.position, base.sequence, base.state);
+    if (parsed.position < length || !parsed.state) {
+      throw new HttpError(503, "INVALID_AUTH_STORE", "Authentication event log is incomplete");
+    }
+    return { revision: `${parsed.position}:${parsed.sequence}`, state: parsed.state };
+  }
+
+  async function appendRateCounter(name, limit, nowSeconds) {
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      let position;
+      let count = 0;
+      try {
+        const meta = await oss.getObjectMeta(name);
+        position = Number(meta.res.headers["content-length"]);
+        if (!Number.isSafeInteger(position) || position < 0 || position > 64 * 1024) {
+          throw new HttpError(503, "INVALID_AUTH_STORE", "Authentication rate counter is invalid");
+        }
+        if (position > 0) {
+          const result = await oss.get(name);
+          const content = Buffer.from(result.content).toString("utf8");
+          if (!content.endsWith("\n")) {
+            throw new HttpError(503, "INVALID_AUTH_STORE", "Authentication rate counter is truncated");
+          }
+          count = content.split("\n").length - 1;
+        }
+      } catch (error) {
+        if (!isOssMissing(error)) throw error;
+        position = 0;
+      }
+      if (count >= limit) return false;
+      const body = Buffer.from(`${nowSeconds}\n`, "utf8");
+      try {
+        const result = await oss.append(name, body, {
+          position,
+          headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+        });
+        if (Number(result.nextAppendPosition) !== position + body.length) {
+          throw new HttpError(503, "INVALID_AUTH_STORE", "OSS returned an invalid rate-counter position");
+        }
+        return true;
+      } catch (error) {
+        if (!isOssAppendConflict(error)) throw error;
+      }
+    }
+    throw new HttpError(409, "AUTH_STORE_CONFLICT", "Concurrent update; retry the same request");
+  }
+
+  async function takeRateLimit(sourceIp, nowSeconds) {
+    const minute = new Date(nowSeconds * 1000).toISOString().slice(0, 16).replace(/[-:T]/g, "");
+    if (!await appendRateCounter(`${ratePrefix}/${minute}-global.log`, 120, nowSeconds)) return false;
+    if (typeof sourceIp === "string" && sourceIp) {
+      return appendRateCounter(`${ratePrefix}/${minute}-ip-${hash(sourceIp)}.log`, 20, nowSeconds);
+    }
+    return true;
+  }
+
+  return createRegistryStore({
+    readRow,
+    takeRateLimit,
+    async compareAndSwap(revision, state) {
+      const { position, sequence } = parseOssRevision(revision);
+      const nextSequence = sequence + 1;
+      const event = {
+        schemaVersion: 1,
+        eventId: opaqueId(),
+        previousPosition: position,
+        nextPosition: 0,
+        sequence: nextSequence,
+        createdAt: new Date().toISOString(),
+        state,
+      };
+      // nextPosition is part of the protected event chain, so calculate until the
+      // serialized byte length stabilizes (normally two iterations).
+      let body;
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        body = Buffer.from(`${JSON.stringify(event)}\n`, "utf8");
+        const calculated = position + body.length;
+        if (event.nextPosition === calculated) break;
+        event.nextPosition = calculated;
+      }
+      body = Buffer.from(`${JSON.stringify(event)}\n`, "utf8");
+      const expectedNextPosition = position + body.length;
+      if (event.nextPosition !== expectedNextPosition || expectedNextPosition > maxLogBytes) {
+        throw new HttpError(503, "AUTH_STORE_CAPACITY", "Authentication event log capacity reached");
+      }
+      try {
+        const result = await oss.append(logObject, body, {
+          position,
+          headers: { "Content-Type": "application/x-ndjson", "Cache-Control": "no-store" },
+        });
+        if (Number(result.nextAppendPosition) !== expectedNextPosition) {
+          throw new HttpError(503, "INVALID_AUTH_STORE", "OSS returned an invalid append position");
+        }
+      } catch (error) {
+        if (isOssAppendConflict(error)) return false;
+        // Do not blindly retry an ambiguous append. Exact WebAuthn response retries
+        // recover through the completion receipt already stored in the registry.
+        throw error;
+      }
+      if (nextSequence % snapshotInterval === 0) {
+        const snapshot = Buffer.from(JSON.stringify({ schemaVersion: 1,
+          logPosition: expectedNextPosition, sequence: nextSequence, state }), "utf8");
+        try {
+          await oss.put(snapshotObject, snapshot, {
+            headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+          });
+        } catch {
+          // Snapshot is only a cache. The append-only log remains authoritative.
+        }
+      }
+      return true;
+    },
+  });
+}
+
+function userCredentials(state, userId) {
+  return Object.values(state.credentials).filter((credential) => credential.userId === userId);
+}
+
+function activeUser(state, userId) {
+  const user = Object.hasOwn(state.users, userId || "") ? state.users[userId] : null;
+  if (!user || user.status !== "active") {
+    throw new HttpError(401, "UNAUTHENTICATED", "Account or session is not active");
+  }
+  return user;
+}
+
+function persistedSession(state, payload, config, nowSeconds) {
+  const user = activeUser(state, payload.sub);
+  const session = state.sessions[payload.sid];
+  if (payload.store !== "oss" || payload.version !== config.sessionVersion ||
+      payload.userVersion !== user.version || !session || session.userId !== user.id ||
+      session.exp <= nowSeconds || payload.exp <= nowSeconds ||
+      !state.credentials[hash(session.credentialId)] || !payload.csrf) {
+    throw new HttpError(401, "UNAUTHENTICATED", "Account or session is not active");
+  }
+  return { user, session };
+}
+
+function requireRecent(state, payload, config, nowSeconds) {
+  const result = persistedSession(state, payload, config, nowSeconds);
+  if (!Number.isSafeInteger(result.session.authTime) ||
+      result.session.authTime > nowSeconds || nowSeconds - result.session.authTime > RECENT_AUTH_SECONDS) {
+    throw new HttpError(403, "REAUTHENTICATION_REQUIRED", "Verify a Passkey again before managing credentials");
+  }
+  return result;
+}
+
+function label(value, field) {
+  if (typeof value !== "string" || !value.trim() || value.trim().length > 80 || /[\u0000-\u001f\u007f]/.test(value)) {
+    throw new HttpError(400, "INVALID_LABEL", `${field} must contain 1 to 80 printable characters`);
+  }
+  return value.trim();
+}
+
+function inviteFromToken(state, token, nowSeconds) {
+  if (typeof token !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(token)) {
+    throw new HttpError(403, "INVALID_INVITATION", "Invitation is invalid or expired");
+  }
+  const key = hash(token);
+  const invite = state.invites[key];
+  if (!invite || invite.exp <= nowSeconds || invite.used) {
+    throw new HttpError(403, "INVALID_INVITATION", "Invitation is invalid or expired");
+  }
+  return { key, invite };
+}
+
+function sessionResult(payload, user) {
+  return {
+    authenticated: true, csrfToken: payload.csrf, expiresAt: payload.exp,
+    user: { id: user.id, displayName: user.displayName, role: user.role, permissions: user.permissions },
+  };
+}
+
+function issueSession(state, user, credentialId, config, nowSeconds, seed) {
+  const existing = Object.entries(state.sessions).filter(([, session]) => session.userId === user.id)
+    .sort((a, b) => a[1].createdAt - b[1].createdAt);
+  while (existing.length >= 8) delete state.sessions[existing.shift()[0]];
+  const payload = {
+    kind: "session", store: "oss", sub: user.id, sid: seed.sid,
+    version: config.sessionVersion, userVersion: user.version, csrf: seed.csrf,
+    iat: nowSeconds, exp: nowSeconds + config.sessionTtlSeconds,
+  };
+  state.sessions[seed.sid] = { userId: user.id, credentialId, authTime: nowSeconds, createdAt: nowSeconds, exp: payload.exp };
+  return payload;
+}
+
+function revokeUser(state, user) {
+  user.version += 1;
+  for (const [id, session] of Object.entries(state.sessions)) {
+    if (session.userId === user.id) delete state.sessions[id];
+  }
+  for (const [id, challenge] of Object.entries(state.challenges)) {
+    if (challenge.userId === user.id || challenge.result?.sub === user.id) delete state.challenges[id];
+  }
+}
+
+async function persistentRequest(options) {
+  const {
+    request, route, config, store, nowSeconds, randomBytesImpl,
+    generateAuthenticationOptionsImpl, verifyAuthenticationResponseImpl,
+    generateRegistrationOptionsImpl, verifyRegistrationResponseImpl,
+  } = options;
+  const operationConfig = { ...config, cookieName: `${config.cookieName}_challenge` };
+  const body = request.method === "POST" ? parseJsonBody(request.body || "{}") : {};
+  const protectedRoute = !["register/options", "register/verify", "challenge", "verify"].includes(route);
+  let auth;
+  if (protectedRoute) {
+    auth = readAuthToken(request, config, nowSeconds, "session");
+    if (request.method === "POST") requireCsrf(request, auth);
+    persistedSession(await store.read(), auth, config, nowSeconds);
+  }
+
+  // Persistent fixed-window rate limits survive cold starts and multiple instances.
+  // Every public verification attempt is counted, including malformed responses.
+  if (["register/options", "register/verify", "challenge", "verify", "reauth/challenge", "reauth/verify",
+    "passkeys/options", "passkeys/verify"].includes(route)) {
+    const allowed = store.takeRateLimit
+      ? await store.takeRateLimit(request.sourceIp, nowSeconds)
+      : await store.mutate((state) => {
+        pruneRegistry(state, nowSeconds);
+        const keys = [{ key: "global", limit: 120 }];
+        if (typeof request.sourceIp === "string") keys.push({ key: hash(request.sourceIp), limit: 20 });
+        for (const { key, limit } of keys) {
+          if (!state.rates[key]) state.rates[key] = { count: 0, exp: nowSeconds + 60 };
+          if (state.rates[key].count >= limit) return false;
+          state.rates[key].count += 1;
+        }
+        return true;
+      });
+    if (!allowed) throw new HttpError(429, "RATE_LIMITED", "Too many authentication attempts; retry later");
+  }
+
+  if (["register/options", "passkeys/options", "challenge", "reauth/challenge"].includes(route)) {
+    const state = await store.read();
+    const action = { "register/options": "register", "passkeys/options": "add", challenge: "login", "reauth/challenge": "reauth" }[route];
+    let user;
+    let invitation;
+    let displayName;
+    if (action === "register") {
+      invitation = inviteFromToken(state, body.invitationToken, nowSeconds);
+      displayName = label(body.displayName, "displayName");
+      user = { id: invitation.invite.userId, displayName };
+    } else if (action !== "login") {
+      user = (action === "add" ? requireRecent : persistedSession)(state, auth, config, nowSeconds).user;
+    }
+    const isRegistration = ["register", "add"].includes(action);
+    const credentialName = isRegistration ? label(body.credentialName || "My Passkey", "credentialName") : undefined;
+    const publicKey = isRegistration
+      ? await generateRegistrationOptionsImpl({
+        rpName: "彦骁的笔记", rpID: config.rpID,
+        userID: new Uint8Array(Buffer.from(user.id, "utf8")), userName: user.id, userDisplayName: user.displayName,
+        attestationType: "none", timeout: 60_000,
+        authenticatorSelection: { residentKey: "required", userVerification: "required" },
+        excludeCredentials: userCredentials(state, user.id).map(({ id, transports }) => ({ id, transports })),
+      })
+      : await generateAuthenticationOptionsImpl({
+        rpID: config.rpID, timeout: 60_000, userVerification: "required",
+        // Discoverable login does not publish all users' credential IDs.
+        ...(user ? { allowCredentials: userCredentials(state, user.id).map(({ id, transports }) => ({ id, transports })) } : {}),
+      });
+    const id = opaqueId(randomBytesImpl);
+    const exp = nowSeconds + config.challengeTtlSeconds;
+    await store.mutate((current) => {
+      pruneRegistry(current, nowSeconds);
+      if (invitation) inviteFromToken(current, body.invitationToken, nowSeconds);
+      if (auth) (action === "add" ? requireRecent : persistedSession)(current, auth, config, nowSeconds);
+      if (Object.keys(current.challenges).length >= 32) {
+        throw new HttpError(429, "TOO_MANY_CHALLENGES", "Too many outstanding authentication challenges");
+      }
+      current.challenges[id] = {
+        action, challenge: publicKey.challenge, exp, userId: user?.id,
+        inviteHash: invitation?.key, displayName, credentialName,
+        sessionId: auth?.sid, userVersion: user?.version,
+      };
+    });
+    return jsonResponse(config, 200, { publicKey }, {
+      "set-cookie": serializeCookie(operationConfig,
+        encryptToken({ kind: "operation", id, exp }, config.currentSessionKey, randomBytesImpl), config.challengeTtlSeconds),
+    });
+  }
+
+  if (["register/verify", "passkeys/verify", "verify", "reauth/verify"].includes(route)) {
+    const action = { "register/verify": "register", "passkeys/verify": "add", verify: "login", "reauth/verify": "reauth" }[route];
+    const operation = readAuthToken(request, operationConfig, nowSeconds, "operation");
+    const response = body.credential ||
+      (body.response && typeof body.response.id === "string" ? body.response : body);
+    if (!response || typeof response.id !== "string" || response.id.length > 2048 || !BASE64URL_PATTERN.test(response.id)) {
+      throw new HttpError(400, "INVALID_CREDENTIAL", "credential must be a WebAuthn response");
+    }
+    const fingerprint = hash(JSON.stringify(response));
+    const getChallenge = (state) => {
+      const challenge = state.challenges[operation.id];
+      if (!challenge || challenge.exp <= nowSeconds || challenge.action !== action ||
+          challenge.sessionId !== auth?.sid) {
+        throw new HttpError(401, "INVALID_CHALLENGE", "Authentication challenge is invalid or expired");
+      }
+      return challenge;
+    };
+    const replayResult = (state, challenge) => {
+      if (challenge.fingerprint !== fingerprint) {
+        throw new HttpError(409, "CHALLENGE_USED", "This challenge has already been used");
+      }
+      const { user } = persistedSession(state, challenge.result, config, nowSeconds);
+      if (auth) persistedSession(state, auth, config, nowSeconds);
+      return { payload: challenge.result, user };
+    };
+    const respond = ({ payload, user }) => jsonResponse(config, 200, sessionResult(payload, user), {
+      "set-cookie": serializeCookie(config, encryptToken(payload, config.currentSessionKey, randomBytesImpl), payload.exp - nowSeconds),
+    });
+    const state = await store.read();
+    const challenge = getChallenge(state);
+    if (challenge.result) return respond(replayResult(state, challenge));
+    const isRegistration = ["register", "add"].includes(action);
+    const credential = state.credentials[hash(response.id)];
+    let verified;
+    try {
+      if (isRegistration) {
+        verified = await verifyRegistrationResponseImpl({
+          response, expectedChallenge: challenge.challenge,
+          expectedOrigin: config.expectedOrigin, expectedRPID: config.rpID, requireUserVerification: true,
+        });
+        if (!verified.verified || !verified.registrationInfo?.userVerified) throw new Error();
+      } else {
+        if (!credential || (challenge.userId && credential.userId !== challenge.userId)) throw new Error();
+        activeUser(state, credential.userId);
+        if (credential.webauthnUserId && response.response?.userHandle &&
+            response.response.userHandle !== credential.webauthnUserId) throw new Error();
+        verified = await verifyAuthenticationResponseImpl({
+          response, expectedChallenge: challenge.challenge, expectedOrigin: config.expectedOrigin,
+          expectedRPID: config.rpID, credential: normalizeCredential(credential, "credential"), requireUserVerification: true,
+        });
+        if (!verified.verified || !verified.authenticationInfo?.userVerified) throw new Error();
+      }
+    } catch {
+      throw new HttpError(401, "PASSKEY_VERIFICATION_FAILED", "Passkey verification failed");
+    }
+    const seed = { sid: opaqueId(randomBytesImpl), csrf: randomBytesImpl(32).toString("base64url") };
+    const completed = await store.mutate((current) => {
+      const pending = getChallenge(current);
+      if (pending.result) return replayResult(current, pending);
+      let user;
+      if (action === "register") {
+        const invite = current.invites[pending.inviteHash];
+        if (!invite || invite.used || invite.exp <= nowSeconds || invite.userId !== pending.userId) {
+          throw new HttpError(403, "INVALID_INVITATION", "Invitation is invalid or expired");
+        }
+        if (invite.kind === "recovery") {
+          user = current.users[invite.userId];
+          if (!user || user.status !== "recovering" || user.version !== invite.userVersion) {
+            throw new HttpError(403, "INVALID_INVITATION", "Recovery invitation is no longer valid");
+          }
+          user.status = "active";
+        } else {
+          if (current.users[invite.userId] || Object.keys(current.users).length >= MAX_USERS) {
+            throw new HttpError(409, "ACCOUNT_LIMIT", "Account exists or account limit reached");
+          }
+          user = { id: invite.userId, displayName: pending.displayName, role: invite.role,
+            permissions: invite.permissions, status: "active", version: 1, createdAt: nowSeconds };
+          current.users[user.id] = user;
+        }
+        invite.used = true;
+      } else if (action === "add") {
+        user = requireRecent(current, auth, config, nowSeconds).user;
+      } else {
+        const latest = current.credentials[hash(response.id)];
+        if (!latest || latest.userId !== credential.userId || latest.publicKey !== credential.publicKey ||
+            latest.counter !== credential.counter) {
+          throw new HttpError(409, "CREDENTIAL_CHANGED", "Credential changed; start a new login");
+        }
+        user = activeUser(current, latest.userId);
+        if (user.version !== state.users[credential.userId].version) {
+          throw new HttpError(401, "UNAUTHENTICATED", "Account changed during authentication");
+        }
+        if (auth) persistedSession(current, auth, config, nowSeconds);
+        const counter = verified.authenticationInfo.newCounter;
+        if (!Number.isSafeInteger(counter) || counter < 0) throw new Error("Invalid authenticator counter");
+        latest.counter = counter;
+        latest.lastUsedAt = nowSeconds;
+      }
+      if (isRegistration) {
+        const info = verified.registrationInfo;
+        const saved = info.credential;
+        if (!saved || saved.id !== response.id || !saved.publicKey?.length) throw new Error("Invalid verified credential");
+        if (current.credentials[hash(saved.id)] || userCredentials(current, user.id).length >= MAX_PASSKEYS) {
+          throw new HttpError(409, "CREDENTIAL_EXISTS_OR_LIMIT", "Credential already registered or Passkey limit reached");
+        }
+        const normalized = normalizeCredential({ ...saved, publicKey: Buffer.from(saved.publicKey).toString("base64url") }, "credential");
+        current.credentials[hash(saved.id)] = {
+          ...normalized, publicKey: Buffer.from(normalized.publicKey).toString("base64url"), userId: user.id,
+          webauthnUserId: Buffer.from(user.id).toString("base64url"),
+          name: pending.credentialName, createdAt: nowSeconds, deviceType: info.credentialDeviceType,
+          backedUp: info.credentialBackedUp,
+        };
+      }
+      let payload;
+      if (auth) {
+        payload = auth;
+        if (action === "reauth") current.sessions[auth.sid].authTime = nowSeconds;
+      } else payload = issueSession(current, user, response.id, config, nowSeconds, seed);
+      pending.fingerprint = fingerprint;
+      pending.result = payload;
+      return { payload, user };
+    });
+    return respond(completed);
+  }
+
+  const state = await store.read();
+  const { user } = persistedSession(state, auth, config, nowSeconds);
+  if (route === "session") return jsonResponse(config, 200, sessionResult(auth, user));
+  if (route === "sign") {
+    if (!user.permissions.includes("english-learning")) {
+      throw new HttpError(403, "MISSING_PERMISSION", "English learning access has not been granted");
+    }
+    return jsonResponse(config, 200, {
+      expiresAt: nowSeconds + config.cdnUrlTtlSeconds,
+      resources: signedResources(body, config, nowSeconds, randomBytesImpl),
+    });
+  }
+  if (route === "passkeys") {
+    return jsonResponse(config, 200, { credentials: userCredentials(state, user.id)
+      .map(({ id, name, createdAt, lastUsedAt, deviceType, backedUp }) => ({ id, name, createdAt, lastUsedAt, deviceType, backedUp })) });
+  }
+  if (["passkeys/rename", "passkeys/remove"].includes(route)) {
+    if (typeof body.credentialId !== "string") throw new HttpError(400, "INVALID_CREDENTIAL", "credentialId is required");
+    const name = route === "passkeys/rename" ? label(body.name, "name") : undefined;
+    await store.mutate((current) => {
+      const account = requireRecent(current, auth, config, nowSeconds).user;
+      const key = hash(body.credentialId);
+      const target = current.credentials[key];
+      if (!target || target.userId !== account.id) throw new HttpError(404, "NOT_FOUND", "Credential not found");
+      if (route === "passkeys/rename") target.name = name;
+      else {
+        if (userCredentials(current, account.id).length <= 1) {
+          throw new HttpError(409, "LAST_PASSKEY", "Add another Passkey before removing the last one");
+        }
+        delete current.credentials[key];
+        revokeUser(current, account);
+      }
+    });
+    return jsonResponse(config, 200, { updated: true, loginRequired: route === "passkeys/remove" },
+      route === "passkeys/remove" ? { "set-cookie": clearCookie(config) } : {});
+  }
+  if (route === "logout") {
+    await store.mutate((current) => { delete current.sessions[auth.sid]; });
+    return jsonResponse(config, 200, { authenticated: false }, { "set-cookie": clearCookie(config) });
+  }
+  throw new HttpError(404, "NOT_FOUND", "Route does not exist");
+}
+
+/** Trusted CLI only. No HTTP route exposes initialization, invitations or recovery. */
+export async function administer({ store, command, userId, displayName = "Owner", permissions = [],
+  invitationHash, credentials = [], ttlSeconds = 86400, nowSeconds = Math.floor(Date.now() / 1000), randomBytesImpl = randomBytes }) {
+  if (!Number.isInteger(ttlSeconds) || ttlSeconds < 300 || ttlSeconds > 604800) throw new Error("Invitation TTL must be 300..604800 seconds");
+  if (!Array.isArray(permissions) || permissions.some((value) => value !== "english-learning")) throw new Error("Invalid permissions");
+  const allowed = ["bootstrap", "reissue-bootstrap", "import-owner", "invite", "revoke-invite", "disable", "enable", "permissions", "recover", "list"];
+  if (!allowed.includes(command)) throw new Error("Unknown administrative command");
+  const token = randomBytesImpl(32).toString("base64url");
+  const tokenHash = hash(token);
+  const newUserId = opaqueId(randomBytesImpl);
+  return store.mutate((state) => {
+    pruneRegistry(state, nowSeconds);
+    if (["bootstrap", "import-owner"].includes(command)) {
+      if (state.initialized) throw new Error("Registry already initialized; use owner recovery if needed");
+      state.initialized = true;
+      state.bootstrapUserId = command === "import-owner" ? "owner" : newUserId;
+      if (command === "import-owner") {
+        if (!credentials.length || credentials.length > MAX_PASSKEYS) throw new Error("Provide 1..8 existing credentials");
+        state.users.owner = { id: "owner", displayName: label(displayName, "displayName"), role: "owner",
+          permissions: ["english-learning"], status: "active", version: 1, createdAt: nowSeconds };
+        for (const raw of credentials) {
+          const credential = normalizeCredential(raw, "credential");
+          const key = hash(credential.id);
+          if (state.credentials[key]) throw new Error("Duplicate credential");
+          state.credentials[key] = { ...credential, publicKey: Buffer.from(credential.publicKey).toString("base64url"),
+            webauthnUserId: raw.webauthnUserId,
+            userId: "owner", name: "Imported Passkey", createdAt: nowSeconds };
+        }
+        return { userId: "owner", imported: credentials.length };
+      }
+    } else if (!state.initialized) throw new Error("Registry must be initialized by the owner");
+
+    if (command === "reissue-bootstrap") {
+      if (!state.bootstrapUserId || state.users[state.bootstrapUserId]) {
+        throw new Error("Owner already enrolled; use recovery instead");
+      }
+      for (const [id, invite] of Object.entries(state.invites)) {
+        if (invite.userId === state.bootstrapUserId) delete state.invites[id];
+      }
+    }
+
+    if (command === "list") return {
+      users: Object.values(state.users).map(({ id, displayName: name, status, role, permissions: grants }) => ({ id, displayName: name, status, role, permissions: grants })),
+      invites: Object.entries(state.invites).map(([id, invite]) => ({ id, userId: invite.userId, kind: invite.kind, exp: invite.exp, used: !!invite.used })),
+    };
+    if (command === "revoke-invite") {
+      if (!Object.hasOwn(state.invites, invitationHash || "")) throw new Error("Unknown invitation hash");
+      delete state.invites[invitationHash];
+      return { revoked: true };
+    }
+    const user = Object.hasOwn(state.users, userId || "") ? state.users[userId] : undefined;
+    if (["disable", "enable", "permissions", "recover"].includes(command) && !user) throw new Error("Unknown user ID");
+    if (["disable", "enable", "permissions"].includes(command)) {
+      if (command === "enable" && !userCredentials(state, user.id).length) throw new Error("Recover a Passkey before enabling this account");
+      if (command === "permissions") user.permissions = [...new Set(permissions)];
+      else user.status = command === "disable" ? "disabled" : "active";
+      revokeUser(state, user);
+      for (const [id, invite] of Object.entries(state.invites)) {
+        if (invite.userId === user.id) delete state.invites[id];
+      }
+      return { userId: user.id, status: user.status, permissions: user.permissions };
+    }
+    if (Object.keys(state.invites).length >= 20) throw new Error("Invitation limit reached");
+    if (command === "recover") {
+      revokeUser(state, user);
+      user.status = "recovering";
+      for (const [id, credential] of Object.entries(state.credentials)) {
+        if (credential.userId === user.id) delete state.credentials[id];
+      }
+      for (const [id, invite] of Object.entries(state.invites)) {
+        if (invite.userId === user.id) delete state.invites[id];
+      }
+    }
+    const ownerEnrollment = ["bootstrap", "reissue-bootstrap"].includes(command);
+    const targetId = ownerEnrollment ? state.bootstrapUserId : user?.id || newUserId;
+    state.invites[tokenHash] = {
+      kind: command === "recover" ? "recovery" : "registration", userId: targetId,
+      role: ownerEnrollment ? "owner" : "member",
+      permissions: ownerEnrollment ? ["english-learning"] : [...new Set(permissions)],
+      userVersion: user?.version, exp: nowSeconds + ttlSeconds, used: false,
+    };
+    return { invitationToken: token, invitationHash: tokenHash, userId: targetId, expiresAt: nowSeconds + ttlSeconds };
+  }, { initialize: ["bootstrap", "import-owner"].includes(command) });
 }
 
 export const handler = createHandler();
