@@ -184,21 +184,20 @@ export default function PrivateAuth(): JSX.Element {
         <meta content="noindex,nofollow" name="robots" />
       </Helmet>
 
-      <main className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-[#070a12] text-slate-100">
+      <main className="relative h-[calc(100dvh-4rem)] overflow-hidden bg-[#070a12] text-slate-100">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.035)_1px,transparent_1px)] bg-[size:52px_52px]" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(600px_circle_at_50%_8%,rgba(34,211,238,0.11),transparent_68%)]" />
 
-        <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-md items-center px-5 py-10 sm:px-0">
+        <div className="relative mx-auto flex h-full max-w-md items-center px-5 py-3 sm:px-0 sm:py-5">
           <section className="w-full rounded-3xl border border-white/10 bg-[#0a0e18]/95 p-1 shadow-[0_30px_100px_rgba(0,0,0,0.42)]">
-            <div className="rounded-[22px] border border-white/[0.06] bg-[#080c15] p-6 sm:p-8">
-              <div className="mb-7">
+            <div className="rounded-[22px] border border-white/[0.06] bg-[#080c15] p-4 sm:p-6">
+              <div className="mb-4">
                 <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">PRIVATE ACCESS</p>
-                <h1 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-white">私人学习空间</h1>
-                <p className="mt-2 text-sm text-slate-500">使用 Passkey 验证身份</p>
+                <h1 className="mt-1.5 text-xl font-semibold tracking-[-0.03em] text-white">私人学习空间</h1>
               </div>
 
               {isCheckingSession ? (
-                <div aria-live="polite" className="flex min-h-56 flex-col items-center justify-center text-center">
+                <div aria-live="polite" className="flex min-h-48 flex-col items-center justify-center text-center">
                   <RefreshCw className="size-6 animate-spin text-cyan-300" />
                   <p className="mt-4 text-sm text-slate-500">正在检查登录状态…</p>
                 </div>
@@ -237,7 +236,7 @@ export default function PrivateAuth(): JSX.Element {
                     {(["login", "register"] as const).map((item) => (
                       <button
                         aria-pressed={mode === item}
-                        className={`rounded-lg px-3 py-2.5 text-sm transition ${mode === item ? "bg-white/10 text-white" : "text-slate-600 hover:text-slate-300"}`}
+                        className={`rounded-lg px-3 py-2 text-sm transition ${mode === item ? "bg-white/10 text-white" : "text-slate-600 hover:text-slate-300"}`}
                         key={item}
                         onClick={() => {
                           setMode(item);
@@ -259,7 +258,7 @@ export default function PrivateAuth(): JSX.Element {
                   )}
 
                   {mode === "login" ? (
-                    <div className="pt-5">
+                    <div className="pt-3">
                       <button
                         className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100 disabled:cursor-wait disabled:opacity-50"
                         disabled={isBusy || !supportsWebAuthn}
@@ -271,13 +270,13 @@ export default function PrivateAuth(): JSX.Element {
                       </button>
                     </div>
                   ) : (
-                    <form className="space-y-4 pt-5" onSubmit={handleRegister}>
+                    <form className="space-y-2.5 pt-3" onSubmit={handleRegister}>
                       <div>
-                        <label className="text-sm font-medium text-slate-300" htmlFor="invitation-token">邀请码</label>
+                        <label className="text-xs font-medium text-slate-300" htmlFor="invitation-token">邀请码</label>
                         <input
                           autoCapitalize="none"
                           autoComplete="one-time-code"
-                          className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 font-mono text-base tracking-[0.08em] text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-2.5 font-mono text-base tracking-[0.08em] text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
                           id="invitation-token"
                           maxLength={16}
                           minLength={16}
@@ -289,10 +288,10 @@ export default function PrivateAuth(): JSX.Element {
                         />
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-slate-300" htmlFor="display-name">显示名称</label>
+                        <label className="text-xs font-medium text-slate-300" htmlFor="display-name">显示名称</label>
                         <input
                           autoComplete="name"
-                          className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-base text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-2.5 text-base text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
                           id="display-name"
                           maxLength={80}
                           onChange={(event) => setDisplayName(event.target.value)}
@@ -302,9 +301,9 @@ export default function PrivateAuth(): JSX.Element {
                         />
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-slate-300" htmlFor="credential-name">Passkey 名称</label>
+                        <label className="text-xs font-medium text-slate-300" htmlFor="credential-name">Passkey 名称</label>
                         <input
-                          className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-base text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-2.5 text-base text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
                           id="credential-name"
                           maxLength={80}
                           onChange={(event) => setCredentialName(event.target.value)}
@@ -346,7 +345,7 @@ export default function PrivateAuth(): JSX.Element {
                 </div>
               )}
 
-              <Link className="mt-7 inline-flex items-center gap-2 text-xs text-slate-600 transition hover:text-slate-300" to="/">
+              <Link className="mt-4 inline-flex items-center gap-2 text-xs text-slate-600 transition hover:text-slate-300" to="/">
                 <ArrowLeft className="size-3.5" />
                 返回首页
               </Link>

@@ -6,7 +6,7 @@ import {
   useState,
   type JSX,
 } from "react";
-import { BookOpen, Heart, House, KeyRound, Terminal } from "lucide-react";
+import { BookOpen, Heart, House, Terminal, UserRound } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 import { terminalOpenEvent } from "@/lib/terminal";
@@ -18,7 +18,7 @@ const TerminalDialog = lazy(
 const navigation = [
   { icon: House, label: "首页", to: "/" },
   { icon: BookOpen, label: "笔记", to: "/notes" },
-  { icon: KeyRound, label: "私人内容登录", to: "/auth" },
+  { icon: UserRound, label: "个人信息", to: "/auth" },
   { icon: Heart, label: "婚礼纪念", to: "/wedding" },
 ];
 
