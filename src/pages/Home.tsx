@@ -4,6 +4,7 @@ import {
   BookOpen,
   Code2,
   LineChart,
+  LockKeyhole,
   Sparkles,
   Terminal,
 } from "lucide-react";
@@ -84,6 +85,13 @@ export default function Home(): JSX.Element {
                     Ctrl + `
                   </span>
                 </button>
+                <Link
+                  className="group inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-5 py-3 text-sm font-medium text-slate-300 transition hover:border-violet-300/30 hover:bg-violet-300/[0.08] hover:text-violet-100"
+                  to="/resources"
+                >
+                  <LockKeyhole className="size-4 transition group-hover:scale-110" />
+                  访问私人资源
+                </Link>
               </div>
             </div>
 

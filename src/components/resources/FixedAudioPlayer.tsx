@@ -48,20 +48,28 @@ export default function FixedAudioPlayer({ audioUrl, title }: Props): JSX.Elemen
             <MediaTimeDisplay showDuration />
             <MediaTimeRange />
           </MediaControlBar>
-          <div className="grid min-h-14 grid-cols-[1fr_auto_1fr] items-center px-1">
-            <div className="flex min-w-0 justify-start">
+          <div className="relative min-h-14 px-1 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+            <div className="absolute left-0 top-1/2 flex min-w-0 -translate-y-1/2 justify-start sm:static sm:translate-y-0">
               <MediaPlaybackRateButton aria-label="调整播放速度" />
             </div>
-            <div className="flex items-center justify-center gap-1 sm:gap-2">
-              <MediaSeekBackwardButton aria-label="后退 10 秒" seekOffset={10} />
+            <div className="contents sm:flex sm:items-center sm:justify-center sm:gap-2">
+              <MediaSeekBackwardButton
+                aria-label="后退 10 秒"
+                className="absolute left-1/4 top-1/2 -translate-x-1/2 -translate-y-1/2 sm:static sm:translate-x-0 sm:translate-y-0"
+                seekOffset={10}
+              />
               <MediaPlayButton
                 aria-label="播放或暂停"
-                className="size-12 rounded-full bg-cyan-300/10 text-cyan-100 transition hover:bg-cyan-300/20"
+                className="absolute left-1/2 top-1/2 size-12 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300/10 text-cyan-100 transition hover:bg-cyan-300/20 sm:static sm:translate-x-0 sm:translate-y-0"
                 style={playButtonStyles}
               />
-              <MediaSeekForwardButton aria-label="前进 10 秒" seekOffset={10} />
+              <MediaSeekForwardButton
+                aria-label="前进 10 秒"
+                className="absolute left-3/4 top-1/2 -translate-x-1/2 -translate-y-1/2 sm:static sm:translate-x-0 sm:translate-y-0"
+                seekOffset={10}
+              />
             </div>
-            <div className="flex min-w-0 items-center justify-end">
+            <div className="absolute right-0 top-1/2 flex min-w-0 -translate-y-1/2 items-center justify-end sm:static sm:translate-y-0">
               <MediaMuteButton aria-label="静音" />
               <MediaVolumeRange className="hidden sm:inline-flex" />
             </div>

@@ -9,6 +9,7 @@ function App() {
   const { pathname } = useLocation();
   const showAiDisclaimer =
     pathname === "/" || pathname.startsWith("/notes");
+  const showFooter = !pathname.startsWith("/resources");
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -21,7 +22,7 @@ function App() {
         {showAiDisclaimer && <AiDisclaimer />}
       </div>
       <Outlet />
-      <Footer />
+      {showFooter && <Footer />}
     </div>
   );
 }
