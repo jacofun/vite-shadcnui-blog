@@ -90,7 +90,7 @@ export default function PrivateResourceItem(): JSX.Element {
         <title>{episode ? `${episode.title} · ${collection?.title ?? "私人资源"}` : "私人资源 · 彦骁的笔记"}</title>
         <meta content="noindex,nofollow" name="robots" />
       </Helmet>
-      <main className="min-h-[calc(100dvh-4rem)] bg-[#070a12] px-6 pb-40 pt-10 text-slate-100 sm:px-8 sm:pb-44 sm:pt-14 lg:px-10">
+      <main className="min-h-[calc(100svh-4rem)] bg-[#070a12] px-6 pb-48 pt-10 text-slate-100 sm:px-8 sm:pb-48 sm:pt-14 lg:px-10">
         <article className="mx-auto max-w-3xl">
           <Link className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-cyan-300" to={collectionPath}>
             <ArrowLeft className="size-4" />返回{collection?.title ?? "私人资源"}

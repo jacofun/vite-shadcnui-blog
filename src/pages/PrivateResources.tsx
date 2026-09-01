@@ -39,7 +39,7 @@ export default function PrivateResources(): JSX.Element {
         <meta content="noindex,nofollow" name="robots" />
       </Helmet>
 
-      <main className="min-h-[calc(100dvh-4rem)] bg-[#070a12] px-6 py-12 text-slate-100 sm:px-8 sm:py-16 lg:px-10">
+      <main className="min-h-[calc(100svh-4rem)] bg-[#070a12] px-6 py-12 text-slate-100 sm:px-8 sm:py-16 lg:px-10">
         <div className="mx-auto max-w-6xl">
           <header className="max-w-3xl">
             <div className="flex items-center gap-2 font-mono text-xs tracking-[0.18em] text-cyan-300">
