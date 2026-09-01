@@ -180,8 +180,9 @@ node scripts/admin.mjs permissions <user-id>
 
 `bootstrap` creates the initial owner invitation and refuses an initialized store. If that token
 is lost before enrollment, use `reissue-bootstrap`. Ordinary invites create members; the browser
-cannot choose role or permissions. Invitation bearer tokens are random, returned once, stored only
-as SHA-256 hashes and expire after 24 hours by default. Configure `INVITATION_TTL_SECONDS` between
+cannot choose role or permissions. Invitation bearer tokens contain 96 bits of randomness encoded
+as 16 Base64URL characters, are returned once, stored only as SHA-256 hashes and expire after
+24 hours by default. Configure `INVITATION_TTL_SECONDS` between
 300 and 604800 seconds.
 
 For full credential loss, verify identity outside the site and run:

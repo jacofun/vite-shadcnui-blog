@@ -90,16 +90,21 @@ test("uninitialized persistent mode fails closed and never falls back to env cre
 
 test("owner bootstrap and member invitations enforce server-side roles and grants", async () => {
   const h = harness();
-  const owner = await h.register(await h.admin("bootstrap"));
+  const bootstrap = await h.admin("bootstrap");
+  assert.match(bootstrap.invitationToken, /^[A-Za-z0-9_-]{16}$/);
+  assert.equal(bootstrap.invitationToken.length, 16);
+  const owner = await h.register(bootstrap);
   assert.equal(owner.user.role, "owner");
   assert.equal((await h.call("sign", { ...owner, body: { resource: "index" } })).statusCode, 200);
   const invite = await h.admin("invite");
+  assert.equal(invite.invitationToken.length, 16);
   const step = await h.start(invite, { role: "owner", permissions: ["english-learning"] });
   const res = await h.call("register/verify", { cookies: step.cookies, body: { credential: credential(), role: "owner" } });
   assert.equal(json(res).user.role, "member");
   assert.deepEqual(json(res).user.permissions, []);
   assert.equal((await h.call("sign", { cookies: [cookie(res)], csrf: json(res).csrfToken, body: { resource: "index" } })).statusCode, 403);
   assert.equal((await h.call("register/options", { body: { invitationToken: invite.invitationToken, displayName: "again" } })).statusCode, 403);
+  assert.equal((await h.call("register/options", { body: { invitationToken: randomBytes(32).toString("base64url"), displayName: "old format" } })).statusCode, 403);
   assert.equal(JSON.stringify(await h.store.read()).includes(invite.invitationToken), false);
 });
 

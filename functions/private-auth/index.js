@@ -641,6 +641,8 @@ const REGISTRY_MAX_BYTES = 60 * 1024;
 const MAX_USERS = 20;
 const MAX_PASSKEYS = 8;
 const RECENT_AUTH_SECONDS = 300;
+const INVITATION_TOKEN_BYTES = 12;
+const INVITATION_TOKEN_PATTERN = /^[A-Za-z0-9_-]{16}$/;
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const opaqueId = (random = randomBytes) => random(24).toString("hex");
 
@@ -976,7 +978,7 @@ function label(value, field) {
 }
 
 function inviteFromToken(state, token, nowSeconds) {
-  if (typeof token !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(token)) {
+  if (typeof token !== "string" || !INVITATION_TOKEN_PATTERN.test(token)) {
     throw new HttpError(403, "INVALID_INVITATION", "Invitation is invalid or expired");
   }
   const key = hash(token);
@@ -1277,7 +1279,7 @@ export async function administer({ store, command, userId, displayName = "Owner"
   if (!Array.isArray(permissions) || permissions.some((value) => value !== "english-learning")) throw new Error("Invalid permissions");
   const allowed = ["bootstrap", "reissue-bootstrap", "import-owner", "invite", "revoke-invite", "disable", "enable", "permissions", "recover", "list"];
   if (!allowed.includes(command)) throw new Error("Unknown administrative command");
-  const token = randomBytesImpl(32).toString("base64url");
+  const token = randomBytesImpl(INVITATION_TOKEN_BYTES).toString("base64url");
   const tokenHash = hash(token);
   const newUserId = opaqueId(randomBytesImpl);
   return store.mutate((state) => {
