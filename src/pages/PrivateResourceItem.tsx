@@ -1,13 +1,13 @@
-import { ArrowLeft, CalendarDays, ExternalLink, File, RefreshCw } from "lucide-react";
+import { ArrowLeft, CalendarDays, ExternalLink, File, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import FixedAudioPlayer from "@/components/resources/FixedAudioPlayer";
 import FlvVideoPlayer from "@/components/resources/FlvVideoPlayer";
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
-import { signLegacyPrivateLearningEpisode, signPrivateResourcePaths } from "@/lib/privateAuth";
+import { deletePrivateResourceFile, signLegacyPrivateLearningEpisode, signPrivateResourcePaths } from "@/lib/privateAuth";
 import { fetchPrivateFileItem, formatFileBytes, type PrivateFileItem } from "@/lib/privateFiles";
 import { fetchPrivateLearningEpisode, fetchPrivateLearningTranscript, type PrivateLearningEpisode } from "@/lib/privateLearning";
 import { loadPrivateResourceCatalog, privateResourceItemPath, usesLegacyPrivateAuth, type PrivateResourceCollection } from "@/lib/privateResources";
@@ -17,6 +17,7 @@ const itemIdPattern = /^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/;
 export default function PrivateResourceItem(): JSX.Element {
   const { collectionId = "", itemId = "" } = useParams();
   const access = usePrivateResourceSession();
+  const navigate = useNavigate();
   const [collection, setCollection] = useState<PrivateResourceCollection | null>(null);
   const [episode, setEpisode] = useState<PrivateLearningEpisode | null>(null);
   const [file, setFile] = useState<PrivateFileItem | null>(null);
@@ -24,6 +25,7 @@ export default function PrivateResourceItem(): JSX.Element {
   const [mediaUrl, setMediaUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const transcriptSections = useMemo(() => transcript.split(/\n{2,}/).map((section) => section.trim()).filter(Boolean), [transcript]);
 
   useEffect(() => {
@@ -83,6 +85,21 @@ export default function PrivateResourceItem(): JSX.Element {
   const invalidItem = !itemIdPattern.test(itemId);
   const collectionPath = collection ? `/resources/${collection.collectionId}` : "/resources";
   const title = file?.originalName || episode?.title;
+  const canWrite = access.session?.user.role === "owner" || access.session?.user.permissions.includes("private-resources-write");
+
+  async function deleteFile(): Promise<void> {
+    if (!access.session || !collection || !file || !canWrite) return;
+    if (!window.confirm(`确定删除文件“${file.originalName}”吗？删除后无法恢复。`)) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await deletePrivateResourceFile(access.session, collection.collectionId, file.itemId);
+      navigate(`/resources/${collection.collectionId}`, { replace: true });
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "文件删除失败");
+      setDeleting(false);
+    }
+  }
 
   return (
     <>
@@ -95,8 +112,9 @@ export default function PrivateResourceItem(): JSX.Element {
           {file && <>
             <header className="mt-9 border-b border-white/10 pb-9">
               <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">PRIVATE FILE</p>
-              <h1 className="mt-4 break-words text-3xl font-semibold tracking-[-0.035em] text-white sm:text-5xl">{file.originalName}</h1>
+              <h1 className="mt-4 max-w-full break-all text-3xl font-semibold tracking-[-0.035em] text-white sm:text-5xl">{file.originalName}</h1>
               <p className="mt-5 text-sm text-slate-500">{file.format.toUpperCase()} · {formatFileBytes(file.bytes)} · {new Date(file.uploadedAt).toLocaleString()}</p>
+              {canWrite && <button className="mt-6 inline-flex items-center gap-2 rounded-xl border border-rose-300/15 bg-rose-300/[0.04] px-4 py-2.5 text-sm text-rose-200 disabled:opacity-50" disabled={deleting} onClick={() => void deleteFile()} type="button">{deleting ? <RefreshCw className="size-4 animate-spin" /> : <Trash2 className="size-4" />}删除文件</button>}
             </header>
             <section className="mt-9">
               {file.format === "mp3" && mediaUrl && <FixedAudioPlayer audioUrl={mediaUrl} title={file.originalName} />}

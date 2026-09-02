@@ -399,7 +399,8 @@ function routeName(path, cookiePath, persistent = false) {
   const apiPrefix = cookiePath.replace(/\/+$/, "");
   const knownRoutes = [
     "challenge", "verify", "session", "sign", "logout", "uploads/init", "uploads/complete",
-    "collections/create",
+    "collections/create", "collections/delete", "files/delete",
+    "clipboard/get", "clipboard/save", "clipboard/delete",
   ];
   if (persistent) knownRoutes.push(
     "register/options", "register/verify", "reauth/challenge", "reauth/verify",
@@ -407,6 +408,10 @@ function routeName(path, cookiePath, persistent = false) {
   );
   return knownRoutes.find((route) =>
     normalized === `/${route}` || normalized === `${apiPrefix}/${route}`);
+}
+
+function usesPrivateContentStore(route) {
+  return ["uploads/", "collections/", "files/", "clipboard/"].some((prefix) => route.startsWith(prefix));
 }
 
 function jsonResponse(config, statusCode, body, extraHeaders = {}) {
@@ -831,6 +836,12 @@ export async function createPrivateResourceContentStore({ env = process.env, con
         }
       }
     },
+    async deletePaths(paths) {
+      const names = [...new Set(paths.map(objectName))];
+      for (let offset = 0; offset < names.length; offset += 1000) {
+        await oss.deleteMulti(names.slice(offset, offset + 1000), { quiet: true });
+      }
+    },
     async updateJson(path, { missing, validate }, change) {
       const run = contentIndexUpdate.then(async () => {
         const lockPath = `${path}.upload-lock`;
@@ -901,12 +912,54 @@ function validMediaHeader(format, bytes) {
   return true;
 }
 
-async function handlePrivateResourceCollection({ body, user, config, contentStore, nowSeconds, randomBytesImpl }) {
+async function handlePrivateResourceCollection({ route, body, user, config, contentStore, nowSeconds, randomBytesImpl }) {
   if (user.role !== "owner") {
     throw new HttpError(403, "MISSING_PERMISSION", "Only the owner can create private collections");
   }
   if (!contentStore) {
     throw new HttpError(503, "CONTENT_STORE_UNAVAILABLE", "Private resource storage is unavailable");
+  }
+  if (route === "collections/delete") {
+    const collectionId = uploadText(body.collectionId, "collectionId", 64);
+    const currentCatalog = await contentStore.readJson(`${config.privateRoot}/index.json`, {
+      missing: fallbackPrivateCatalog(config),
+    });
+    const removed = currentCatalog.collections?.find((item) => item.collectionId === collectionId);
+    if (!removed) throw new HttpError(404, "NOT_FOUND", "Private collection was not found");
+    if (removed.type !== "files") {
+      throw new HttpError(400, "COLLECTION_PROTECTED", "This collection cannot be deleted");
+    }
+    const indexPath = normalizePrivateResourcePath(removed.indexPath, config);
+    const basePath = normalizePrivateResourcePath(removed.basePath, config);
+    const index = await contentStore.readJson(indexPath, {
+      missing: { schemaVersion: 1, updatedAt: null, items: [] },
+    });
+    if (index?.schemaVersion !== 1 || !Array.isArray(index.items)) {
+      throw new HttpError(503, "INVALID_RESOURCE_INDEX", "Private resource index is invalid");
+    }
+    const paths = [indexPath];
+    for (const item of index.items) {
+      const objectPath = normalizePrivateResourcePath(item.objectPath, config);
+      const metadataPath = normalizePrivateResourcePath(item.metadataPath, config);
+      const itemPrefix = `${basePath}/items/${item.itemId}/`;
+      if (!objectPath.startsWith(itemPrefix) || !metadataPath.startsWith(itemPrefix)) {
+        throw new HttpError(503, "INVALID_RESOURCE_INDEX", "Private resource index is invalid");
+      }
+      paths.push(objectPath, metadataPath);
+    }
+    await contentStore.updateJson(`${config.privateRoot}/index.json`, {
+      missing: fallbackPrivateCatalog(config),
+      validate: (value) => value?.schemaVersion === 1 && Array.isArray(value.collections),
+    }, (catalog) => {
+      const latest = catalog.collections.find((item) => item.collectionId === collectionId);
+      if (!latest) throw new HttpError(404, "NOT_FOUND", "Private collection was not found");
+      if (latest.type !== "files") throw new HttpError(400, "COLLECTION_PROTECTED", "This collection cannot be deleted");
+      catalog.updatedAt = new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
+      catalog.collections = catalog.collections.filter((item) => item.collectionId !== collectionId);
+      return catalog;
+    });
+    await contentStore.deletePaths(paths);
+    return { deleted: true, collectionId };
   }
   const collectionId = `files-${randomBytesImpl(8).toString("hex")}`;
   const basePath = `${config.privateRoot}/collections/${collectionId}`;
@@ -931,6 +984,100 @@ async function handlePrivateResourceCollection({ body, user, config, contentStor
     return catalog;
   });
   return { created: true, collection };
+}
+
+async function handlePrivateFileDelete({ body, user, config, contentStore, nowSeconds }) {
+  if (!hasPrivateResourceWriteAccess(user)) {
+    throw new HttpError(403, "MISSING_PERMISSION", "Private resource write access has not been granted");
+  }
+  const collectionId = uploadText(body.collectionId, "collectionId", 64);
+  const itemId = uploadText(body.itemId, "itemId", 100);
+  if (!EPISODE_ID_PATTERN.test(itemId)) throw new HttpError(400, "INVALID_UPLOAD", "itemId is invalid");
+  const catalog = await contentStore.readJson(`${config.privateRoot}/index.json`, {
+    missing: fallbackPrivateCatalog(config),
+  });
+  const collection = catalog.collections?.find((item) => item.collectionId === collectionId);
+  if (!collection || collection.type !== "files") {
+    throw new HttpError(404, "NOT_FOUND", "Private file collection was not found");
+  }
+  const indexPath = normalizePrivateResourcePath(collection.indexPath, config);
+  const basePath = normalizePrivateResourcePath(collection.basePath, config);
+  const deletedAt = new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
+  let removed;
+  let objectPath;
+  let metadataPath;
+  await contentStore.updateJson(indexPath, {
+    missing: { schemaVersion: 1, updatedAt: null, items: [] },
+    validate: (value) => value?.schemaVersion === 1 && Array.isArray(value.items),
+  }, (index) => {
+    removed = index.items.find((item) => item.itemId === itemId);
+    if (!removed) {
+      throw new HttpError(404, "NOT_FOUND", "Private file was not found");
+    }
+    objectPath = normalizePrivateResourcePath(removed.objectPath, config);
+    metadataPath = normalizePrivateResourcePath(removed.metadataPath, config);
+    const itemPrefix = `${basePath}/items/${itemId}/`;
+    if (!objectPath.startsWith(itemPrefix) || !metadataPath.startsWith(itemPrefix)) {
+      throw new HttpError(503, "INVALID_RESOURCE_INDEX", "Private resource index is invalid");
+    }
+    index.updatedAt = deletedAt;
+    index.items = index.items.filter((item) => item.itemId !== itemId);
+    return index;
+  });
+  await contentStore.deletePaths([objectPath, metadataPath]);
+  return { deleted: true, collectionId, itemId };
+}
+
+function clipboardDocument() {
+  return { schemaVersion: 1, updatedAt: null, entries: [] };
+}
+
+function validClipboardDocument(value) {
+  return value?.schemaVersion === 1 && Array.isArray(value.entries) && value.entries.length <= 100 &&
+    value.entries.every((entry) => entry && EPISODE_ID_PATTERN.test(entry.id) &&
+      typeof entry.text === "string" && entry.text.length > 0 && entry.text.length <= 20_000 &&
+      typeof entry.createdAt === "string");
+}
+
+async function handlePrivateClipboard({ route, body, user, config, contentStore, nowSeconds, randomBytesImpl }) {
+  if (!hasPrivateResourceAccess(user)) {
+    throw new HttpError(403, "MISSING_PERMISSION", "Private resource access has not been granted");
+  }
+  const path = `${config.privateRoot}/clipboard/index.json`;
+  if (route === "clipboard/get") {
+    const clipboard = await contentStore.readJson(path, { missing: clipboardDocument() });
+    if (!validClipboardDocument(clipboard)) {
+      throw new HttpError(503, "INVALID_RESOURCE_INDEX", "Private clipboard is invalid");
+    }
+    return clipboard;
+  }
+  if (!hasPrivateResourceWriteAccess(user)) {
+    throw new HttpError(403, "MISSING_PERMISSION", "Private resource write access has not been granted");
+  }
+  const timestamp = new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
+  let entry;
+  await contentStore.updateJson(path, {
+    missing: clipboardDocument(),
+    validate: validClipboardDocument,
+  }, (clipboard) => {
+    if (route === "clipboard/save") {
+      const value = uploadText(body.text, "text", 20_000);
+      if (clipboard.entries.length >= 100) {
+        throw new HttpError(409, "CLIPBOARD_FULL", "Private clipboard has reached 100 entries");
+      }
+      entry = { id: randomBytesImpl(12).toString("hex"), text: value, createdAt: timestamp };
+      clipboard.entries.unshift(entry);
+    } else {
+      const id = uploadText(body.id, "id", 100);
+      if (!EPISODE_ID_PATTERN.test(id) || !clipboard.entries.some((item) => item.id === id)) {
+        throw new HttpError(404, "NOT_FOUND", "Clipboard entry was not found");
+      }
+      clipboard.entries = clipboard.entries.filter((item) => item.id !== id);
+    }
+    clipboard.updatedAt = timestamp;
+    return clipboard;
+  });
+  return route === "clipboard/save" ? { saved: true, entry } : { deleted: true };
 }
 
 async function handlePrivateResourceUpload({
@@ -1134,7 +1281,7 @@ export function createHandler({
 
       if (config.storeMode === "oss") {
         const persistentStore = store || await createOssEventStore({ env, context });
-        const privateContentStore = route.startsWith("uploads/") || route.startsWith("collections/")
+        const privateContentStore = usesPrivateContentStore(route)
           ? contentStore || await createPrivateResourceContentStore({ env, context })
           : contentStore;
         return await persistentRequest({
@@ -1222,14 +1369,22 @@ export function createHandler({
       const session = requireSession(request, config, nowSeconds);
       requireCsrf(request, session);
 
-      if (route.startsWith("uploads/") || route.startsWith("collections/")) {
+      if (usesPrivateContentStore(route)) {
         const privateContentStore = contentStore || await createPrivateResourceContentStore({ env, context });
         const body = parseJsonBody(request.body);
         const user = { id: "owner", role: "owner", permissions: [] };
-        const result = route === "collections/create"
+        const result = route.startsWith("collections/")
           ? await handlePrivateResourceCollection({
-            body, user, config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
+            route, body, user, config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
           })
+          : route === "files/delete"
+            ? await handlePrivateFileDelete({
+              body, user, config, contentStore: privateContentStore, nowSeconds,
+            })
+            : route.startsWith("clipboard/")
+              ? await handlePrivateClipboard({
+                route, body, user, config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
+              })
           : await handlePrivateResourceUpload({
             route, body, user, auth: session,
             config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
@@ -1876,7 +2031,23 @@ async function persistentRequest(options) {
   }
   if (route === "collections/create") {
     const result = await handlePrivateResourceCollection({
-      body, user, config, contentStore, nowSeconds, randomBytesImpl,
+      route, body, user, config, contentStore, nowSeconds, randomBytesImpl,
+    });
+    return jsonResponse(config, 200, result);
+  }
+  if (route === "collections/delete") {
+    const result = await handlePrivateResourceCollection({
+      route, body, user, config, contentStore, nowSeconds, randomBytesImpl,
+    });
+    return jsonResponse(config, 200, result);
+  }
+  if (route === "files/delete") {
+    const result = await handlePrivateFileDelete({ body, user, config, contentStore, nowSeconds });
+    return jsonResponse(config, 200, result);
+  }
+  if (route.startsWith("clipboard/")) {
+    const result = await handlePrivateClipboard({
+      route, body, user, config, contentStore, nowSeconds, randomBytesImpl,
     });
     return jsonResponse(config, 200, result);
   }

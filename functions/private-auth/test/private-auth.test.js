@@ -377,6 +377,7 @@ test("owner creates a file collection and publishes a verified FLV upload", asyn
   };
   const json = new Map();
   const uploaded = new Map();
+  const deletedPaths = [];
   const contentStore = {
     async readJson(path, options) {
       if (path === "/private/index.json") return catalog;
@@ -385,14 +386,17 @@ test("owner creates a file collection and publishes a verified FLV upload", asyn
     async putJsonOnce(path, value) {
       if (!json.has(path)) json.set(path, structuredClone(value));
     },
-    async updateJson(path, _options, change) {
+    async updateJson(path, options, change) {
       if (path === "/private/index.json") {
         catalog = change(structuredClone(catalog));
         return catalog;
       }
-      const next = change(structuredClone(json.get(path)));
+      const next = change(structuredClone(json.get(path) || options.missing));
       json.set(path, next);
       return next;
+    },
+    async deletePaths(paths) {
+      deletedPaths.push(...paths);
     },
     signUpload(path) {
       return `https://private-content.example${path}`;
@@ -444,4 +448,36 @@ test("owner creates a file collection and publishes a verified FLV upload", asyn
   }));
   assert.equal(completed.statusCode, 200, completed.body);
   assert.equal(json.get(collection.indexPath).items[0].format, "flv");
+
+  const savedClipboard = await handler(request({
+    method: "POST", path: "/clipboard/save", cookie, csrf,
+    body: { text: "A private clipboard value" },
+  }));
+  assert.equal(savedClipboard.statusCode, 200, savedClipboard.body);
+  const clipboardEntry = responseJson(savedClipboard).entry;
+  const loadedClipboard = await handler(request({
+    method: "POST", path: "/clipboard/get", cookie, csrf, body: {},
+  }));
+  assert.equal(responseJson(loadedClipboard).entries[0].text, "A private clipboard value");
+  const deletedClipboard = await handler(request({
+    method: "POST", path: "/clipboard/delete", cookie, csrf, body: { id: clipboardEntry.id },
+  }));
+  assert.equal(deletedClipboard.statusCode, 200, deletedClipboard.body);
+
+  const deletedFile = await handler(request({
+    method: "POST", path: "/files/delete", cookie, csrf,
+    body: { collectionId: collection.collectionId, itemId: upload.itemId },
+  }));
+  assert.equal(deletedFile.statusCode, 200, deletedFile.body);
+  assert.equal(json.get(collection.indexPath).items.length, 0);
+  assert.match(deletedPaths[0], new RegExp(`/items/${upload.itemId}/file\.flv$`));
+  assert.match(deletedPaths[1], new RegExp(`/items/${upload.itemId}/metadata\.json$`));
+
+  const deletedCollection = await handler(request({
+    method: "POST", path: "/collections/delete", cookie, csrf,
+    body: { collectionId: collection.collectionId },
+  }));
+  assert.equal(deletedCollection.statusCode, 200, deletedCollection.body);
+  assert.equal(catalog.collections.length, 0);
+  assert.equal(deletedPaths[2], collection.indexPath);
 });

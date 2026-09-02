@@ -244,3 +244,57 @@ export function createPrivateResourceCollection(
     signal,
   });
 }
+
+export interface PrivateClipboardEntry {
+  id: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface PrivateClipboard {
+  schemaVersion: 1;
+  updatedAt: string | null;
+  entries: PrivateClipboardEntry[];
+}
+
+export function deletePrivateResourceCollection(
+  session: PrivateAuthSession,
+  collectionId: string,
+): Promise<{ deleted: true; collectionId: string }> {
+  return request("collections/delete", {
+    body: { collectionId },
+    csrfToken: session.csrfToken,
+  });
+}
+
+export function deletePrivateResourceFile(
+  session: PrivateAuthSession,
+  collectionId: string,
+  itemId: string,
+): Promise<{ deleted: true; collectionId: string; itemId: string }> {
+  return request("files/delete", {
+    body: { collectionId, itemId },
+    csrfToken: session.csrfToken,
+  });
+}
+
+export function getPrivateClipboard(
+  session: PrivateAuthSession,
+  signal?: AbortSignal,
+): Promise<PrivateClipboard> {
+  return request("clipboard/get", { body: {}, csrfToken: session.csrfToken, signal });
+}
+
+export function savePrivateClipboardText(
+  session: PrivateAuthSession,
+  text: string,
+): Promise<{ saved: true; entry: PrivateClipboardEntry }> {
+  return request("clipboard/save", { body: { text }, csrfToken: session.csrfToken });
+}
+
+export function deletePrivateClipboardEntry(
+  session: PrivateAuthSession,
+  id: string,
+): Promise<{ deleted: true }> {
+  return request("clipboard/delete", { body: { id }, csrfToken: session.csrfToken });
+}

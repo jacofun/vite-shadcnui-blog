@@ -1,10 +1,12 @@
-import { ArrowRight, FolderLock, FolderPlus, Headphones, RefreshCw, ShieldCheck, UploadCloud } from "lucide-react";
+import { ArrowRight, FolderLock, FolderPlus, Headphones, LogOut, RefreshCw, ShieldCheck, UploadCloud } from "lucide-react";
 import { useEffect, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
+import PrivateClipboard from "@/components/resources/PrivateClipboard";
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
+import { logoutPrivateAuth } from "@/lib/privateAuth";
 import {
   loadPrivateResourceCatalog,
   type PrivateResourceCatalog,
@@ -12,8 +14,10 @@ import {
 
 export default function PrivateResources(): JSX.Element {
   const access = usePrivateResourceSession();
+  const navigate = useNavigate();
   const [catalog, setCatalog] = useState<PrivateResourceCatalog | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     if (access.status !== "ready" || !access.session) return;
@@ -34,6 +38,18 @@ export default function PrivateResources(): JSX.Element {
   const canUpload = access.session?.user.role === "owner" ||
     access.session?.user.permissions.includes("private-resources-write") === true;
 
+  async function logout(): Promise<void> {
+    if (!access.session || loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await logoutPrivateAuth(access.session);
+      navigate("/auth", { replace: true });
+    } catch (logoutError) {
+      setError(logoutError instanceof Error ? logoutError.message : "退出登录失败");
+      setLoggingOut(false);
+    }
+  }
+
   return (
     <>
       <Helmet>
@@ -44,7 +60,7 @@ export default function PrivateResources(): JSX.Element {
 
       <main className="min-h-[calc(100svh-4rem)] bg-[#070a12] px-6 py-12 text-slate-100 sm:px-8 sm:py-16 lg:px-10">
         <div className="mx-auto max-w-6xl">
-          <header className="max-w-3xl">
+          <header className="relative max-w-3xl">
             <div className="flex items-center gap-2 font-mono text-xs tracking-[0.18em] text-cyan-300">
               <ShieldCheck className="size-4" />
               PRIVATE RESOURCES
@@ -54,8 +70,11 @@ export default function PrivateResources(): JSX.Element {
             <div className="mt-7 flex flex-wrap gap-3">
               {canUpload && <Link className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-2.5 text-sm font-medium text-cyan-200 transition hover:border-cyan-300/40 hover:bg-cyan-300/[0.12]" to="/resources/upload"><UploadCloud className="size-4" />上传资源</Link>}
               {access.session?.user.role === "owner" && <Link className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07]" to="/resources/new"><FolderPlus className="size-4" />新建合集</Link>}
+              <button className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-rose-300/20 hover:text-rose-300 disabled:opacity-50" disabled={loggingOut} onClick={() => void logout()} type="button">{loggingOut ? <RefreshCw className="size-4 animate-spin" /> : <LogOut className="size-4" />}退出登录</button>
             </div>
           </header>
+
+          {access.session && <PrivateClipboard canWrite={canUpload} session={access.session} />}
 
           {!catalog && !error && (
             <div aria-live="polite" className="mt-14 flex items-center gap-3 text-sm text-slate-500">

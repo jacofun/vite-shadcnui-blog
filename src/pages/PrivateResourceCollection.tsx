@@ -1,11 +1,11 @@
-import { ArrowLeft, ArrowRight, CalendarDays, File, Music, RefreshCw, UploadCloud, Video } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, File, Music, RefreshCw, Trash2, UploadCloud, Video } from "lucide-react";
 import { useEffect, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
-import { signLegacyPrivateLearningIndex, signPrivateResourcePaths } from "@/lib/privateAuth";
+import { deletePrivateResourceCollection, signLegacyPrivateLearningIndex, signPrivateResourcePaths } from "@/lib/privateAuth";
 import { fetchPrivateFileIndex, formatFileBytes, type PrivateFileIndex, type PrivateFileItem } from "@/lib/privateFiles";
 import { fetchPrivateLearningIndex, type PrivateLearningIndex } from "@/lib/privateLearning";
 import { loadPrivateResourceCatalog, usesLegacyPrivateAuth, type PrivateResourceCollection as ResourceCollection } from "@/lib/privateResources";
@@ -23,11 +23,13 @@ function fileIcon(item: PrivateFileItem): typeof File {
 export default function PrivateResourceCollection(): JSX.Element {
   const { collectionId = "" } = useParams();
   const access = usePrivateResourceSession();
+  const navigate = useNavigate();
   const [collection, setCollection] = useState<ResourceCollection | null>(null);
   const [learningIndex, setLearningIndex] = useState<PrivateLearningIndex | null>(null);
   const [fileIndex, setFileIndex] = useState<PrivateFileIndex | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const canWrite = access.session?.user.role === "owner" || access.session?.user.permissions.includes("private-resources-write");
 
   useEffect(() => {
@@ -62,6 +64,20 @@ export default function PrivateResourceCollection(): JSX.Element {
   if (access.status !== "ready") return <PrivateResourceAccessState error={access.error} status={access.status} />;
   const empty = (fileIndex && fileIndex.items.length === 0) || (learningIndex && learningIndex.episodes.length === 0);
 
+  async function deleteCollection(): Promise<void> {
+    if (!access.session || !collection || collection.type !== "files" || access.session.user.role !== "owner") return;
+    if (!window.confirm(`确定删除合集“${collection.title}”吗？合集中的全部文件和文本将一并删除，无法恢复。`)) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await deletePrivateResourceCollection(access.session, collection.collectionId);
+      navigate("/resources", { replace: true });
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "合集删除失败");
+      setDeleting(false);
+    }
+  }
+
   return (
     <>
       <Helmet><title>{collection ? `${collection.title} · 私人资源` : "私人资源 · 彦骁的笔记"}</title><meta content="noindex,nofollow" name="robots" /></Helmet>
@@ -72,7 +88,7 @@ export default function PrivateResourceCollection(): JSX.Element {
             <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">PRIVATE COLLECTION</p>
             <h1 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">{collection.title}</h1>
             <p className="mt-5 text-base leading-8 text-slate-400">{collection.description}</p>
-            {canWrite && <Link className="mt-6 inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-2.5 text-sm text-cyan-200" to={`/resources/upload?collection=${collection.collectionId}`}><UploadCloud className="size-4" />上传到此合集</Link>}
+            <div className="mt-6 flex flex-wrap gap-3">{canWrite && <Link className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-2.5 text-sm text-cyan-200" to={`/resources/upload?collection=${collection.collectionId}`}><UploadCloud className="size-4" />上传到此合集</Link>}{collection.type === "files" && access.session?.user.role === "owner" && <button className="inline-flex items-center gap-2 rounded-xl border border-rose-300/15 bg-rose-300/[0.04] px-4 py-2.5 text-sm text-rose-200 disabled:opacity-50" disabled={deleting} onClick={() => void deleteCollection()} type="button">{deleting ? <RefreshCw className="size-4 animate-spin" /> : <Trash2 className="size-4" />}删除合集</button>}</div>
           </header>}
           {isLoading && <div className="mt-14 flex items-center gap-3 text-sm text-slate-500"><RefreshCw className="size-4 animate-spin text-cyan-300" />正在读取合集…</div>}
           {error && <div className="mt-12 rounded-2xl border border-rose-300/20 bg-rose-300/[0.06] p-5 text-sm text-rose-100">{error}</div>}
@@ -80,9 +96,9 @@ export default function PrivateResourceCollection(): JSX.Element {
           {collection && fileIndex && fileIndex.items.length > 0 && <section className="mt-12 grid gap-4 md:grid-cols-2">
             {fileIndex.items.map((item) => {
               const Icon = fileIcon(item);
-              return <Link className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.035] p-5 transition hover:border-cyan-300/25 hover:bg-white/[0.055]" key={item.itemId} to={`/resources/${collection.collectionId}/${item.itemId}`}>
+              return <Link className="group flex min-w-0 max-w-full items-center gap-4 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] p-5 transition hover:border-cyan-300/25 hover:bg-white/[0.055]" key={item.itemId} to={`/resources/${collection.collectionId}/${item.itemId}`}>
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-cyan-300/[0.08]"><Icon className="size-5 text-cyan-300" /></span>
-                <span className="min-w-0 flex-1"><strong className="block truncate text-sm font-medium text-white">{item.originalName}</strong><span className="mt-1 block text-xs text-slate-500">{item.format.toUpperCase()} · {formatFileBytes(item.bytes)} · {displayDate(item.uploadedAt)}</span></span>
+                <span className="min-w-0 flex-1 overflow-hidden"><strong className="block break-all text-sm font-medium leading-6 text-white">{item.originalName}</strong><span className="mt-1 block truncate text-xs text-slate-500">{item.format.toUpperCase()} · {formatFileBytes(item.bytes)} · {displayDate(item.uploadedAt)}</span></span>
                 <ArrowRight className="size-4 shrink-0 text-slate-600 transition group-hover:translate-x-1 group-hover:text-cyan-300" />
               </Link>;
             })}

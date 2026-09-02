@@ -242,6 +242,10 @@ All paths are relative to `/api/private-auth/`.
 | `POST passkeys/rename` / `POST passkeys/remove` | Manage own Passkeys; last key cannot be removed |
 | `POST sign` | Sign resources under `PRIVATE_RESOURCE_ROOT`; requires private-resource access |
 | `POST collections/create` | Create a private `files` collection and its index; owner only |
+| `POST collections/delete` | Remove a `files` collection, its index and indexed objects; owner only |
+| `POST files/delete` | Remove an indexed file and its metadata; owner or write grant only |
+| `POST clipboard/get` | Read the private OSS-backed text clipboard |
+| `POST clipboard/save` / `POST clipboard/delete` | Add or remove clipboard entries; owner or write grant only |
 | `POST uploads/init` | Validate metadata and return short-lived, path-bound OSS PUT URLs; owner or write grant only |
 | `POST uploads/complete` | Verify every uploaded object, write metadata and publish the collection index |
 | `POST logout` | Revoke the current persistent session |
