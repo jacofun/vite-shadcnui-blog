@@ -243,3 +243,113 @@ test("rejects direct origin access, invalid CSRF and arbitrary episode paths", a
   }));
   assert.equal(traversalResponse.statusCode, 400);
 });
+
+test("owner uploads private resource files before the collection index is published", async () => {
+  const uploaded = new Map();
+  let savedMetadata;
+  let savedIndex = { schemaVersion: 1, updatedAt: null, episodes: [] };
+  const contentStore = {
+    async readJson(path, options) {
+      if (path === "/private/index.json") {
+        return {
+          schemaVersion: 1,
+          collections: [{
+            collectionId: "6minuteenglish",
+            type: "audio-transcript",
+            basePath: "/private/english-learning/6minuteenglish",
+            indexPath: "/private/english-learning/6minuteenglish/index.json",
+          }],
+        };
+      }
+      return options?.missing;
+    },
+    signUpload(path, file) {
+      return `https://private-content.example/${path}?type=${encodeURIComponent(file.contentType)}`;
+    },
+    async stat(path) {
+      const value = uploaded.get(path);
+      if (!value) throw Object.assign(new Error("missing"), { code: "NoSuchKey", status: 404 });
+      return value;
+    },
+    async readText(path) {
+      assert.match(path, /transcript\.txt$/);
+      return "A complete transcript for upload verification. ".repeat(4);
+    },
+    async putJsonOnce(path, value) {
+      assert.match(path, /metadata\.json$/);
+      savedMetadata = value;
+    },
+    async updateIndex(path, change) {
+      assert.equal(path, "/private/english-learning/6minuteenglish/index.json");
+      savedIndex = change(structuredClone(savedIndex));
+      return savedIndex;
+    },
+  };
+  const handler = createHandler({
+    env: createEnv(),
+    contentStore,
+    now: () => NOW,
+    randomBytesImpl: (size) => Buffer.alloc(size, 11),
+    generateAuthenticationOptionsImpl: async () => ({ challenge: "upload-challenge" }),
+    verifyAuthenticationResponseImpl: async () => ({
+      verified: true,
+      authenticationInfo: { userVerified: true, newCounter: 0 },
+    }),
+  });
+  const challenge = await handler(request({ method: "POST", path: "/challenge", body: {} }));
+  const verified = await handler(request({
+    method: "POST",
+    path: "/verify",
+    cookie: cookiePair(challenge.headers["set-cookie"]),
+    body: { id: CREDENTIAL_ID, type: "public-key", response: {} },
+  }));
+  const session = cookiePair(verified.headers["set-cookie"]);
+  const csrf = responseJson(verified).csrfToken;
+  const initialized = await handler(request({
+    method: "POST",
+    path: "/uploads/init",
+    cookie: session,
+    csrf,
+    body: {
+      collectionId: "6minuteenglish",
+      itemId: "uploaded-episode",
+      title: "Uploaded episode",
+      publishedAt: "2026-08-30",
+      recommendedDate: "2026-09-02",
+      sourcePage: "https://www.bbc.co.uk/learningenglish/example",
+      reason: "Upload integration test",
+      difficulty: "B1-B2",
+      tags: ["test"],
+      files: {
+        audio: { contentType: "audio/mpeg", bytes: 200_000 },
+        transcriptText: { contentType: "text/plain", bytes: 180 },
+        transcriptPdf: { contentType: "application/pdf", bytes: 2_000 },
+      },
+    },
+  }));
+  assert.equal(initialized.statusCode, 200, initialized.body);
+  const upload = responseJson(initialized);
+  assert.equal(upload.itemId, "uploaded-episode");
+  assert.deepEqual(upload.files.audio.headers, {
+    "Content-Type": "audio/mpeg",
+    "x-oss-forbid-overwrite": "true",
+  });
+
+  const incomplete = await handler(request({
+    method: "POST", path: "/uploads/complete", cookie: session, csrf,
+    body: { uploadToken: upload.uploadToken },
+  }));
+  assert.equal(incomplete.statusCode, 409);
+
+  uploaded.set(upload.files.audio.path, { bytes: 200_000, etag: "audio", contentType: "audio/mpeg" });
+  uploaded.set(upload.files.transcriptText.path, { bytes: 180, etag: "text", contentType: "text/plain" });
+  uploaded.set(upload.files.transcriptPdf.path, { bytes: 2_000, etag: "pdf", contentType: "application/pdf" });
+  const completed = await handler(request({
+    method: "POST", path: "/uploads/complete", cookie: session, csrf,
+    body: { uploadToken: upload.uploadToken },
+  }));
+  assert.equal(completed.statusCode, 200, completed.body);
+  assert.equal(responseJson(completed).published, true);
+  assert.equal(savedMetadata.resources.audio.etag, "audio");
+  assert.equal(savedIndex.episodes[0].episodeId, "uploaded-episode");
+});

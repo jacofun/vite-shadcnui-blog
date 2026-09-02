@@ -126,6 +126,22 @@ OSS_AUTH_SNAPSHOT_INTERVAL=50
 OSS_AUTH_MAX_LOG_BYTES=536870912
 ```
 
+To enable browser uploads, configure the separate CDN-backed private content bucket:
+
+```text
+OSS_CONTENT_BUCKET=<private content bucket>
+OSS_CONTENT_REGION=oss-cn-<region>
+OSS_CONTENT_ENDPOINT=https://oss-cn-<region>-internal.aliyuncs.com
+OSS_CONTENT_PUBLIC_ENDPOINT=https://oss-cn-<region>.aliyuncs.com
+```
+
+The Function Compute RAM role needs `GetObject`, `GetObjectMeta`, `PutObject` and `DeleteObject` for
+`private/*` in this content bucket. Keep `fc/private-auth/*` in the function-only authentication
+bucket. The public endpoint is used only to generate short-lived browser PUT URLs; verification
+and index updates use the internal endpoint. Configure the content bucket CORS rule to allow
+`PUT` from `https://yanxiao.me`, allow `Content-Type` and `x-oss-forbid-overwrite`, and expose
+`ETag`.
+
 Because the bucket's `/fc` prefix is mounted at `/home/fc`, the default objects appear at:
 
 | OSS object | Mounted view | Purpose |
@@ -178,6 +194,7 @@ node scripts/admin.mjs disable <user-id>
 node scripts/admin.mjs enable <user-id>
 node scripts/admin.mjs permissions <user-id> private-resources
 node scripts/admin.mjs permissions <user-id> private-resources english-learning
+node scripts/admin.mjs permissions <user-id> private-resources private-resources-write
 node scripts/admin.mjs permissions <user-id>
 ```
 
@@ -224,6 +241,8 @@ All paths are relative to `/api/private-auth/`.
 | `POST passkeys/options` / `POST passkeys/verify` | Add a Passkey after recent authentication |
 | `POST passkeys/rename` / `POST passkeys/remove` | Manage own Passkeys; last key cannot be removed |
 | `POST sign` | Sign resources under `PRIVATE_RESOURCE_ROOT`; requires private-resource access |
+| `POST uploads/init` | Validate metadata and return short-lived, path-bound OSS PUT URLs; owner or write grant only |
+| `POST uploads/complete` | Verify every uploaded object, write metadata and publish the collection index |
 | `POST logout` | Revoke the current persistent session |
 
 Recent authentication lasts five minutes. WebAuthn verification requires user verification, the
@@ -238,6 +257,14 @@ and episode request formats remain supported while clients migrate. Owners, acco
 `private-resources` grant and accounts with the legacy `english-learning` grant may sign resources.
 Revocation stops new signed URLs but cannot invalidate a URL already issued before its CDN type-A
 expiry.
+
+Upload URLs bind the object path, method, content type and `x-oss-forbid-overwrite=true`, and expire
+after 15 minutes. The browser never receives OSS credentials. Audio and plain-text transcript are
+required for `audio-transcript` collections; PDF is optional. An item is added to `index.json` only
+after every object is present with the declared size and type and the transcript passes a basic
+content check. A short-lived OSS lock object serializes index replacement across function
+instances. Keep the GitHub Actions resource-sync workflow concurrency at one and avoid publishing
+the same collection from Actions while a browser upload is being finalized.
 
 The generic private-resource catalog belongs at `/private/index.json` in the CDN-backed private
 content bucket. A deployable copy is provided at `examples/private-resource-index.json`; its

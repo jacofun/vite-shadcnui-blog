@@ -1,4 +1,4 @@
-import { ArrowRight, FolderLock, Headphones, RefreshCw, ShieldCheck } from "lucide-react";
+import { ArrowRight, FolderLock, Headphones, RefreshCw, ShieldCheck, UploadCloud } from "lucide-react";
 import { useEffect, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
@@ -31,6 +31,9 @@ export default function PrivateResources(): JSX.Element {
     return <PrivateResourceAccessState error={access.error} status={access.status} />;
   }
 
+  const canUpload = access.session?.user.role === "owner" ||
+    access.session?.user.permissions.includes("private-resources-write") === true;
+
   return (
     <>
       <Helmet>
@@ -48,6 +51,11 @@ export default function PrivateResources(): JSX.Element {
             </div>
             <h1 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">私人资源</h1>
             <p className="mt-5 text-base leading-8 text-slate-400">集中保存个人学习资料、内容合集与其他非公开资源。</p>
+            {canUpload && (
+              <Link className="mt-7 inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-2.5 text-sm font-medium text-cyan-200 transition hover:border-cyan-300/40 hover:bg-cyan-300/[0.12]" to="/resources/upload">
+                <UploadCloud className="size-4" />上传资源
+              </Link>
+            )}
           </header>
 
           {!catalog && !error && (

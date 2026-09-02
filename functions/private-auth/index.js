@@ -21,7 +21,15 @@ const EPISODE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/;
 const RESOURCE_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
 const RESOURCE_PATH_SEGMENT_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const PRIVATE_RESOURCE_PERMISSIONS = new Set(["private-resources", "english-learning"]);
+const PRIVATE_RESOURCE_WRITE_PERMISSION = "private-resources-write";
+const PRIVATE_RESOURCE_ADMIN_PERMISSIONS = new Set([
+  ...PRIVATE_RESOURCE_PERMISSIONS,
+  PRIVATE_RESOURCE_WRITE_PERMISSION,
+]);
 const MAX_SIGNED_RESOURCES = 12;
+const UPLOAD_TOKEN_TTL_SECONDS = 900;
+const UPLOAD_MAX_AUDIO_BYTES = 100 * 1024 * 1024;
+const UPLOAD_MAX_TRANSCRIPT_BYTES = 20 * 1024 * 1024;
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const ALLOWED_TRANSPORTS = new Set([
   "ble",
@@ -388,7 +396,9 @@ function parseJsonBody(body) {
 function routeName(path, cookiePath, persistent = false) {
   const normalized = path.replace(/\/+$/, "") || "/";
   const apiPrefix = cookiePath.replace(/\/+$/, "");
-  const knownRoutes = ["challenge", "verify", "session", "sign", "logout"];
+  const knownRoutes = [
+    "challenge", "verify", "session", "sign", "logout", "uploads/init", "uploads/complete",
+  ];
   if (persistent) knownRoutes.push(
     "register/options", "register/verify", "reauth/challenge", "reauth/verify",
     "passkeys", "passkeys/options", "passkeys/verify", "passkeys/rename", "passkeys/remove",
@@ -564,7 +574,375 @@ function signedResources(body, config, nowSeconds, randomBytesImpl) {
 
 function hasPrivateResourceAccess(user) {
   return user.role === "owner" ||
-    user.permissions.some((permission) => PRIVATE_RESOURCE_PERMISSIONS.has(permission));
+    user.permissions.some((permission) => PRIVATE_RESOURCE_ADMIN_PERMISSIONS.has(permission));
+}
+
+function hasPrivateResourceWriteAccess(user) {
+  return user.role === "owner" || user.permissions.includes(PRIVATE_RESOURCE_WRITE_PERMISSION);
+}
+
+function uploadText(value, name, maxLength, { required = true } = {}) {
+  if (value === undefined && !required) return "";
+  if (typeof value !== "string") {
+    throw new HttpError(400, "INVALID_UPLOAD", `${name} must be a string`);
+  }
+  const normalized = value.trim();
+  if ((required && !normalized) || normalized.length > maxLength) {
+    throw new HttpError(400, "INVALID_UPLOAD", `${name} is invalid`);
+  }
+  return normalized;
+}
+
+function uploadDate(value, name) {
+  const normalized = uploadText(value, name, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized) ||
+      new Date(`${normalized}T00:00:00Z`).toISOString().slice(0, 10) !== normalized) {
+    throw new HttpError(400, "INVALID_UPLOAD", `${name} is invalid`);
+  }
+  return normalized;
+}
+
+function uploadUrl(value, name) {
+  const normalized = uploadText(value, name, 1000, { required: false });
+  if (!normalized) return "";
+  try {
+    const url = new URL(normalized);
+    if (url.protocol !== "https:" || url.username || url.password) throw new Error();
+  } catch {
+    throw new HttpError(400, "INVALID_UPLOAD", `${name} must be an HTTPS URL`);
+  }
+  return normalized;
+}
+
+function uploadTags(value) {
+  if (!Array.isArray(value) || value.length > 20) {
+    throw new HttpError(400, "INVALID_UPLOAD", "tags is invalid");
+  }
+  const tags = value.map((tag) => uploadText(tag, "tag", 50));
+  return [...new Set(tags)];
+}
+
+function uploadFile(value, role) {
+  const rules = {
+    audio: { contentType: "audio/mpeg", min: 131_072, max: UPLOAD_MAX_AUDIO_BYTES, filename: "audio.mp3" },
+    transcriptText: { contentType: "text/plain", min: 100, max: 2 * 1024 * 1024, filename: "transcript.txt" },
+    transcriptPdf: { contentType: "application/pdf", min: 1024, max: UPLOAD_MAX_TRANSCRIPT_BYTES, filename: "transcript.pdf" },
+  }[role];
+  if (!rules || !value || typeof value !== "object" || Array.isArray(value) ||
+      value.contentType !== rules.contentType || !Number.isSafeInteger(value.bytes) ||
+      value.bytes < rules.min || value.bytes > rules.max) {
+    throw new HttpError(400, "INVALID_UPLOAD", `${role} file is invalid`);
+  }
+  return { ...rules, bytes: value.bytes };
+}
+
+function normalizeUploadRequest(body, catalog, config, randomBytesImpl) {
+  const collectionId = uploadText(body.collectionId, "collectionId", 64);
+  if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(collectionId)) {
+    throw new HttpError(400, "INVALID_UPLOAD", "collectionId is invalid");
+  }
+  const collection = catalog?.collections?.find((item) => item.collectionId === collectionId);
+  if (!collection || collection.type !== "audio-transcript" ||
+      typeof collection.basePath !== "string" || typeof collection.indexPath !== "string") {
+    throw new HttpError(400, "INVALID_UPLOAD", "The selected collection cannot accept this upload");
+  }
+  const itemIdInput = uploadText(body.itemId, "itemId", 100, { required: false });
+  const itemId = itemIdInput || randomBytesImpl(12).toString("hex");
+  if (!EPISODE_ID_PATTERN.test(itemId)) {
+    throw new HttpError(400, "INVALID_UPLOAD", "itemId is invalid");
+  }
+  const files = {
+    audio: uploadFile(body.files?.audio, "audio"),
+    transcriptText: uploadFile(body.files?.transcriptText, "transcriptText"),
+    ...(body.files?.transcriptPdf ? { transcriptPdf: uploadFile(body.files.transcriptPdf, "transcriptPdf") } : {}),
+  };
+  return {
+    collection: {
+      collectionId,
+      basePath: normalizePrivateResourcePath(collection.basePath, config),
+      indexPath: normalizePrivateResourcePath(collection.indexPath, config),
+    },
+    episode: {
+      episodeId: itemId,
+      title: uploadText(body.title, "title", 200),
+      publishedAt: uploadDate(body.publishedAt, "publishedAt"),
+      recommendedDate: uploadDate(body.recommendedDate, "recommendedDate"),
+      sourcePage: uploadUrl(body.sourcePage, "sourcePage"),
+      reason: uploadText(body.reason, "reason", 1000),
+      difficulty: uploadText(body.difficulty, "difficulty", 20),
+      tags: uploadTags(body.tags),
+    },
+    files,
+  };
+}
+
+function contentCredentials(env, context) {
+  const credentials = context.credentials || {};
+  const accessKeyId = credentials.accessKeyId || env.ALIBABA_CLOUD_ACCESS_KEY_ID;
+  const accessKeySecret = credentials.accessKeySecret || env.ALIBABA_CLOUD_ACCESS_KEY_SECRET;
+  const stsToken = credentials.securityToken || env.ALIBABA_CLOUD_SECURITY_TOKEN;
+  if (!accessKeyId || !accessKeySecret) {
+    throw new HttpError(503, "STORAGE_CREDENTIALS_MISSING", "OSS content credentials are not configured");
+  }
+  return { accessKeyId, accessKeySecret, ...(stsToken ? { stsToken } : {}) };
+}
+
+function objectName(path) {
+  return path.replace(/^\/+/, "");
+}
+
+function objectMetadata(result) {
+  const headers = result?.res?.headers || {};
+  const bytes = Number(result?.contentLength ?? headers["content-length"]);
+  const etag = String(result?.etag ?? headers.etag ?? "").replace(/^\"|\"$/g, "");
+  return { bytes, etag, contentType: String(result?.contentType ?? headers["content-type"] ?? "") };
+}
+
+function isOssAlreadyExists(error) {
+  return error?.code === "FileAlreadyExists" || ossErrorStatus(error) === 409;
+}
+
+let contentIndexUpdate = Promise.resolve();
+
+export async function createPrivateResourceContentStore({ env = process.env, context = {}, sdk, client, publicClient } = {}) {
+  const OSS = sdk || (client ? null : (await import("ali-oss")).default);
+  const bucket = requiredString(env, "OSS_CONTENT_BUCKET");
+  const region = requiredString(env, "OSS_CONTENT_REGION");
+  const internalEndpoint = normalizeOrigin(requiredString(env, "OSS_CONTENT_ENDPOINT"), "OSS_CONTENT_ENDPOINT");
+  const publicEndpoint = normalizeOrigin(
+    env.OSS_CONTENT_PUBLIC_ENDPOINT?.trim() || `https://${region}.aliyuncs.com`,
+    "OSS_CONTENT_PUBLIC_ENDPOINT",
+  );
+  const credentials = contentCredentials(env, context);
+  const common = { bucket, region, authorizationV4: false, secure: true, ...credentials };
+  const oss = client || new OSS({ ...common, endpoint: internalEndpoint });
+  const signer = publicClient || new OSS({ ...common, endpoint: publicEndpoint });
+
+  return {
+    async readJson(path, { missing } = {}) {
+      try {
+        const result = await oss.get(objectName(path));
+        const value = JSON.parse(Buffer.from(result.content).toString("utf8"));
+        return value;
+      } catch (error) {
+        if (missing !== undefined && isOssMissing(error)) return structuredClone(missing);
+        if (error instanceof SyntaxError) {
+          throw new HttpError(503, "INVALID_RESOURCE_INDEX", "Private resource index is invalid");
+        }
+        throw error;
+      }
+    },
+    signUpload(path, file) {
+      return signer.signatureUrl(objectName(path), {
+        method: "PUT",
+        expires: UPLOAD_TOKEN_TTL_SECONDS,
+        "Content-Type": file.contentType,
+        "x-oss-forbid-overwrite": "true",
+      });
+    },
+    async stat(path) {
+      const result = await oss.getObjectMeta(objectName(path));
+      return objectMetadata(result);
+    },
+    async readText(path) {
+      const result = await oss.get(objectName(path));
+      return Buffer.from(result.content).toString("utf8");
+    },
+    async putJsonOnce(path, value) {
+      const serialized = `${JSON.stringify(value, null, 2)}\n`;
+      try {
+        await oss.put(objectName(path), Buffer.from(serialized), {
+          mime: "application/json; charset=utf-8",
+          headers: { "x-oss-forbid-overwrite": "true" },
+        });
+      } catch (error) {
+        if (!isOssAlreadyExists(error)) throw error;
+        const existing = await this.readJson(path);
+        if (JSON.stringify(existing) !== JSON.stringify(value)) {
+          throw new HttpError(409, "RESOURCE_EXISTS", "Resource metadata already exists");
+        }
+      }
+    },
+    async updateIndex(path, change) {
+      const run = contentIndexUpdate.then(async () => {
+        const lockPath = `${path}.upload-lock`;
+        const lockId = randomBytes(16).toString("hex");
+        let acquired = false;
+        for (let attempt = 0; attempt < 6 && !acquired; attempt += 1) {
+          try {
+            await oss.put(objectName(lockPath), Buffer.from(JSON.stringify({
+              lockId,
+              expiresAt: Date.now() + 30_000,
+            })), {
+              mime: "application/json; charset=utf-8",
+              headers: { "x-oss-forbid-overwrite": "true" },
+            });
+            acquired = true;
+          } catch (error) {
+            if (!isOssAlreadyExists(error)) throw error;
+            const lock = await this.readJson(lockPath);
+            if (Number(lock?.expiresAt) < Date.now()) {
+              await oss.delete(objectName(lockPath));
+            } else {
+              await new Promise((resolve) => setTimeout(resolve, 100 + attempt * 50));
+            }
+          }
+        }
+        if (!acquired) {
+          throw new HttpError(409, "RESOURCE_INDEX_BUSY", "Private resource index is being updated");
+        }
+        try {
+          const current = await this.readJson(path, {
+            missing: { schemaVersion: 1, updatedAt: null, episodes: [] },
+          });
+          if (current?.schemaVersion !== 1 || !Array.isArray(current.episodes)) {
+            throw new HttpError(503, "INVALID_RESOURCE_INDEX", "Private resource index is invalid");
+          }
+          const next = change(structuredClone(current));
+          await oss.put(objectName(path), Buffer.from(`${JSON.stringify(next, null, 2)}\n`), {
+            mime: "application/json; charset=utf-8",
+          });
+          return next;
+        } finally {
+          try {
+            const lock = await this.readJson(lockPath);
+            if (lock?.lockId === lockId) await oss.delete(objectName(lockPath));
+          } catch {
+            // The short lease allows a later publisher to recover a failed cleanup.
+          }
+        }
+      });
+      contentIndexUpdate = run.catch(() => undefined);
+      return run;
+    },
+  };
+}
+
+async function handlePrivateResourceUpload({
+  route, body, user, auth, config, contentStore, nowSeconds, randomBytesImpl,
+}) {
+  if (!hasPrivateResourceWriteAccess(user)) {
+    throw new HttpError(403, "MISSING_PERMISSION", "Private resource upload access has not been granted");
+  }
+  if (!contentStore) {
+    throw new HttpError(503, "CONTENT_STORE_UNAVAILABLE", "Private resource storage is unavailable");
+  }
+
+  if (route === "uploads/init") {
+    const fallbackCatalog = {
+      schemaVersion: 1,
+      collections: [{
+        collectionId: "6minuteenglish",
+        type: "audio-transcript",
+        basePath: config.privatePrefix,
+        indexPath: `${config.privatePrefix}/index.json`,
+      }],
+    };
+    const catalog = await contentStore.readJson(`${config.privateRoot}/index.json`, {
+      missing: fallbackCatalog,
+    });
+    const upload = normalizeUploadRequest(body, catalog, config, randomBytesImpl);
+    const prefix = `${upload.collection.basePath}/${upload.episode.episodeId}`;
+    const files = Object.fromEntries(Object.entries(upload.files).map(([role, file]) => [role, {
+      ...file,
+      path: `${prefix}/${file.filename}`,
+    }]));
+    const payload = {
+      kind: "resource-upload",
+      sub: user.id,
+      collection: upload.collection,
+      episode: upload.episode,
+      files,
+      iat: nowSeconds,
+      exp: nowSeconds + UPLOAD_TOKEN_TTL_SECONDS,
+    };
+    return {
+      uploadToken: encryptToken(payload, config.currentSessionKey, randomBytesImpl),
+      expiresAt: payload.exp,
+      itemId: upload.episode.episodeId,
+      files: Object.fromEntries(Object.entries(files).map(([role, file]) => [role, {
+        path: file.path,
+        uploadUrl: contentStore.signUpload(file.path, file),
+        headers: {
+          "Content-Type": file.contentType,
+          "x-oss-forbid-overwrite": "true",
+        },
+      }])),
+    };
+  }
+
+  const upload = decryptToken(body.uploadToken, [config.currentSessionKey, config.previousSessionKey]);
+  if (!upload || upload.kind !== "resource-upload" || upload.sub !== user.id ||
+      !Number.isSafeInteger(upload.exp) || upload.exp <= nowSeconds ||
+      !upload.collection || !upload.episode || !upload.files) {
+    throw new HttpError(400, "INVALID_UPLOAD_TOKEN", "Upload token is invalid or expired");
+  }
+
+  const resources = {};
+  for (const [role, file] of Object.entries(upload.files)) {
+    let metadata;
+    try {
+      metadata = await contentStore.stat(file.path);
+    } catch (error) {
+      if (isOssMissing(error)) {
+        throw new HttpError(409, "UPLOAD_INCOMPLETE", `${role} has not been uploaded`);
+      }
+      throw error;
+    }
+    if (metadata.bytes !== file.bytes ||
+        (metadata.contentType && !metadata.contentType.startsWith(file.contentType))) {
+      throw new HttpError(409, "UPLOAD_MISMATCH", `${role} does not match the upload request`);
+    }
+    resources[role] = {
+      path: file.path,
+      contentType: file.contentType,
+      bytes: metadata.bytes,
+      etag: metadata.etag,
+    };
+  }
+  const transcript = (await contentStore.readText(upload.files.transcriptText.path))
+    .replace(/\r\n?/g, "\n").trim();
+  if (transcript.length < 100 || transcript.includes("\0")) {
+    throw new HttpError(409, "INVALID_TRANSCRIPT", "Transcript content is incomplete");
+  }
+
+  const syncedAt = new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
+  const objectPrefix = `${upload.collection.basePath}/${upload.episode.episodeId}`;
+  const metadataPath = `${objectPrefix}/metadata.json`;
+  const episodeMetadata = {
+    schemaVersion: 1,
+    ...upload.episode,
+    audioSource: "",
+    transcriptSource: "",
+    syncedAt,
+    objectPrefix,
+    resources,
+  };
+  await contentStore.putJsonOnce(metadataPath, episodeMetadata);
+
+  const summary = {
+    episodeId: upload.episode.episodeId,
+    title: upload.episode.title,
+    publishedAt: upload.episode.publishedAt,
+    recommendedDate: upload.episode.recommendedDate,
+    reason: upload.episode.reason,
+    difficulty: upload.episode.difficulty,
+    tags: upload.episode.tags,
+    metadataPath,
+  };
+  await contentStore.updateIndex(upload.collection.indexPath, (index) => {
+    const existing = index.episodes.find((item) => item.episodeId === summary.episodeId);
+    if (existing && JSON.stringify(existing) !== JSON.stringify(summary)) {
+      throw new HttpError(409, "RESOURCE_EXISTS", "An item with the same ID already exists");
+    }
+    index.updatedAt = syncedAt;
+    index.episodes = [
+      ...index.episodes.filter((item) => item.episodeId !== summary.episodeId),
+      summary,
+    ].sort((left, right) => right.recommendedDate.localeCompare(left.recommendedDate));
+    return index;
+  });
+  return { published: true, collectionId: upload.collection.collectionId, itemId: summary.episodeId };
 }
 
 export function createHandler({
@@ -576,6 +954,7 @@ export function createHandler({
   generateRegistrationOptionsImpl = generateRegistrationOptions,
   verifyRegistrationResponseImpl = verifyRegistrationResponse,
   store,
+  contentStore,
 } = {}) {
   return async function privateAuthHandler(event, context = {}) {
     let config;
@@ -606,8 +985,12 @@ export function createHandler({
 
       if (config.storeMode === "oss") {
         const persistentStore = store || await createOssEventStore({ env, context });
+        const privateContentStore = route.startsWith("uploads/")
+          ? contentStore || await createPrivateResourceContentStore({ env, context })
+          : contentStore;
         return await persistentRequest({
-          request, route, config, store: persistentStore, nowSeconds, randomBytesImpl,
+          request, route, config, store: persistentStore, contentStore: privateContentStore,
+          nowSeconds, randomBytesImpl,
           generateAuthenticationOptionsImpl, verifyAuthenticationResponseImpl,
           generateRegistrationOptionsImpl, verifyRegistrationResponseImpl,
         });
@@ -671,6 +1054,7 @@ export function createHandler({
           authenticated: true,
           csrfToken: csrf,
           expiresAt,
+          user: { id: "owner", displayName: "Owner", role: "owner", permissions: ["private-resources"] },
         }, {
           "set-cookie": serializeCookie(config, sessionToken, config.sessionTtlSeconds),
         });
@@ -682,11 +1066,22 @@ export function createHandler({
           authenticated: true,
           csrfToken: session.csrf,
           expiresAt: session.exp,
+          user: { id: "owner", displayName: "Owner", role: "owner", permissions: ["private-resources"] },
         });
       }
 
       const session = requireSession(request, config, nowSeconds);
       requireCsrf(request, session);
+
+      if (route.startsWith("uploads/")) {
+        const privateContentStore = contentStore || await createPrivateResourceContentStore({ env, context });
+        const body = parseJsonBody(request.body);
+        const result = await handlePrivateResourceUpload({
+          route, body, user: { id: "owner", role: "owner", permissions: [] }, auth: session,
+          config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
+        });
+        return jsonResponse(config, 200, result);
+      }
 
       if (route === "sign") {
         const body = parseJsonBody(request.body);
@@ -1099,7 +1494,7 @@ function revokeUser(state, user) {
 
 async function persistentRequest(options) {
   const {
-    request, route, config, store, nowSeconds, randomBytesImpl,
+    request, route, config, store, contentStore, nowSeconds, randomBytesImpl,
     generateAuthenticationOptionsImpl, verifyAuthenticationResponseImpl,
     generateRegistrationOptionsImpl, verifyRegistrationResponseImpl,
   } = options;
@@ -1319,6 +1714,12 @@ async function persistentRequest(options) {
       resources: signedResources(body, config, nowSeconds, randomBytesImpl),
     });
   }
+  if (route.startsWith("uploads/")) {
+    const result = await handlePrivateResourceUpload({
+      route, body, user, auth, config, contentStore, nowSeconds, randomBytesImpl,
+    });
+    return jsonResponse(config, 200, result);
+  }
   if (route === "passkeys") {
     return jsonResponse(config, 200, { credentials: userCredentials(state, user.id)
       .map(({ id, name, createdAt, lastUsedAt, deviceType, backedUp }) => ({ id, name, createdAt, lastUsedAt, deviceType, backedUp })) });
@@ -1354,7 +1755,7 @@ async function persistentRequest(options) {
 export async function administer({ store, command, userId, displayName = "Owner", permissions = [],
   invitationHash, credentials = [], ttlSeconds = 86400, nowSeconds = Math.floor(Date.now() / 1000), randomBytesImpl = randomBytes }) {
   if (!Number.isInteger(ttlSeconds) || ttlSeconds < 300 || ttlSeconds > 604800) throw new Error("Invitation TTL must be 300..604800 seconds");
-  if (!Array.isArray(permissions) || permissions.some((value) => !PRIVATE_RESOURCE_PERMISSIONS.has(value))) throw new Error("Invalid permissions");
+  if (!Array.isArray(permissions) || permissions.some((value) => !PRIVATE_RESOURCE_ADMIN_PERMISSIONS.has(value))) throw new Error("Invalid permissions");
   const allowed = ["bootstrap", "reissue-bootstrap", "import-owner", "invite", "revoke-invite", "disable", "enable", "permissions", "recover", "list"];
   if (!allowed.includes(command)) throw new Error("Unknown administrative command");
   const token = randomBytesImpl(INVITATION_TOKEN_BYTES).toString("base64url");

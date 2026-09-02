@@ -19,6 +19,41 @@ export interface SignedPrivateResources {
   resources: Record<string, string>;
 }
 
+export interface PrivateResourceUploadFile {
+  contentType: "audio/mpeg" | "text/plain" | "application/pdf";
+  bytes: number;
+}
+
+export interface PrivateResourceUploadRequest {
+  collectionId: string;
+  itemId?: string;
+  title: string;
+  publishedAt: string;
+  recommendedDate: string;
+  sourcePage?: string;
+  reason: string;
+  difficulty: string;
+  tags: string[];
+  files: {
+    audio: PrivateResourceUploadFile;
+    transcriptText: PrivateResourceUploadFile;
+    transcriptPdf?: PrivateResourceUploadFile;
+  };
+}
+
+export interface PrivateResourceUploadTarget {
+  path: string;
+  uploadUrl: string;
+  headers: Record<string, string>;
+}
+
+export interface PrivateResourceUploadSession {
+  uploadToken: string;
+  expiresAt: number;
+  itemId: string;
+  files: Record<string, PrivateResourceUploadTarget>;
+}
+
 interface ApiErrorBody {
   code?: string;
   message?: string;
@@ -162,6 +197,30 @@ export function signLegacyPrivateLearningEpisode(
 ): Promise<SignedPrivateResources> {
   return request<SignedPrivateResources>("sign", {
     body: { episodeId },
+    csrfToken: session.csrfToken,
+    signal,
+  });
+}
+
+export function beginPrivateResourceUpload(
+  session: PrivateAuthSession,
+  body: PrivateResourceUploadRequest,
+  signal?: AbortSignal,
+): Promise<PrivateResourceUploadSession> {
+  return request<PrivateResourceUploadSession>("uploads/init", {
+    body,
+    csrfToken: session.csrfToken,
+    signal,
+  });
+}
+
+export function completePrivateResourceUpload(
+  session: PrivateAuthSession,
+  uploadToken: string,
+  signal?: AbortSignal,
+): Promise<{ published: true; collectionId: string; itemId: string }> {
+  return request("uploads/complete", {
+    body: { uploadToken },
     csrfToken: session.csrfToken,
     signal,
   });

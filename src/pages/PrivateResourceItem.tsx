@@ -107,7 +107,9 @@ export default function PrivateResourceItem(): JSX.Element {
                 <h1 className="mt-5 text-3xl font-semibold leading-tight tracking-[-0.035em] text-white sm:text-5xl">{episode.title}</h1>
                 <p className="mt-6 text-base leading-8 text-slate-400">{episode.reason}</p>
                 <div className="mt-5 flex flex-wrap gap-2">{episode.tags.map((tag) => <span className="rounded-full border border-white/[0.08] px-2.5 py-1 text-xs text-slate-500" key={tag}>{tag}</span>)}</div>
-                <a className="mt-6 inline-flex items-center gap-2 text-xs text-slate-500 transition hover:text-cyan-300" href={episode.sourcePage} rel="noreferrer" target="_blank">BBC 官方节目页 <ExternalLink className="size-3.5" /></a>
+                {episode.sourcePage && (
+                  <a className="mt-6 inline-flex items-center gap-2 text-xs text-slate-500 transition hover:text-cyan-300" href={episode.sourcePage} rel="noreferrer" target="_blank">资源来源 <ExternalLink className="size-3.5" /></a>
+                )}
               </header>
               <section aria-labelledby="transcript-title" className="pt-10">
                 <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">TRANSCRIPT</p>

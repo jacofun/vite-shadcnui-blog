@@ -22,7 +22,8 @@ interface ResourceMetadata {
   path: string;
   contentType: string;
   bytes: number;
-  sha256: string;
+  sha256?: string;
+  etag?: string;
 }
 
 export interface PrivateLearningEpisode extends PrivateLearningEpisodeCore {
@@ -34,7 +35,7 @@ export interface PrivateLearningEpisode extends PrivateLearningEpisodeCore {
   objectPrefix: string;
   resources: {
     audio: ResourceMetadata;
-    transcriptPdf: ResourceMetadata;
+    transcriptPdf?: ResourceMetadata;
     transcriptText: ResourceMetadata;
   };
 }

@@ -15,6 +15,7 @@ const PrivateAuth = lazy(() => import("./pages/PrivateAuth.tsx"));
 const PrivateResources = lazy(() => import("./pages/PrivateResources.tsx"));
 const PrivateResourceCollection = lazy(() => import("./pages/PrivateResourceCollection.tsx"));
 const PrivateResourceItem = lazy(() => import("./pages/PrivateResourceItem.tsx"));
+const PrivateResourceUpload = lazy(() => import("./pages/PrivateResourceUpload.tsx"));
 const WeddingInvitation = lazy(
   () => import("./pages/WeddingInvitation.tsx"),
 );
@@ -46,6 +47,7 @@ const router = createHashRouter([
       { path: "notes/:slug", element: lazyPage(<NoteDetail />) },
       { path: "auth", element: lazyPage(<PrivateAuth />) },
       { path: "resources", element: lazyPage(<PrivateResources />) },
+      { path: "resources/upload", element: lazyPage(<PrivateResourceUpload />) },
       { path: "resources/:collectionId", element: lazyPage(<PrivateResourceCollection />) },
       { path: "resources/:collectionId/:itemId", element: lazyPage(<PrivateResourceItem />) },
       { path: "learning/english", element: <Navigate replace to="/resources/6minuteenglish" /> },
