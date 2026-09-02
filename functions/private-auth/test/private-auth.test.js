@@ -114,6 +114,21 @@ test("rejects unsafe or excessive private resource paths", () => {
   )), /1 to 12/);
 });
 
+test("classifies playable files and verifies MP3, MP4 and FLV signatures", () => {
+  assert.deepEqual(__test.genericUploadFile({ originalName: "lesson.FLV", bytes: 4096 }), {
+    mediaType: "video",
+    contentType: "video/x-flv",
+    format: "flv",
+    originalName: "lesson.FLV",
+    bytes: 4096,
+    filename: "file.flv",
+  });
+  assert.equal(__test.validMediaHeader("mp3", Buffer.from("ID3example")), true);
+  assert.equal(__test.validMediaHeader("mp4", Buffer.concat([Buffer.alloc(4), Buffer.from("ftypisom")])), true);
+  assert.equal(__test.validMediaHeader("flv", Buffer.from([0x46, 0x4c, 0x56, 0x01])), true);
+  assert.equal(__test.validMediaHeader("flv", Buffer.from("plain text renamed to flv")), false);
+});
+
 test("completes challenge, passkey verification, session lookup and resource signing", async () => {
   const env = createEnv();
   const handler = createHandler({
@@ -352,4 +367,81 @@ test("owner uploads private resource files before the collection index is publis
   assert.equal(responseJson(completed).published, true);
   assert.equal(savedMetadata.resources.audio.etag, "audio");
   assert.equal(savedIndex.episodes[0].episodeId, "uploaded-episode");
+});
+
+test("owner creates a file collection and publishes a verified FLV upload", async () => {
+  let catalog = {
+    schemaVersion: 1,
+    updatedAt: null,
+    collections: [],
+  };
+  const json = new Map();
+  const uploaded = new Map();
+  const contentStore = {
+    async readJson(path, options) {
+      if (path === "/private/index.json") return catalog;
+      return json.get(path) || options?.missing;
+    },
+    async putJsonOnce(path, value) {
+      if (!json.has(path)) json.set(path, structuredClone(value));
+    },
+    async updateJson(path, _options, change) {
+      if (path === "/private/index.json") {
+        catalog = change(structuredClone(catalog));
+        return catalog;
+      }
+      const next = change(structuredClone(json.get(path)));
+      json.set(path, next);
+      return next;
+    },
+    signUpload(path) {
+      return `https://private-content.example${path}`;
+    },
+    async stat(path) {
+      const value = uploaded.get(path);
+      if (!value) throw Object.assign(new Error("missing"), { code: "NoSuchKey", status: 404 });
+      return value;
+    },
+    async readPrefix() {
+      return Buffer.from([0x46, 0x4c, 0x56, 0x01, 0x05]);
+    },
+  };
+  const handler = createHandler({
+    env: createEnv(), contentStore, now: () => NOW,
+    randomBytesImpl: (size) => Buffer.alloc(size, 12),
+    generateAuthenticationOptionsImpl: async () => ({ challenge: "collection-challenge" }),
+    verifyAuthenticationResponseImpl: async () => ({
+      verified: true, authenticationInfo: { userVerified: true, newCounter: 0 },
+    }),
+  });
+  const challenge = await handler(request({ method: "POST", path: "/challenge", body: {} }));
+  const verified = await handler(request({
+    method: "POST", path: "/verify", cookie: cookiePair(challenge.headers["set-cookie"]),
+    body: { id: CREDENTIAL_ID, type: "public-key", response: {} },
+  }));
+  const cookie = cookiePair(verified.headers["set-cookie"]);
+  const csrf = responseJson(verified).csrfToken;
+  const created = await handler(request({
+    method: "POST", path: "/collections/create", cookie, csrf,
+    body: { title: "Media", description: "Private media", tags: ["video"] },
+  }));
+  assert.equal(created.statusCode, 200, created.body);
+  const collection = responseJson(created).collection;
+  assert.equal(collection.type, "files");
+  assert.equal(catalog.collections[0].collectionId, collection.collectionId);
+
+  const initialized = await handler(request({
+    method: "POST", path: "/uploads/init", cookie, csrf,
+    body: { collectionId: collection.collectionId, file: { originalName: "movie.flv", bytes: 5000 } },
+  }));
+  assert.equal(initialized.statusCode, 200, initialized.body);
+  const upload = responseJson(initialized);
+  assert.equal(upload.files.file.headers["Content-Type"], "video/x-flv");
+  uploaded.set(upload.files.file.path, { bytes: 5000, etag: "flv", contentType: "video/x-flv" });
+  const completed = await handler(request({
+    method: "POST", path: "/uploads/complete", cookie, csrf,
+    body: { uploadToken: upload.uploadToken },
+  }));
+  assert.equal(completed.statusCode, 200, completed.body);
+  assert.equal(json.get(collection.indexPath).items[0].format, "flv");
 });

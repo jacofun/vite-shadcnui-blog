@@ -241,6 +241,7 @@ All paths are relative to `/api/private-auth/`.
 | `POST passkeys/options` / `POST passkeys/verify` | Add a Passkey after recent authentication |
 | `POST passkeys/rename` / `POST passkeys/remove` | Manage own Passkeys; last key cannot be removed |
 | `POST sign` | Sign resources under `PRIVATE_RESOURCE_ROOT`; requires private-resource access |
+| `POST collections/create` | Create a private `files` collection and its index; owner only |
 | `POST uploads/init` | Validate metadata and return short-lived, path-bound OSS PUT URLs; owner or write grant only |
 | `POST uploads/complete` | Verify every uploaded object, write metadata and publish the collection index |
 | `POST logout` | Revoke the current persistent session |
@@ -265,6 +266,13 @@ after every object is present with the declared size and type and the transcript
 content check. A short-lived OSS lock object serializes index replacement across function
 instances. Keep the GitHub Actions resource-sync workflow concurrency at one and avoid publishing
 the same collection from Actions while a browser upload is being finalized.
+
+Owners can create generic `files` collections from `/resources`. These collections accept multiple
+browser-selected files, uploaded one at a time with a 1 GiB per-file limit. MP3, MP4 and FLV files
+are assigned fixed media content types and their container signatures are checked before the item
+is published. Other extensions are stored as `application/octet-stream` and deliberately receive
+no open or download link. The browser uses native playback for MP3/MP4 and MSE through `mpegts.js`
+for FLV; actual codec support still depends on the browser.
 
 The generic private-resource catalog belongs at `/private/index.json` in the CDN-backed private
 content bucket. A deployable copy is provided at `examples/private-resource-index.json`; its

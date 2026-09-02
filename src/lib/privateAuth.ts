@@ -24,7 +24,7 @@ export interface PrivateResourceUploadFile {
   bytes: number;
 }
 
-export interface PrivateResourceUploadRequest {
+export interface PrivateLearningUploadRequest {
   collectionId: string;
   itemId?: string;
   title: string;
@@ -40,6 +40,13 @@ export interface PrivateResourceUploadRequest {
     transcriptPdf?: PrivateResourceUploadFile;
   };
 }
+
+export interface PrivateFileUploadRequest {
+  collectionId: string;
+  file: { originalName: string; bytes: number };
+}
+
+export type PrivateResourceUploadRequest = PrivateLearningUploadRequest | PrivateFileUploadRequest;
 
 export interface PrivateResourceUploadTarget {
   path: string;
@@ -221,6 +228,18 @@ export function completePrivateResourceUpload(
 ): Promise<{ published: true; collectionId: string; itemId: string }> {
   return request("uploads/complete", {
     body: { uploadToken },
+    csrfToken: session.csrfToken,
+    signal,
+  });
+}
+
+export function createPrivateResourceCollection(
+  session: PrivateAuthSession,
+  body: { title: string; description: string; tags: string[] },
+  signal?: AbortSignal,
+): Promise<{ created: true; collection: { collectionId: string } }> {
+  return request("collections/create", {
+    body,
     csrfToken: session.csrfToken,
     signal,
   });

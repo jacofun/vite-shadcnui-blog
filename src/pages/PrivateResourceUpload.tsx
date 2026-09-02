@@ -1,7 +1,7 @@
 import { ArrowLeft, CheckCircle2, FileAudio, FileText, RefreshCw, UploadCloud } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
@@ -54,6 +54,7 @@ function FileField({
 export default function PrivateResourceUpload(): JSX.Element {
   const access = usePrivateResourceSession();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [collections, setCollections] = useState<PrivateResourceCollection[]>([]);
   const [collectionId, setCollectionId] = useState("");
   const [itemId, setItemId] = useState("");
@@ -67,6 +68,7 @@ export default function PrivateResourceUpload(): JSX.Element {
   const [audio, setAudio] = useState<File | null>(null);
   const [transcriptText, setTranscriptText] = useState<File | null>(null);
   const [transcriptPdf, setTranscriptPdf] = useState<File | null>(null);
+  const [genericFiles, setGenericFiles] = useState<File[]>([]);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<"idle" | "uploading" | "publishing" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -78,9 +80,10 @@ export default function PrivateResourceUpload(): JSX.Element {
     const controller = new AbortController();
     loadPrivateResourceCatalog(access.session, controller.signal)
       .then((catalog) => {
-        const supported = catalog.collections.filter((collection) => collection.type === "audio-transcript");
+        const supported = catalog.collections.filter((collection) => ["audio-transcript", "files"].includes(collection.type));
         setCollections(supported);
-        setCollectionId((current) => current || supported[0]?.collectionId || "");
+        const requested = searchParams.get("collection");
+        setCollectionId((current) => current || supported.find((item) => item.collectionId === requested)?.collectionId || supported[0]?.collectionId || "");
       })
       .catch((loadError: unknown) => {
         if (!controller.signal.aborted) {
@@ -88,7 +91,9 @@ export default function PrivateResourceUpload(): JSX.Element {
         }
       });
     return () => controller.abort();
-  }, [access.session, access.status]);
+  }, [access.session, access.status, searchParams]);
+
+  const selectedCollection = collections.find((collection) => collection.collectionId === collectionId);
 
   const submitLabel = useMemo(() => {
     if (status === "uploading") return `正在上传 ${progress}%`;
@@ -99,11 +104,35 @@ export default function PrivateResourceUpload(): JSX.Element {
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!access.session || !audio || !transcriptText || !collectionId) return;
+    if (!access.session || !collectionId) return;
     setError(null);
     setProgress(0);
     setStatus("uploading");
     try {
+      if (selectedCollection?.type === "files") {
+        if (genericFiles.length === 0) throw new Error("请至少选择一个文件");
+        for (let index = 0; index < genericFiles.length; index += 1) {
+          const file = genericFiles[index];
+          const upload = await beginPrivateResourceUpload(access.session, {
+            collectionId,
+            file: { originalName: file.name, bytes: file.size },
+          });
+          const target = upload.files.file;
+          if (!target) throw new Error("上传服务未返回 OSS 地址");
+          await uploadPrivateResourceFile(file, target, ({ loaded }) => {
+            const completed = index / genericFiles.length;
+            const current = (loaded / Math.max(file.size, 1)) / genericFiles.length;
+            setProgress(Math.min(100, Math.round((completed + current) * 100)));
+          });
+          setStatus("publishing");
+          await completePrivateResourceUpload(access.session, upload.uploadToken);
+          if (index < genericFiles.length - 1) setStatus("uploading");
+        }
+        setStatus("done");
+        window.setTimeout(() => navigate(`/resources/${collectionId}`), 600);
+        return;
+      }
+      if (!audio || !transcriptText) throw new Error("请选择 MP3 音频和 TXT 文稿");
       const request: PrivateResourceUploadRequest = {
         collectionId,
         ...(itemId.trim() ? { itemId: itemId.trim() } : {}),
@@ -182,10 +211,10 @@ export default function PrivateResourceUpload(): JSX.Element {
                     {collections.map((collection) => <option className="bg-slate-950" key={collection.collectionId} value={collection.collectionId}>{collection.title}</option>)}
                   </select>
                 </label>
-                <label className="text-sm text-slate-400">资源 ID（可留空自动生成）
+                {selectedCollection?.type === "audio-transcript" && <label className="text-sm text-slate-400">资源 ID（可留空自动生成）
                   <input className={fieldClass} maxLength={100} onChange={(event) => setItemId(event.target.value)} pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,99}" placeholder="例如 debt-and-money" value={itemId} />
-                </label>
-                <label className="text-sm text-slate-400 sm:col-span-2">标题
+                </label>}
+                {selectedCollection?.type === "audio-transcript" && <><label className="text-sm text-slate-400 sm:col-span-2">标题
                   <input className={fieldClass} maxLength={200} onChange={(event) => setTitle(event.target.value)} required value={title} />
                 </label>
                 <label className="text-sm text-slate-400">发布日期
@@ -205,14 +234,20 @@ export default function PrivateResourceUpload(): JSX.Element {
                 </label>
                 <label className="text-sm text-slate-400 sm:col-span-2">资源说明
                   <textarea className={`${fieldClass} min-h-28 resize-y`} maxLength={1000} onChange={(event) => setReason(event.target.value)} required value={reason} />
-                </label>
+                </label></>}
               </section>
 
-              <section className="grid gap-4 sm:grid-cols-2">
+              {selectedCollection?.type === "files" ? (
+                <label className="block rounded-2xl border border-dashed border-white/15 bg-white/[0.025] p-6 transition hover:border-cyan-300/30">
+                  <span className="flex items-center gap-2 text-sm font-medium text-slate-200"><UploadCloud className="size-4 text-cyan-300" />选择文件（可多选）</span>
+                  <input className="mt-4 block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-300/10 file:px-3 file:py-2 file:text-xs file:text-cyan-200" multiple onChange={(event) => setGenericFiles(Array.from(event.target.files || []))} required type="file" />
+                  {genericFiles.length > 0 && <span className="mt-3 block text-xs text-slate-500">已选择 {genericFiles.length} 个文件；MP3、MP4、FLV 可在线播放，单文件最大 1 GB。</span>}
+                </label>
+              ) : <section className="grid gap-4 sm:grid-cols-2">
                 <FileField accept="audio/mpeg,.mp3" file={audio} icon={FileAudio} label="MP3 音频" onChange={setAudio} required />
                 <FileField accept="text/plain,.txt" file={transcriptText} icon={FileText} label="TXT 文稿" onChange={setTranscriptText} required />
                 <div className="sm:col-span-2"><FileField accept="application/pdf,.pdf" file={transcriptPdf} icon={FileText} label="PDF 原稿（可选）" onChange={setTranscriptPdf} /></div>
-              </section>
+              </section>}
 
               {error && <div className="rounded-2xl border border-rose-300/20 bg-rose-300/[0.06] p-5 text-sm text-rose-100">{error}</div>}
               {status !== "idle" && (

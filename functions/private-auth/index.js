@@ -30,6 +30,7 @@ const MAX_SIGNED_RESOURCES = 12;
 const UPLOAD_TOKEN_TTL_SECONDS = 900;
 const UPLOAD_MAX_AUDIO_BYTES = 100 * 1024 * 1024;
 const UPLOAD_MAX_TRANSCRIPT_BYTES = 20 * 1024 * 1024;
+const UPLOAD_MAX_FILE_BYTES = 1024 * 1024 * 1024;
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const ALLOWED_TRANSPORTS = new Set([
   "ble",
@@ -398,6 +399,7 @@ function routeName(path, cookiePath, persistent = false) {
   const apiPrefix = cookiePath.replace(/\/+$/, "");
   const knownRoutes = [
     "challenge", "verify", "session", "sign", "logout", "uploads/init", "uploads/complete",
+    "collections/create",
   ];
   if (persistent) knownRoutes.push(
     "register/options", "register/verify", "reauth/challenge", "reauth/verify",
@@ -636,13 +638,57 @@ function uploadFile(value, role) {
   return { ...rules, bytes: value.bytes };
 }
 
+function genericUploadFile(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value) ||
+      !Number.isSafeInteger(value.bytes) || value.bytes < 1 || value.bytes > UPLOAD_MAX_FILE_BYTES) {
+    throw new HttpError(400, "INVALID_UPLOAD", "file is invalid");
+  }
+  const originalName = uploadText(value.originalName, "originalName", 255);
+  if (/[\\/\u0000-\u001f\u007f]/.test(originalName)) {
+    throw new HttpError(400, "INVALID_UPLOAD", "originalName is invalid");
+  }
+  const extensionMatch = originalName.match(/\.([A-Za-z0-9]{1,16})$/);
+  const extension = extensionMatch ? extensionMatch[1].toLowerCase() : "";
+  const media = {
+    mp3: { mediaType: "audio", contentType: "audio/mpeg", format: "mp3" },
+    mp4: { mediaType: "video", contentType: "video/mp4", format: "mp4" },
+    flv: { mediaType: "video", contentType: "video/x-flv", format: "flv" },
+  }[extension] || {
+    mediaType: "file",
+    contentType: "application/octet-stream",
+    format: extension || "file",
+  };
+  return {
+    ...media,
+    originalName,
+    bytes: value.bytes,
+    filename: extension ? `file.${extension}` : "file",
+  };
+}
+
+function fallbackPrivateCatalog(config) {
+  return {
+    schemaVersion: 1,
+    updatedAt: null,
+    collections: [{
+      collectionId: "6minuteenglish",
+      title: "6 Minute English",
+      description: "BBC Learning English 精听、跟读与复述课程",
+      type: "audio-transcript",
+      basePath: config.privatePrefix,
+      indexPath: `${config.privatePrefix}/index.json`,
+      tags: ["英语学习", "精听", "B1-B2"],
+    }],
+  };
+}
+
 function normalizeUploadRequest(body, catalog, config, randomBytesImpl) {
   const collectionId = uploadText(body.collectionId, "collectionId", 64);
   if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(collectionId)) {
     throw new HttpError(400, "INVALID_UPLOAD", "collectionId is invalid");
   }
   const collection = catalog?.collections?.find((item) => item.collectionId === collectionId);
-  if (!collection || collection.type !== "audio-transcript" ||
+  if (!collection || !["audio-transcript", "files"].includes(collection.type) ||
       typeof collection.basePath !== "string" || typeof collection.indexPath !== "string") {
     throw new HttpError(400, "INVALID_UPLOAD", "The selected collection cannot accept this upload");
   }
@@ -651,17 +697,33 @@ function normalizeUploadRequest(body, catalog, config, randomBytesImpl) {
   if (!EPISODE_ID_PATTERN.test(itemId)) {
     throw new HttpError(400, "INVALID_UPLOAD", "itemId is invalid");
   }
+  const normalizedCollection = {
+    collectionId,
+    type: collection.type,
+    basePath: normalizePrivateResourcePath(collection.basePath, config),
+    indexPath: normalizePrivateResourcePath(collection.indexPath, config),
+  };
+  if (collection.type === "files") {
+    const file = genericUploadFile(body.file);
+    return {
+      collection: normalizedCollection,
+      item: {
+        itemId,
+        originalName: file.originalName,
+        mediaType: file.mediaType,
+        format: file.format,
+        contentType: file.contentType,
+      },
+      files: { file },
+    };
+  }
   const files = {
     audio: uploadFile(body.files?.audio, "audio"),
     transcriptText: uploadFile(body.files?.transcriptText, "transcriptText"),
     ...(body.files?.transcriptPdf ? { transcriptPdf: uploadFile(body.files.transcriptPdf, "transcriptPdf") } : {}),
   };
   return {
-    collection: {
-      collectionId,
-      basePath: normalizePrivateResourcePath(collection.basePath, config),
-      indexPath: normalizePrivateResourcePath(collection.indexPath, config),
-    },
+    collection: normalizedCollection,
     episode: {
       episodeId: itemId,
       title: uploadText(body.title, "title", 200),
@@ -748,6 +810,12 @@ export async function createPrivateResourceContentStore({ env = process.env, con
       const result = await oss.get(objectName(path));
       return Buffer.from(result.content).toString("utf8");
     },
+    async readPrefix(path, bytes = 4096) {
+      const result = await oss.get(objectName(path), {
+        headers: { Range: `bytes=0-${bytes - 1}` },
+      });
+      return Buffer.from(result.content);
+    },
     async putJsonOnce(path, value) {
       const serialized = `${JSON.stringify(value, null, 2)}\n`;
       try {
@@ -763,7 +831,7 @@ export async function createPrivateResourceContentStore({ env = process.env, con
         }
       }
     },
-    async updateIndex(path, change) {
+    async updateJson(path, { missing, validate }, change) {
       const run = contentIndexUpdate.then(async () => {
         const lockPath = `${path}.upload-lock`;
         const lockId = randomBytes(16).toString("hex");
@@ -792,10 +860,8 @@ export async function createPrivateResourceContentStore({ env = process.env, con
           throw new HttpError(409, "RESOURCE_INDEX_BUSY", "Private resource index is being updated");
         }
         try {
-          const current = await this.readJson(path, {
-            missing: { schemaVersion: 1, updatedAt: null, episodes: [] },
-          });
-          if (current?.schemaVersion !== 1 || !Array.isArray(current.episodes)) {
+          const current = await this.readJson(path, { missing });
+          if (!validate(current)) {
             throw new HttpError(503, "INVALID_RESOURCE_INDEX", "Private resource index is invalid");
           }
           const next = change(structuredClone(current));
@@ -815,7 +881,56 @@ export async function createPrivateResourceContentStore({ env = process.env, con
       contentIndexUpdate = run.catch(() => undefined);
       return run;
     },
+    async updateIndex(path, change) {
+      return this.updateJson(path, {
+        missing: { schemaVersion: 1, updatedAt: null, episodes: [] },
+        validate: (value) => value?.schemaVersion === 1 && Array.isArray(value.episodes),
+      }, change);
+    },
   };
+}
+
+function validMediaHeader(format, bytes) {
+  if (!Buffer.isBuffer(bytes)) return false;
+  if (format === "mp3") {
+    return bytes.subarray(0, 3).toString("ascii") === "ID3" ||
+      (bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0);
+  }
+  if (format === "mp4") return bytes.length >= 12 && bytes.subarray(4, 8).toString("ascii") === "ftyp";
+  if (format === "flv") return bytes.length >= 4 && bytes.subarray(0, 3).toString("ascii") === "FLV" && bytes[3] === 1;
+  return true;
+}
+
+async function handlePrivateResourceCollection({ body, user, config, contentStore, nowSeconds, randomBytesImpl }) {
+  if (user.role !== "owner") {
+    throw new HttpError(403, "MISSING_PERMISSION", "Only the owner can create private collections");
+  }
+  if (!contentStore) {
+    throw new HttpError(503, "CONTENT_STORE_UNAVAILABLE", "Private resource storage is unavailable");
+  }
+  const collectionId = `files-${randomBytesImpl(8).toString("hex")}`;
+  const basePath = `${config.privateRoot}/collections/${collectionId}`;
+  const indexPath = `${basePath}/index.json`;
+  const syncedAt = new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
+  const collection = {
+    collectionId,
+    title: uploadText(body.title, "title", 200),
+    description: uploadText(body.description, "description", 1000, { required: false }),
+    type: "files",
+    basePath,
+    indexPath,
+    tags: uploadTags(body.tags || []),
+  };
+  await contentStore.putJsonOnce(indexPath, { schemaVersion: 1, updatedAt: syncedAt, items: [] });
+  await contentStore.updateJson(`${config.privateRoot}/index.json`, {
+    missing: fallbackPrivateCatalog(config),
+    validate: (value) => value?.schemaVersion === 1 && Array.isArray(value.collections),
+  }, (catalog) => {
+    catalog.updatedAt = syncedAt;
+    catalog.collections.push(collection);
+    return catalog;
+  });
+  return { created: true, collection };
 }
 
 async function handlePrivateResourceUpload({
@@ -829,20 +944,14 @@ async function handlePrivateResourceUpload({
   }
 
   if (route === "uploads/init") {
-    const fallbackCatalog = {
-      schemaVersion: 1,
-      collections: [{
-        collectionId: "6minuteenglish",
-        type: "audio-transcript",
-        basePath: config.privatePrefix,
-        indexPath: `${config.privatePrefix}/index.json`,
-      }],
-    };
     const catalog = await contentStore.readJson(`${config.privateRoot}/index.json`, {
-      missing: fallbackCatalog,
+      missing: fallbackPrivateCatalog(config),
     });
     const upload = normalizeUploadRequest(body, catalog, config, randomBytesImpl);
-    const prefix = `${upload.collection.basePath}/${upload.episode.episodeId}`;
+    const item = upload.episode || upload.item;
+    const prefix = upload.collection.type === "files"
+      ? `${upload.collection.basePath}/items/${item.itemId}`
+      : `${upload.collection.basePath}/${item.episodeId}`;
     const files = Object.fromEntries(Object.entries(upload.files).map(([role, file]) => [role, {
       ...file,
       path: `${prefix}/${file.filename}`,
@@ -851,7 +960,7 @@ async function handlePrivateResourceUpload({
       kind: "resource-upload",
       sub: user.id,
       collection: upload.collection,
-      episode: upload.episode,
+      ...(upload.episode ? { episode: upload.episode } : { item: upload.item }),
       files,
       iat: nowSeconds,
       exp: nowSeconds + UPLOAD_TOKEN_TTL_SECONDS,
@@ -859,7 +968,7 @@ async function handlePrivateResourceUpload({
     return {
       uploadToken: encryptToken(payload, config.currentSessionKey, randomBytesImpl),
       expiresAt: payload.exp,
-      itemId: upload.episode.episodeId,
+      itemId: upload.episode?.episodeId || upload.item.itemId,
       files: Object.fromEntries(Object.entries(files).map(([role, file]) => [role, {
         path: file.path,
         uploadUrl: contentStore.signUpload(file.path, file),
@@ -874,7 +983,7 @@ async function handlePrivateResourceUpload({
   const upload = decryptToken(body.uploadToken, [config.currentSessionKey, config.previousSessionKey]);
   if (!upload || upload.kind !== "resource-upload" || upload.sub !== user.id ||
       !Number.isSafeInteger(upload.exp) || upload.exp <= nowSeconds ||
-      !upload.collection || !upload.episode || !upload.files) {
+      !upload.collection || (!upload.episode && !upload.item) || !upload.files) {
     throw new HttpError(400, "INVALID_UPLOAD_TOKEN", "Upload token is invalid or expired");
   }
 
@@ -899,6 +1008,46 @@ async function handlePrivateResourceUpload({
       bytes: metadata.bytes,
       etag: metadata.etag,
     };
+  }
+  if (upload.collection.type === "files") {
+    const file = upload.files.file;
+    if (!file || !upload.item) {
+      throw new HttpError(400, "INVALID_UPLOAD_TOKEN", "Upload token is invalid or expired");
+    }
+    if (["mp3", "mp4", "flv"].includes(upload.item.format)) {
+      const prefix = await contentStore.readPrefix(file.path);
+      if (!validMediaHeader(upload.item.format, prefix)) {
+        throw new HttpError(409, "INVALID_MEDIA", "Media content does not match its file extension");
+      }
+    }
+    const uploadedAt = new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
+    const metadataPath = `${upload.collection.basePath}/items/${upload.item.itemId}/metadata.json`;
+    const metadata = {
+      schemaVersion: 1,
+      ...upload.item,
+      bytes: resources.file.bytes,
+      objectPath: resources.file.path,
+      uploadedAt,
+      etag: resources.file.etag,
+    };
+    await contentStore.putJsonOnce(metadataPath, metadata);
+    const summary = { ...metadata, metadataPath };
+    await contentStore.updateJson(upload.collection.indexPath, {
+      missing: { schemaVersion: 1, updatedAt: null, items: [] },
+      validate: (value) => value?.schemaVersion === 1 && Array.isArray(value.items),
+    }, (index) => {
+      const existing = index.items.find((item) => item.itemId === summary.itemId);
+      if (existing && JSON.stringify(existing) !== JSON.stringify(summary)) {
+        throw new HttpError(409, "RESOURCE_EXISTS", "An item with the same ID already exists");
+      }
+      index.updatedAt = uploadedAt;
+      index.items = [
+        ...index.items.filter((item) => item.itemId !== summary.itemId),
+        summary,
+      ].sort((left, right) => right.uploadedAt.localeCompare(left.uploadedAt));
+      return index;
+    });
+    return { published: true, collectionId: upload.collection.collectionId, itemId: summary.itemId };
   }
   const transcript = (await contentStore.readText(upload.files.transcriptText.path))
     .replace(/\r\n?/g, "\n").trim();
@@ -985,7 +1134,7 @@ export function createHandler({
 
       if (config.storeMode === "oss") {
         const persistentStore = store || await createOssEventStore({ env, context });
-        const privateContentStore = route.startsWith("uploads/")
+        const privateContentStore = route.startsWith("uploads/") || route.startsWith("collections/")
           ? contentStore || await createPrivateResourceContentStore({ env, context })
           : contentStore;
         return await persistentRequest({
@@ -1073,13 +1222,18 @@ export function createHandler({
       const session = requireSession(request, config, nowSeconds);
       requireCsrf(request, session);
 
-      if (route.startsWith("uploads/")) {
+      if (route.startsWith("uploads/") || route.startsWith("collections/")) {
         const privateContentStore = contentStore || await createPrivateResourceContentStore({ env, context });
         const body = parseJsonBody(request.body);
-        const result = await handlePrivateResourceUpload({
-          route, body, user: { id: "owner", role: "owner", permissions: [] }, auth: session,
-          config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
-        });
+        const user = { id: "owner", role: "owner", permissions: [] };
+        const result = route === "collections/create"
+          ? await handlePrivateResourceCollection({
+            body, user, config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
+          })
+          : await handlePrivateResourceUpload({
+            route, body, user, auth: session,
+            config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
+          });
         return jsonResponse(config, 200, result);
       }
 
@@ -1720,6 +1874,12 @@ async function persistentRequest(options) {
     });
     return jsonResponse(config, 200, result);
   }
+  if (route === "collections/create") {
+    const result = await handlePrivateResourceCollection({
+      body, user, config, contentStore, nowSeconds, randomBytesImpl,
+    });
+    return jsonResponse(config, 200, result);
+  }
   if (route === "passkeys") {
     return jsonResponse(config, 200, { credentials: userCredentials(state, user.id)
       .map(({ id, name, createdAt, lastUsedAt, deviceType, backedUp }) => ({ id, name, createdAt, lastUsedAt, deviceType, backedUp })) });
@@ -1841,8 +2001,10 @@ export const handler = createHandler();
 export const __test = {
   decryptToken,
   encryptToken,
+  genericUploadFile,
   loadConfig,
   parseEvent,
   signCdnPath,
   signedResources,
+  validMediaHeader,
 };
