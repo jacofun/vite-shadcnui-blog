@@ -21,7 +21,12 @@ import {
 import { PRIVATE_AUTH_INVALIDATED_EVENT } from "@/lib/privateAuthEvents";
 
 const PRIVATE_AUTH_CHANNEL = "private-auth";
+const MILLISECONDS_PER_SECOND = 1000;
 let sessionRequest: Promise<PrivateAuthSession | null> | null = null;
+
+function sessionExpiresAtMilliseconds(session: PrivateAuthSession): number {
+  return session.expiresAt * MILLISECONDS_PER_SECOND;
+}
 
 function fetchSession(): Promise<PrivateAuthSession | null> {
   if (!sessionRequest) {
@@ -64,7 +69,9 @@ export function PrivateAuthProvider({ children }: { children: ReactNode }): JSX.
 
   const ensureSession = useCallback(async (force = false): Promise<PrivateAuthSession | null> => {
     const currentSession = sessionRef.current;
-    if (!force && currentSession && currentSession.expiresAt > Date.now()) return currentSession;
+    if (!force && currentSession && sessionExpiresAtMilliseconds(currentSession) > Date.now()) {
+      return currentSession;
+    }
     if (!force && statusRef.current === "signed-out") return null;
 
     statusRef.current = "loading";
@@ -105,7 +112,7 @@ export function PrivateAuthProvider({ children }: { children: ReactNode }): JSX.
 
   useEffect(() => {
     if (!session) return;
-    const remaining = session.expiresAt - Date.now();
+    const remaining = sessionExpiresAtMilliseconds(session) - Date.now();
     if (remaining <= 0) {
       sessionRef.current = null;
       statusRef.current = "idle";

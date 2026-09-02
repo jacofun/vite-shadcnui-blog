@@ -12,6 +12,7 @@ export interface PrivateAuthUser {
 export interface PrivateAuthSession {
   authenticated: true;
   csrfToken: string;
+  /** Unix timestamp in seconds, matching the Function Compute API contract. */
   expiresAt: number;
   user: PrivateAuthUser;
 }
