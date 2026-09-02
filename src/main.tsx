@@ -5,6 +5,7 @@ import { HelmetProvider } from "react-helmet-async";
 
 import App from "./App.tsx";
 import LegacyEnglishEpisodeRedirect from "./components/routing/LegacyEnglishEpisodeRedirect.tsx";
+import { PrivateAuthProvider } from "./contexts/PrivateAuthContext.tsx";
 import "./index.css";
 import Home from "./pages/Home.tsx";
 
@@ -12,6 +13,7 @@ const NoteDetail = lazy(() => import("./pages/NoteDetail.tsx"));
 const Notes = lazy(() => import("./pages/Notes.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const PrivateAuth = lazy(() => import("./pages/PrivateAuth.tsx"));
+const PrivateClipboard = lazy(() => import("./pages/PrivateClipboard.tsx"));
 const PrivateResources = lazy(() => import("./pages/PrivateResources.tsx"));
 const PrivateResourceCollection = lazy(() => import("./pages/PrivateResourceCollection.tsx"));
 const PrivateResourceItem = lazy(() => import("./pages/PrivateResourceItem.tsx"));
@@ -48,6 +50,7 @@ const router = createHashRouter([
       { path: "notes/:slug", element: lazyPage(<NoteDetail />) },
       { path: "auth", element: lazyPage(<PrivateAuth />) },
       { path: "resources", element: lazyPage(<PrivateResources />) },
+      { path: "resources/clipboard", element: lazyPage(<PrivateClipboard />) },
       { path: "resources/new", element: lazyPage(<PrivateResourceCreateCollection />) },
       { path: "resources/upload", element: lazyPage(<PrivateResourceUpload />) },
       { path: "resources/:collectionId", element: lazyPage(<PrivateResourceCollection />) },
@@ -63,7 +66,9 @@ const router = createHashRouter([
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <HelmetProvider>
-      <RouterProvider router={router} />
+      <PrivateAuthProvider>
+        <RouterProvider router={router} />
+      </PrivateAuthProvider>
     </HelmetProvider>
   </StrictMode>,
 );

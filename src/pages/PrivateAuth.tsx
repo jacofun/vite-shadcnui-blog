@@ -19,13 +19,12 @@ import { useEffect, useState, type FormEvent, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 
+import { usePrivateAuth } from "@/hooks/usePrivateAuth";
 import {
   beginPasskeyLogin,
   beginPasskeyRegistration,
-  getPrivateAuthSession,
   logoutPrivateAuth,
   PrivateAuthApiError,
-  type PrivateAuthSession,
   verifyPasskeyLogin,
   verifyPasskeyRegistration,
 } from "@/lib/privateAuth";
@@ -74,9 +73,14 @@ function shouldKeepVerification(error: unknown): boolean {
 }
 
 export default function PrivateAuth(): JSX.Element {
+  const {
+    clearSession,
+    ensureSession,
+    session,
+    setAuthenticatedSession,
+    status: authStatus,
+  } = usePrivateAuth();
   const [mode, setMode] = useState<AuthMode>("login");
-  const [session, setSession] = useState<PrivateAuthSession | null>(null);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [busyAction, setBusyAction] = useState<BusyAction>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingVerification, setPendingVerification] =
@@ -85,23 +89,13 @@ export default function PrivateAuth(): JSX.Element {
   const [displayName, setDisplayName] = useState("");
   const [credentialName, setCredentialName] = useState("我的 Passkey");
   const supportsWebAuthn = browserSupportsWebAuthn();
+  const isCheckingSession = authStatus === "idle" || authStatus === "loading";
 
   useEffect(() => {
-    const controller = new AbortController();
-
-    getPrivateAuthSession(controller.signal)
-      .then((currentSession) => setSession(currentSession))
-      .catch((sessionError: unknown) => {
-        if (sessionError instanceof DOMException && sessionError.name === "AbortError") return;
-        if (sessionError instanceof PrivateAuthApiError && sessionError.status === 401) return;
-        setError(readableError(sessionError));
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setIsCheckingSession(false);
-      });
-
-    return () => controller.abort();
-  }, []);
+    if (authStatus === "idle") {
+      void ensureSession().catch((sessionError: unknown) => setError(readableError(sessionError)));
+    }
+  }, [authStatus, ensureSession]);
 
   const completeVerification = async (pending: PendingVerification, action: BusyAction) => {
     setBusyAction(action);
@@ -110,7 +104,7 @@ export default function PrivateAuth(): JSX.Element {
       const authenticated = pending.kind === "login"
         ? await verifyPasskeyLogin(pending.credential)
         : await verifyPasskeyRegistration(pending.credential);
-      setSession(authenticated);
+      setAuthenticatedSession(authenticated);
       setPendingVerification(null);
       setInvitationToken("");
     } catch (verificationError) {
@@ -166,7 +160,7 @@ export default function PrivateAuth(): JSX.Element {
     setError(null);
     try {
       await logoutPrivateAuth(session);
-      setSession(null);
+      clearSession();
       setMode("login");
     } catch (logoutError) {
       setError(readableError(logoutError));

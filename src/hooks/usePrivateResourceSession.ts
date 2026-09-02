@@ -1,10 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
-import {
-  getPrivateAuthSession,
-  PrivateAuthApiError,
-  type PrivateAuthSession,
-} from "@/lib/privateAuth";
+import { usePrivateAuth } from "@/hooks/usePrivateAuth";
+import type { PrivateAuthSession } from "@/lib/privateAuth";
 
 interface PrivateResourceSessionState {
   error: string | null;
@@ -19,37 +16,29 @@ function hasPrivateResourceAccess(session: PrivateAuthSession): boolean {
 }
 
 export function usePrivateResourceSession(): PrivateResourceSessionState {
-  const [state, setState] = useState<PrivateResourceSessionState>({
-    error: null,
-    session: null,
-    status: "loading",
-  });
+  const { ensureSession, error, session, status } = usePrivateAuth();
 
   useEffect(() => {
-    const controller = new AbortController();
-    getPrivateAuthSession(controller.signal)
-      .then((session) => {
-        setState({
-          error: null,
-          session,
-          status: hasPrivateResourceAccess(session) ? "ready" : "forbidden",
-        });
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        if (error instanceof PrivateAuthApiError && error.status === 401) {
-          setState({ error: null, session: null, status: "signed-out" });
-          return;
-        }
-        setState({
-          error: error instanceof Error ? error.message : "认证状态读取失败",
-          session: null,
-          status: "error",
-        });
-      });
+    if (status === "idle") {
+      void ensureSession().catch(() => undefined);
+    }
+  }, [ensureSession, status]);
 
-    return () => controller.abort();
-  }, []);
-
-  return state;
+  if (status === "idle" || status === "loading") {
+    return { error: null, session: null, status: "loading" };
+  }
+  if (status === "signed-out") {
+    return { error: null, session: null, status: "signed-out" };
+  }
+  if (status === "error") {
+    return {
+      error: error instanceof Error ? error.message : "认证状态读取失败",
+      session: null,
+      status: "error",
+    };
+  }
+  if (!session || !hasPrivateResourceAccess(session)) {
+    return { error: null, session, status: "forbidden" };
+  }
+  return { error: null, session, status: "ready" };
 }

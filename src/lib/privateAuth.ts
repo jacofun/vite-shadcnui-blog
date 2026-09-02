@@ -1,3 +1,5 @@
+import { notifyPrivateAuthInvalidated } from "@/lib/privateAuthEvents";
+
 const API_BASE = "/api/private-auth";
 
 export interface PrivateAuthUser {
@@ -118,6 +120,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   if (!response.ok) {
     const error = payload as ApiErrorBody;
+    if (response.status === 401) notifyPrivateAuthInvalidated();
     throw new PrivateAuthApiError(
       response.status,
       error.code ?? "REQUEST_FAILED",

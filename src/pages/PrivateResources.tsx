@@ -1,11 +1,11 @@
-import { ArrowRight, FolderLock, FolderPlus, Headphones, LogOut, RefreshCw, ShieldCheck, UploadCloud } from "lucide-react";
+import { ArrowRight, Clipboard, FolderLock, FolderPlus, Headphones, LogOut, RefreshCw, ShieldCheck, UploadCloud } from "lucide-react";
 import { useEffect, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
 
-import PrivateClipboard from "@/components/resources/PrivateClipboard";
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
+import { usePrivateAuth } from "@/hooks/usePrivateAuth";
 import { logoutPrivateAuth } from "@/lib/privateAuth";
 import {
   loadPrivateResourceCatalog,
@@ -13,6 +13,7 @@ import {
 } from "@/lib/privateResources";
 
 export default function PrivateResources(): JSX.Element {
+  const auth = usePrivateAuth();
   const access = usePrivateResourceSession();
   const navigate = useNavigate();
   const [catalog, setCatalog] = useState<PrivateResourceCatalog | null>(null);
@@ -43,6 +44,7 @@ export default function PrivateResources(): JSX.Element {
     setLoggingOut(true);
     try {
       await logoutPrivateAuth(access.session);
+      auth.clearSession();
       navigate("/auth", { replace: true });
     } catch (logoutError) {
       setError(logoutError instanceof Error ? logoutError.message : "退出登录失败");
@@ -70,11 +72,10 @@ export default function PrivateResources(): JSX.Element {
             <div className="mt-7 flex flex-wrap gap-3">
               {canUpload && <Link className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-2.5 text-sm font-medium text-cyan-200 transition hover:border-cyan-300/40 hover:bg-cyan-300/[0.12]" to="/resources/upload"><UploadCloud className="size-4" />上传资源</Link>}
               {access.session?.user.role === "owner" && <Link className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07]" to="/resources/new"><FolderPlus className="size-4" />新建合集</Link>}
+              <Link className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07]" to="/resources/clipboard"><Clipboard className="size-4" />文本剪贴板</Link>
               <button className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-rose-300/20 hover:text-rose-300 disabled:opacity-50" disabled={loggingOut} onClick={() => void logout()} type="button">{loggingOut ? <RefreshCw className="size-4 animate-spin" /> : <LogOut className="size-4" />}退出登录</button>
             </div>
           </header>
-
-          {access.session && <PrivateClipboard canWrite={canUpload} session={access.session} />}
 
           {!catalog && !error && (
             <div aria-live="polite" className="mt-14 flex items-center gap-3 text-sm text-slate-500">

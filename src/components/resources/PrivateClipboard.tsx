@@ -1,4 +1,4 @@
-import { Check, Clipboard, Copy, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Check, Copy, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useState, type FormEvent, type JSX } from "react";
 
 import {
@@ -75,13 +75,7 @@ export default function PrivateClipboard({
   }
 
   return (
-    <section className="mt-12" aria-labelledby="private-clipboard-title">
-      <div className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-xl border border-cyan-300/15 bg-cyan-300/[0.08]"><Clipboard className="size-5 text-cyan-300" /></span>
-        <div><p className="font-mono text-[11px] tracking-[0.16em] text-cyan-300">PRIVATE CLIPBOARD</p><h2 className="mt-1 text-xl font-semibold text-white" id="private-clipboard-title">文本剪贴板</h2></div>
-      </div>
-      <p className="mt-3 text-sm leading-6 text-slate-500">文本保存在私人 OSS，可在已授权设备之间复制使用。</p>
-
+    <section aria-label="文本剪贴板" className="mt-12">
       {canWrite && <form className="mt-5 rounded-2xl border border-white/10 bg-white/[0.025] p-4" onSubmit={save}>
         <textarea className="min-h-28 w-full resize-y bg-transparent text-sm leading-7 text-slate-200 outline-none placeholder:text-slate-600" maxLength={20000} onChange={(event) => setText(event.target.value)} placeholder="输入需要跨设备使用的文本…" value={text} />
         <div className="mt-3 flex items-center justify-between border-t border-white/[0.07] pt-3"><span className="text-xs text-slate-600">{text.length} / 20000</span><button className="inline-flex items-center gap-2 rounded-lg bg-cyan-300 px-3.5 py-2 text-xs font-semibold text-slate-950 disabled:opacity-50" disabled={!text.trim() || saving} type="submit">{saving ? <RefreshCw className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}保存文本</button></div>
