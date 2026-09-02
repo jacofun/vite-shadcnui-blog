@@ -9,7 +9,8 @@ function App() {
   const { pathname } = useLocation();
   const showAiDisclaimer =
     pathname === "/" || pathname.startsWith("/notes");
-  const showFooter = !pathname.startsWith("/resources");
+  const showFooter =
+    !pathname.startsWith("/auth") && !pathname.startsWith("/resources");
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
