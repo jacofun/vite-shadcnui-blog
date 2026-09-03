@@ -22,6 +22,14 @@ export interface PrivateResourceCatalog {
 
 const collectionIdPattern = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const privatePathPattern = /^\/private\/(?:[A-Za-z0-9][A-Za-z0-9._-]{0,127}\/)*[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+const PRIVATE_RESOURCE_CATALOG_CACHE_TTL_MS = 3 * 60 * 1000;
+
+type PrivateResourceCatalogCacheEntry = {
+  catalog: PrivateResourceCatalog;
+  expiresAt: number;
+};
+
+const privateResourceCatalogCache = new Map<string, PrivateResourceCatalogCacheEntry>();
 
 export const fallbackPrivateResourceCatalog: PrivateResourceCatalog = {
   schemaVersion: 1,
@@ -51,6 +59,18 @@ export class PrivateResourceDataError extends Error {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function catalogCacheKey(session: PrivateAuthSession): string {
+  return session.user.id;
+}
+
+export function invalidatePrivateResourceCatalogCache(userId?: string): void {
+  if (userId) {
+    privateResourceCatalogCache.delete(userId);
+    return;
+  }
+  privateResourceCatalogCache.clear();
 }
 
 export function isPrivateResourcePath(value: unknown): value is string {
@@ -119,21 +139,37 @@ export async function fetchPrivateResourceCatalog(
 export async function loadPrivateResourceCatalog(
   session: PrivateAuthSession,
   signal?: AbortSignal,
+  options: { force?: boolean } = {},
 ): Promise<PrivateResourceCatalog> {
+  const cacheKey = catalogCacheKey(session);
+  const cached = privateResourceCatalogCache.get(cacheKey);
+  if (!options.force && cached && cached.expiresAt > Date.now()) {
+    return cached.catalog;
+  }
+  if (cached) privateResourceCatalogCache.delete(cacheKey);
+
+  let catalog: PrivateResourceCatalog;
   try {
     const signed = await signPrivateResourceCatalog(session, signal);
     const catalogUrl = signed.resources.catalog;
     if (!catalogUrl) throw new Error("认证服务未返回私人资源目录地址");
-    return await fetchPrivateResourceCatalog(catalogUrl, signal);
+    catalog = await fetchPrivateResourceCatalog(catalogUrl, signal);
   } catch (error) {
     if (
       (error instanceof PrivateResourceDataError && error.status === 404) ||
       usesLegacyPrivateAuth(error)
     ) {
-      return fallbackPrivateResourceCatalog;
+      catalog = fallbackPrivateResourceCatalog;
+    } else {
+      throw error;
     }
-    throw error;
   }
+
+  privateResourceCatalogCache.set(cacheKey, {
+    catalog,
+    expiresAt: Date.now() + PRIVATE_RESOURCE_CATALOG_CACHE_TTL_MS,
+  });
+  return catalog;
 }
 
 export function usesLegacyPrivateAuth(error: unknown): boolean {
