@@ -2,7 +2,7 @@ import { useEffect, useState, type JSX } from "react";
 
 import { cn } from "@/lib/utils";
 
-const EXPECTED_LOADING_TIME_MS = 10_000;
+const EXPECTED_LOADING_TIME_MS = 8_000;
 const UPDATE_INTERVAL_MS = 200;
 const COMPLETION_DELAY_MS = 260;
 
