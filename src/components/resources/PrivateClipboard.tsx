@@ -8,6 +8,7 @@ import {
   type PrivateAuthSession,
   type PrivateClipboardEntry,
 } from "@/lib/privateAuth";
+import PrivateLoadingProgress from "@/components/resources/PrivateLoadingProgress";
 
 export default function PrivateClipboard({
   canWrite,
@@ -82,7 +83,7 @@ export default function PrivateClipboard({
       </form>}
 
       {error && <div className="mt-4 rounded-xl border border-rose-300/20 bg-rose-300/[0.06] p-4 text-sm text-rose-100">{error}</div>}
-      {loading && <div className="mt-5 flex items-center gap-2 text-sm text-slate-500"><RefreshCw className="size-4 animate-spin text-cyan-300" />正在读取剪贴板…</div>}
+      <PrivateLoadingProgress className="mt-5" failed={Boolean(error)} label="正在读取剪贴板" loading={loading} />
       {!loading && entries.length === 0 && <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.025] p-5 text-sm text-slate-500">剪贴板中还没有文本。</div>}
       {entries.length > 0 && <div className="mt-5 grid min-w-0 gap-3">
         {entries.map((entry) => <article className="min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4" key={entry.id}>

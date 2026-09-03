@@ -5,6 +5,7 @@ import { HelmetProvider } from "react-helmet-async";
 
 import App from "./App.tsx";
 import LegacyEnglishEpisodeRedirect from "./components/routing/LegacyEnglishEpisodeRedirect.tsx";
+import PrivateLoadingProgress from "./components/resources/PrivateLoadingProgress.tsx";
 import { PrivateAuthProvider } from "./contexts/PrivateAuthContext.tsx";
 import "./index.css";
 import Home from "./pages/Home.tsx";
@@ -26,11 +27,11 @@ const WeddingInvitation = lazy(
 const routeFallback = (
   <main className="min-h-screen bg-[#070a12] text-slate-100">
     <div className="mx-auto flex min-h-[55vh] max-w-6xl items-center px-6 sm:px-8 lg:px-10">
-      <div aria-live="polite" className="space-y-3">
+      <div aria-live="polite" className="w-full max-w-xl space-y-3">
         <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">
           YANXIAO.ME
         </p>
-        <p className="animate-pulse text-sm text-slate-500">正在载入页面…</p>
+        <PrivateLoadingProgress label="正在载入页面" loading />
       </div>
     </div>
   </main>

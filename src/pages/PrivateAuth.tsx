@@ -19,6 +19,7 @@ import { useEffect, useState, type FormEvent, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 
+import PrivateLoadingProgress from "@/components/resources/PrivateLoadingProgress";
 import { usePrivateAuth } from "@/hooks/usePrivateAuth";
 import {
   beginPasskeyLogin,
@@ -198,8 +199,7 @@ export default function PrivateAuth(): JSX.Element {
 
               {isCheckingSession ? (
                 <div aria-live="polite" className="flex min-h-48 flex-col items-center justify-center text-center">
-                  <RefreshCw className="size-6 animate-spin text-cyan-300" />
-                  <p className="mt-4 text-sm text-slate-500">正在检查登录状态…</p>
+                  <PrivateLoadingProgress label="正在检查登录状态" loading />
                 </div>
               ) : session ? (
                 <div>

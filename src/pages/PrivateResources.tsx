@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
 
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
+import PrivateLoadingProgress from "@/components/resources/PrivateLoadingProgress";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
 import { usePrivateAuth } from "@/hooks/usePrivateAuth";
 import { logoutPrivateAuth } from "@/lib/privateAuth";
@@ -77,12 +78,7 @@ export default function PrivateResources(): JSX.Element {
             </div>
           </header>
 
-          {!catalog && !error && (
-            <div aria-live="polite" className="mt-14 flex items-center gap-3 text-sm text-slate-500">
-              <RefreshCw className="size-4 animate-spin text-cyan-300" />
-              正在读取资源目录…
-            </div>
-          )}
+          <PrivateLoadingProgress className="mt-14 max-w-xl" failed={Boolean(error)} label="正在读取资源目录" loading={!catalog && !error} />
 
           {error && (
             <div className="mt-12 rounded-2xl border border-rose-300/20 bg-rose-300/[0.06] p-5 text-sm text-rose-100">{error}</div>

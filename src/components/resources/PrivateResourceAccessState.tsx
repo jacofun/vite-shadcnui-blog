@@ -2,6 +2,8 @@ import { AlertCircle, LockKeyhole, RefreshCw } from "lucide-react";
 import type { JSX } from "react";
 import { Link } from "react-router-dom";
 
+import PrivateLoadingProgress from "@/components/resources/PrivateLoadingProgress";
+
 interface Props {
   error?: string | null;
   status: "signed-out" | "forbidden" | "error" | "loading";
@@ -30,7 +32,7 @@ export default function PrivateResourceAccessState({ error, status }: Props): JS
       <section className="mx-auto max-w-lg rounded-3xl border border-white/10 bg-white/[0.035] p-8 text-center shadow-2xl shadow-black/20">
         <div className="mx-auto flex size-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10">
           {isLoading ? (
-            <RefreshCw className="size-5 animate-spin text-cyan-300" />
+            <RefreshCw className="size-5 text-cyan-300" />
           ) : status === "error" ? (
             <AlertCircle className="size-5 text-rose-300" />
           ) : (
@@ -39,6 +41,7 @@ export default function PrivateResourceAccessState({ error, status }: Props): JS
         </div>
         <h1 className="mt-6 text-2xl font-semibold tracking-tight text-white">{title}</h1>
         <p className="mt-3 text-sm leading-7 text-slate-400">{description}</p>
+        <PrivateLoadingProgress className="mt-7 text-left" label="正在连接私人认证服务" loading={isLoading} />
         {!isLoading && (
           <div className="mt-7 flex justify-center gap-3">
             {isSignedOut && (

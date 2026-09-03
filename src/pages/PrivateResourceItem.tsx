@@ -6,6 +6,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import FixedAudioPlayer from "@/components/resources/FixedAudioPlayer";
 import FlvVideoPlayer from "@/components/resources/FlvVideoPlayer";
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
+import PrivateLoadingProgress from "@/components/resources/PrivateLoadingProgress";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
 import { deletePrivateResourceFile, signLegacyPrivateLearningEpisode, signPrivateResourcePaths } from "@/lib/privateAuth";
 import { fetchPrivateFileItem, formatFileBytes, type PrivateFileItem } from "@/lib/privateFiles";
@@ -107,7 +108,9 @@ export default function PrivateResourceItem(): JSX.Element {
       <main className={`min-h-[calc(100svh-4rem)] bg-[#070a12] px-6 pt-10 text-slate-100 sm:px-8 sm:pt-14 lg:px-10 ${episode || file?.format === "mp3" ? "pb-48" : "pb-20"}`}>
         <article className="mx-auto max-w-3xl">
           <Link className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-cyan-300" to={collectionPath}><ArrowLeft className="size-4" />返回{collection?.title ?? "私人资源"}</Link>
-          {isLoading && <div className="flex min-h-[50vh] items-center justify-center gap-3 text-sm text-slate-500"><RefreshCw className="size-4 animate-spin text-cyan-300" />正在读取资源…</div>}
+          <div className={isLoading ? "flex min-h-[50vh] items-center" : ""}>
+            <PrivateLoadingProgress failed={Boolean(error)} label="正在读取资源" loading={isLoading} />
+          </div>
           {(error || invalidItem) && <div className="mt-10 rounded-2xl border border-rose-300/20 bg-rose-300/[0.06] p-5 text-sm text-rose-100">{invalidItem ? "资源标识无效。" : error}</div>}
           {file && <>
             <header className="mt-9 border-b border-white/10 pb-9">
