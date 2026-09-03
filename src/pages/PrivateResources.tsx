@@ -19,19 +19,25 @@ export default function PrivateResources(): JSX.Element {
   const navigate = useNavigate();
   const [catalog, setCatalog] = useState<PrivateResourceCatalog | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [catalogError, setCatalogError] = useState(false);
+  const [loadRevision, setLoadRevision] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     if (access.status !== "ready" || !access.session) return;
     const controller = new AbortController();
-    loadPrivateResourceCatalog(access.session, controller.signal)
+    setCatalog(null);
+    setError(null);
+    setCatalogError(false);
+    loadPrivateResourceCatalog(access.session, controller.signal, { force: loadRevision > 0 })
       .then(setCatalog)
       .catch((loadError: unknown) => {
         if (controller.signal.aborted) return;
+        setCatalogError(true);
         setError(loadError instanceof Error ? loadError.message : "私人资源目录读取失败");
       });
     return () => controller.abort();
-  }, [access.session, access.status]);
+  }, [access.session, access.status, loadRevision]);
 
   if (access.status !== "ready") {
     return <PrivateResourceAccessState error={access.error} status={access.status} />;
@@ -43,6 +49,8 @@ export default function PrivateResources(): JSX.Element {
   async function logout(): Promise<void> {
     if (!access.session || loggingOut) return;
     setLoggingOut(true);
+    setError(null);
+    setCatalogError(false);
     try {
       await logoutPrivateAuth(access.session);
       auth.clearSession();
@@ -78,10 +86,17 @@ export default function PrivateResources(): JSX.Element {
             </div>
           </header>
 
-          <PrivateLoadingProgress className="mt-14 max-w-xl" failed={Boolean(error)} label="正在读取资源目录" loading={!catalog && !error} />
+          <PrivateLoadingProgress className="mt-14 max-w-xl" failed={catalogError} label="正在读取资源目录" loading={!catalog && !error} />
 
           {error && (
-            <div className="mt-12 rounded-2xl border border-rose-300/20 bg-rose-300/[0.06] p-5 text-sm text-rose-100">{error}</div>
+            <div className="mt-12 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-rose-300/20 bg-rose-300/[0.06] p-5 text-sm text-rose-100">
+              <span>{error}</span>
+              {catalogError && (
+                <button className="inline-flex items-center gap-2 rounded-xl border border-rose-200/20 px-4 py-2 text-xs font-medium text-rose-100 transition hover:bg-rose-100/10" onClick={() => setLoadRevision((value) => value + 1)} type="button">
+                  <RefreshCw className="size-3.5" />重新加载
+                </button>
+              )}
+            </div>
           )}
 
           {catalog && catalog.collections.length === 0 && (
@@ -93,24 +108,14 @@ export default function PrivateResources(): JSX.Element {
               {catalog.collections.map((collection) => {
                 const Icon = collection.type === "audio-transcript" ? Headphones : FolderLock;
                 return (
-                  <Link
-                    className="group rounded-3xl border border-white/10 bg-white/[0.035] p-6 transition hover:-translate-y-0.5 hover:border-cyan-300/25 hover:bg-white/[0.055]"
-                    key={collection.collectionId}
-                    to={`/resources/${collection.collectionId}`}
-                  >
+                  <Link className="group rounded-3xl border border-white/10 bg-white/[0.035] p-6 transition hover:-translate-y-0.5 hover:border-cyan-300/25 hover:bg-white/[0.055]" key={collection.collectionId} to={`/resources/${collection.collectionId}`}>
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex size-11 items-center justify-center rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.08]">
-                        <Icon className="size-5 text-cyan-300" />
-                      </div>
+                      <div className="flex size-11 items-center justify-center rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.08]"><Icon className="size-5 text-cyan-300" /></div>
                       <ArrowRight className="size-4 text-slate-600 transition group-hover:translate-x-1 group-hover:text-cyan-300" />
                     </div>
                     <h2 className="mt-6 text-xl font-semibold text-white">{collection.title}</h2>
                     <p className="mt-3 text-sm leading-7 text-slate-400">{collection.description}</p>
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {collection.tags.map((tag) => (
-                        <span className="rounded-full border border-white/[0.08] px-2.5 py-1 text-xs text-slate-500" key={tag}>{tag}</span>
-                      ))}
-                    </div>
+                    <div className="mt-5 flex flex-wrap gap-2">{collection.tags.map((tag) => <span className="rounded-full border border-white/[0.08] px-2.5 py-1 text-xs text-slate-500" key={tag}>{tag}</span>)}</div>
                   </Link>
                 );
               })}

@@ -190,7 +190,7 @@ export default function PrivateAuth(): JSX.Element {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(600px_circle_at_50%_8%,rgba(34,211,238,0.11),transparent_68%)]" />
 
         <div className="relative mx-auto flex h-full max-w-md items-center px-5 py-3 sm:px-0 sm:py-5">
-          <section className="w-full rounded-3xl border border-white/10 bg-[#0a0e18]/95 p-1 shadow-[0_30px_100px_rgba(0,0,0,0.42)]">
+          <section className="max-h-full w-full overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#0a0e18]/95 p-1 shadow-[0_30px_100px_rgba(0,0,0,0.42)]">
             <div className="rounded-[22px] border border-white/[0.06] bg-[#080c15] p-4 sm:p-6">
               <div className="mb-4">
                 <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">PRIVATE ACCESS</p>
@@ -221,20 +221,12 @@ export default function PrivateAuth(): JSX.Element {
                     </div>
                   </dl>
                   {hasPrivateResourceAccess && (
-                    <Link
-                      className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100"
-                      to="/resources"
-                    >
+                    <Link className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100" to="/resources">
                       <BookOpenText className="size-4" />
                       进入私人资源
                     </Link>
                   )}
-                  <button
-                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white disabled:cursor-wait disabled:opacity-50"
-                    disabled={isBusy}
-                    onClick={handleLogout}
-                    type="button"
-                  >
+                  <button className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white disabled:cursor-wait disabled:opacity-50" disabled={isBusy} onClick={handleLogout} type="button">
                     {busyAction === "logout" ? <RefreshCw className="size-4 animate-spin" /> : <LogOut className="size-4" />}
                     退出登录
                   </button>
@@ -243,17 +235,7 @@ export default function PrivateAuth(): JSX.Element {
                 <div>
                   <div className="grid grid-cols-2 rounded-xl border border-white/[0.08] bg-white/[0.025] p-1">
                     {(["login", "register"] as const).map((item) => (
-                      <button
-                        aria-pressed={mode === item}
-                        className={`rounded-lg px-3 py-2 text-sm transition ${mode === item ? "bg-white/10 text-white" : "text-slate-600 hover:text-slate-300"}`}
-                        key={item}
-                        onClick={() => {
-                          setMode(item);
-                          setError(null);
-                          setPendingVerification(null);
-                        }}
-                        type="button"
-                      >
+                      <button aria-pressed={mode === item} className={`rounded-lg px-3 py-2 text-sm transition ${mode === item ? "bg-white/10 text-white" : "text-slate-600 hover:text-slate-300"}`} key={item} onClick={() => { setMode(item); setError(null); setPendingVerification(null); }} type="button">
                         {item === "login" ? "登录" : "注册"}
                       </button>
                     ))}
@@ -268,12 +250,7 @@ export default function PrivateAuth(): JSX.Element {
 
                   {mode === "login" ? (
                     <div className="pt-3">
-                      <button
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100 disabled:cursor-wait disabled:opacity-50"
-                        disabled={isBusy || !supportsWebAuthn}
-                        onClick={handleLogin}
-                        type="button"
-                      >
+                      <button className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100 disabled:cursor-wait disabled:opacity-50" disabled={isBusy || !supportsWebAuthn} onClick={handleLogin} type="button">
                         {busyAction === "login" ? <RefreshCw className="size-4 animate-spin" /> : <Fingerprint className="size-4" />}
                         使用 Passkey 登录
                       </button>
@@ -282,50 +259,17 @@ export default function PrivateAuth(): JSX.Element {
                     <form className="space-y-2.5 pt-3" onSubmit={handleRegister}>
                       <div>
                         <label className="text-xs font-medium text-slate-300" htmlFor="invitation-token">邀请码</label>
-                        <input
-                          autoCapitalize="none"
-                          autoComplete="one-time-code"
-                          className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-2.5 font-mono text-base tracking-[0.08em] text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
-                          id="invitation-token"
-                          maxLength={16}
-                          minLength={16}
-                          onChange={(event) => setInvitationToken(event.target.value.trim())}
-                          placeholder="16 位邀请码"
-                          required
-                          spellCheck={false}
-                          value={invitationToken}
-                        />
+                        <input autoCapitalize="none" autoComplete="one-time-code" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-2.5 font-mono text-base tracking-[0.08em] text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10" id="invitation-token" maxLength={16} minLength={16} onChange={(event) => setInvitationToken(event.target.value.trim())} placeholder="16 位邀请码" required spellCheck={false} value={invitationToken} />
                       </div>
                       <div>
                         <label className="text-xs font-medium text-slate-300" htmlFor="display-name">显示名称</label>
-                        <input
-                          autoComplete="name"
-                          className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-2.5 text-base text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
-                          id="display-name"
-                          maxLength={80}
-                          onChange={(event) => setDisplayName(event.target.value)}
-                          placeholder="用于站内展示"
-                          required
-                          value={displayName}
-                        />
+                        <input autoComplete="name" className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-2.5 text-base text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10" id="display-name" maxLength={80} onChange={(event) => setDisplayName(event.target.value)} placeholder="用于站内展示" required value={displayName} />
                       </div>
                       <div>
                         <label className="text-xs font-medium text-slate-300" htmlFor="credential-name">Passkey 名称</label>
-                        <input
-                          className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-2.5 text-base text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
-                          id="credential-name"
-                          maxLength={80}
-                          onChange={(event) => setCredentialName(event.target.value)}
-                          placeholder="例如：iPhone"
-                          required
-                          value={credentialName}
-                        />
+                        <input className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-2.5 text-base text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10" id="credential-name" maxLength={80} onChange={(event) => setCredentialName(event.target.value)} placeholder="例如：iPhone" required value={credentialName} />
                       </div>
-                      <button
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100 disabled:cursor-wait disabled:opacity-50"
-                        disabled={isBusy || !supportsWebAuthn || invitationToken.length !== 16}
-                        type="submit"
-                      >
+                      <button className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100 disabled:cursor-wait disabled:opacity-50" disabled={isBusy || !supportsWebAuthn || invitationToken.length !== 16} type="submit">
                         {busyAction === "register" ? <RefreshCw className="size-4 animate-spin" /> : <UserRound className="size-4" />}
                         注册 Passkey
                       </button>
@@ -338,12 +282,7 @@ export default function PrivateAuth(): JSX.Element {
                       <div className="flex-1">
                         <p>{error}</p>
                         {pendingVerification && (
-                          <button
-                            className="mt-3 inline-flex items-center gap-2 text-xs font-medium text-rose-200 underline decoration-rose-300/30 underline-offset-4 hover:text-white"
-                            disabled={isBusy}
-                            onClick={() => completeVerification(pendingVerification, "retry")}
-                            type="button"
-                          >
+                          <button className="mt-3 inline-flex items-center gap-2 text-xs font-medium text-rose-200 underline decoration-rose-300/30 underline-offset-4 hover:text-white" disabled={isBusy} onClick={() => completeVerification(pendingVerification, "retry")} type="button">
                             {busyAction === "retry" && <RefreshCw className="size-3 animate-spin" />}
                             重试提交同一次验证
                           </button>
