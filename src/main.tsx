@@ -4,8 +4,8 @@ import { createHashRouter, Navigate, RouterProvider } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 
 import App from "./App.tsx";
+import RouteLoading from "./components/common/RouteLoading.tsx";
 import LegacyEnglishEpisodeRedirect from "./components/routing/LegacyEnglishEpisodeRedirect.tsx";
-import PrivateLoadingProgress from "./components/resources/PrivateLoadingProgress.tsx";
 import { PrivateAuthProvider } from "./contexts/PrivateAuthContext.tsx";
 import "./index.css";
 import Home from "./pages/Home.tsx";
@@ -24,18 +24,7 @@ const WeddingInvitation = lazy(
   () => import("./pages/WeddingInvitation.tsx"),
 );
 
-const routeFallback = (
-  <main className="min-h-screen bg-[#070a12] text-slate-100">
-    <div className="mx-auto flex min-h-[55vh] max-w-6xl items-center px-6 sm:px-8 lg:px-10">
-      <div aria-live="polite" className="w-full max-w-xl space-y-3">
-        <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">
-          YANXIAO.ME
-        </p>
-        <PrivateLoadingProgress label="正在载入页面" loading />
-      </div>
-    </div>
-  </main>
-);
+const routeFallback = <RouteLoading />;
 
 function lazyPage(element: ReactElement): ReactElement {
   return <Suspense fallback={routeFallback}>{element}</Suspense>;
