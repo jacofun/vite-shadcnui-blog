@@ -23,7 +23,7 @@ export default function PrivateResourceAccessState({ error, status }: Props): JS
         ? "当前账户未开通私人资源权限"
         : "暂时无法读取私人资源";
   const description = isLoading
-    ? "正在连接私人认证服务…"
+    ? "首次连接可能需要几秒"
     : isSignedOut
       ? "受版权和隐私限制，登录后才能访问这里的内容。"
       : status === "forbidden"
@@ -55,8 +55,13 @@ export default function PrivateResourceAccessState({ error, status }: Props): JS
           )}
         </div>
         <h1 className="mt-6 text-2xl font-semibold tracking-tight text-white">{title}</h1>
-        <p className="mt-3 text-sm leading-7 text-slate-400">{description}</p>
-        <PrivateLoadingProgress className="mt-7 text-left" label="正在连接私人认证服务" loading={isLoading} />
+        <p className="mt-3 text-sm leading-7 text-slate-500">{description}</p>
+        <PrivateLoadingProgress
+          className="mt-7"
+          label="正在连接私人认证服务"
+          loading={isLoading}
+          variant="countdown"
+        />
         {!isLoading && (
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             {isSignedOut && (
