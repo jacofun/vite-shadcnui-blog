@@ -7,8 +7,9 @@ import SiteHeader from "./components/common/SiteHeader";
 
 function App() {
   const { pathname } = useLocation();
+  const showHeader = !pathname.startsWith("/wedding");
   const showAiDisclaimer =
-    pathname === "/" || pathname.startsWith("/notes");
+    showHeader && (pathname === "/" || pathname.startsWith("/notes"));
   const showFooter =
     !pathname.startsWith("/auth") && !pathname.startsWith("/resources");
 
@@ -18,10 +19,12 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#070a12]">
-      <div className="sticky top-0 z-[110]">
-        <SiteHeader />
-        {showAiDisclaimer && <AiDisclaimer />}
-      </div>
+      {showHeader && (
+        <div className="sticky top-0 z-[110]">
+          <SiteHeader />
+          {showAiDisclaimer && <AiDisclaimer />}
+        </div>
+      )}
       <Outlet />
       {showFooter && <Footer />}
     </div>

@@ -45,6 +45,7 @@ export default function PrivateResources(): JSX.Element {
 
   const canUpload = access.session?.user.role === "owner" ||
     access.session?.user.permissions.includes("private-resources-write") === true;
+  const roleLabel = access.session?.user.role === "owner" ? "站点所有者" : "受邀成员";
 
   async function logout(): Promise<void> {
     if (!access.session || loggingOut) return;
@@ -71,20 +72,47 @@ export default function PrivateResources(): JSX.Element {
 
       <main className="min-h-[calc(100svh-4rem)] bg-[#070a12] px-6 py-12 text-slate-100 sm:px-8 sm:py-16 lg:px-10">
         <div className="mx-auto max-w-6xl">
-          <header className="relative max-w-3xl">
-            <div className="flex items-center gap-2 font-mono text-xs tracking-[0.18em] text-cyan-300">
-              <ShieldCheck className="size-4" />
-              PRIVATE RESOURCES
-            </div>
-            <h1 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">私人资源</h1>
-            <p className="mt-5 text-base leading-8 text-slate-400">集中保存个人学习资料、内容合集与其他非公开资源。</p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              {canUpload && <Link className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-2.5 text-sm font-medium text-cyan-200 transition hover:border-cyan-300/40 hover:bg-cyan-300/[0.12]" to="/resources/upload"><UploadCloud className="size-4" />上传资源</Link>}
-              {access.session?.user.role === "owner" && <Link className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07]" to="/resources/new"><FolderPlus className="size-4" />新建合集</Link>}
-              <Link className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07]" to="/resources/clipboard"><Clipboard className="size-4" />文本剪贴板</Link>
-              <button className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-rose-300/20 hover:text-rose-300 disabled:opacity-50" disabled={loggingOut} onClick={() => void logout()} type="button">{loggingOut ? <RefreshCw className="size-4 animate-spin" /> : <LogOut className="size-4" />}退出登录</button>
-            </div>
-          </header>
+          <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
+            <header className="relative max-w-3xl">
+              <div className="flex items-center gap-2 font-mono text-xs tracking-[0.18em] text-cyan-300">
+                <ShieldCheck className="size-4" />
+                PRIVATE RESOURCES
+              </div>
+              <h1 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">私人资源</h1>
+              <p className="mt-5 text-base leading-8 text-slate-400">集中保存个人学习资料、内容合集与其他非公开资源。</p>
+
+              {access.session && (
+                <section aria-label="当前用户" className="mt-6 flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.025] px-4 py-3 lg:hidden">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-100">{access.session.user.displayName}</p>
+                    <p className="mt-1 text-xs text-slate-500">{roleLabel}</p>
+                  </div>
+                  <button className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs font-medium text-slate-400 transition hover:border-rose-300/20 hover:text-rose-300 disabled:opacity-50" disabled={loggingOut} onClick={() => void logout()} type="button">
+                    {loggingOut ? <RefreshCw className="size-3.5 animate-spin" /> : <LogOut className="size-3.5" />}
+                    退出登录
+                  </button>
+                </section>
+              )}
+
+              <div className="mt-7 flex flex-wrap gap-3">
+                {canUpload && <Link className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-2.5 text-sm font-medium text-cyan-200 transition hover:border-cyan-300/40 hover:bg-cyan-300/[0.12]" to="/resources/upload"><UploadCloud className="size-4" />上传资源</Link>}
+                {access.session?.user.role === "owner" && <Link className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07]" to="/resources/new"><FolderPlus className="size-4" />新建合集</Link>}
+                <Link className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07]" to="/resources/clipboard"><Clipboard className="size-4" />文本剪贴板</Link>
+              </div>
+            </header>
+
+            {access.session && (
+              <aside aria-label="当前用户" className="hidden rounded-2xl border border-white/10 bg-white/[0.025] p-5 lg:block">
+                <p className="font-mono text-[10px] tracking-[0.18em] text-slate-600">SIGNED IN</p>
+                <p className="mt-3 truncate text-base font-medium text-white">{access.session.user.displayName}</p>
+                <p className="mt-1 text-xs text-slate-500">{roleLabel}</p>
+                <button className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-xs font-medium text-slate-400 transition hover:border-rose-300/20 hover:bg-rose-300/[0.04] hover:text-rose-300 disabled:opacity-50" disabled={loggingOut} onClick={() => void logout()} type="button">
+                  {loggingOut ? <RefreshCw className="size-3.5 animate-spin" /> : <LogOut className="size-3.5" />}
+                  退出登录
+                </button>
+              </aside>
+            )}
+          </div>
 
           <PrivateLoadingProgress className="mt-14 max-w-xl" failed={catalogError} label="正在读取资源目录" loading={!catalog && !error} />
 

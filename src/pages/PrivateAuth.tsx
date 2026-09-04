@@ -8,30 +8,26 @@ import {
 import {
   AlertCircle,
   ArrowLeft,
-  BookOpenText,
-  CheckCircle2,
   Fingerprint,
-  LogOut,
   RefreshCw,
   UserRound,
 } from "lucide-react";
 import { useEffect, useState, type FormEvent, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import PrivateLoadingProgress from "@/components/resources/PrivateLoadingProgress";
 import { usePrivateAuth } from "@/hooks/usePrivateAuth";
 import {
   beginPasskeyLogin,
   beginPasskeyRegistration,
-  logoutPrivateAuth,
   PrivateAuthApiError,
   verifyPasskeyLogin,
   verifyPasskeyRegistration,
 } from "@/lib/privateAuth";
 
 type AuthMode = "login" | "register";
-type BusyAction = "login" | "register" | "retry" | "logout" | null;
+type BusyAction = "login" | "register" | "retry" | null;
 type PendingVerification = {
   credential: unknown;
   kind: "login" | "register";
@@ -49,15 +45,9 @@ const errorMessages: Record<string, string> = {
 
 function readableError(error: unknown): string {
   if (error instanceof DOMException) {
-    if (error.name === "NotAllowedError") {
-      return "Passkey 操作已取消或等待超时。";
-    }
-    if (error.name === "InvalidStateError") {
-      return "这个 Passkey 已经注册，请使用其他设备或直接登录。";
-    }
-    if (error.name === "SecurityError") {
-      return "当前域名或安全环境不允许使用 Passkey。";
-    }
+    if (error.name === "NotAllowedError") return "Passkey 操作已取消或等待超时。";
+    if (error.name === "InvalidStateError") return "这个 Passkey 已经注册，请使用其他设备或直接登录。";
+    if (error.name === "SecurityError") return "当前域名或安全环境不允许使用 Passkey。";
   }
   if (error instanceof PrivateAuthApiError) {
     return errorMessages[error.code] ?? error.message;
@@ -75,17 +65,16 @@ function shouldKeepVerification(error: unknown): boolean {
 
 export default function PrivateAuth(): JSX.Element {
   const {
-    clearSession,
     ensureSession,
     session,
     setAuthenticatedSession,
     status: authStatus,
   } = usePrivateAuth();
+  const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("login");
   const [busyAction, setBusyAction] = useState<BusyAction>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pendingVerification, setPendingVerification] =
-    useState<PendingVerification | null>(null);
+  const [pendingVerification, setPendingVerification] = useState<PendingVerification | null>(null);
   const [invitationToken, setInvitationToken] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [credentialName, setCredentialName] = useState("我的 Passkey");
@@ -98,6 +87,12 @@ export default function PrivateAuth(): JSX.Element {
     }
   }, [authStatus, ensureSession]);
 
+  useEffect(() => {
+    if (session) {
+      navigate("/resources", { replace: true });
+    }
+  }, [navigate, session]);
+
   const completeVerification = async (pending: PendingVerification, action: BusyAction) => {
     setBusyAction(action);
     setError(null);
@@ -108,6 +103,7 @@ export default function PrivateAuth(): JSX.Element {
       setAuthenticatedSession(authenticated);
       setPendingVerification(null);
       setInvitationToken("");
+      navigate("/resources", { replace: true });
     } catch (verificationError) {
       if (!shouldKeepVerification(verificationError)) {
         setPendingVerification(null);
@@ -155,27 +151,7 @@ export default function PrivateAuth(): JSX.Element {
     }
   };
 
-  const handleLogout = async () => {
-    if (!session) return;
-    setBusyAction("logout");
-    setError(null);
-    try {
-      await logoutPrivateAuth(session);
-      clearSession();
-      setMode("login");
-    } catch (logoutError) {
-      setError(readableError(logoutError));
-    } finally {
-      setBusyAction(null);
-    }
-  };
-
   const isBusy = busyAction !== null;
-  const hasPrivateResourceAccess = session !== null && (
-    session.user.role === "owner" ||
-    session.user.permissions.some((permission) =>
-      permission === "private-resources" || permission === "english-learning")
-  );
 
   return (
     <>
@@ -197,45 +173,25 @@ export default function PrivateAuth(): JSX.Element {
                 <h1 className="mt-1.5 text-xl font-semibold tracking-[-0.03em] text-white">私人资源空间</h1>
               </div>
 
-              {isCheckingSession ? (
+              {isCheckingSession || session ? (
                 <div aria-live="polite" className="flex min-h-48 flex-col items-center justify-center text-center">
-                  <PrivateLoadingProgress label="正在检查登录状态" loading />
-                </div>
-              ) : session ? (
-                <div>
-                  <div className="flex size-12 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-300/10">
-                    <CheckCircle2 className="size-6 text-emerald-300" />
-                  </div>
-                  <p className="mt-7 font-mono text-xs tracking-[0.16em] text-emerald-300">AUTHENTICATED</p>
-                  <h2 className="mt-3 text-2xl font-semibold text-white">{session.user.displayName}</h2>
-                  <dl className="mt-7 divide-y divide-white/[0.08] border-y border-white/[0.08] text-sm">
-                    <div className="flex justify-between gap-4 py-4">
-                      <dt className="text-slate-600">账户角色</dt>
-                      <dd className="text-slate-300">{session.user.role === "owner" ? "站点所有者" : "受邀成员"}</dd>
-                    </div>
-                    <div className="flex justify-between gap-4 py-4">
-                      <dt className="text-slate-600">私人资源</dt>
-                      <dd className={hasPrivateResourceAccess ? "text-cyan-300" : "text-slate-500"}>
-                        {hasPrivateResourceAccess ? "已开通" : "未开通"}
-                      </dd>
-                    </div>
-                  </dl>
-                  {hasPrivateResourceAccess && (
-                    <Link className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100" to="/resources">
-                      <BookOpenText className="size-4" />
-                      进入私人资源
-                    </Link>
-                  )}
-                  <button className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white disabled:cursor-wait disabled:opacity-50" disabled={isBusy} onClick={handleLogout} type="button">
-                    {busyAction === "logout" ? <RefreshCw className="size-4 animate-spin" /> : <LogOut className="size-4" />}
-                    退出登录
-                  </button>
+                  <PrivateLoadingProgress label={session ? "正在进入私人资源" : "正在检查登录状态"} loading />
                 </div>
               ) : (
                 <div>
                   <div className="grid grid-cols-2 rounded-xl border border-white/[0.08] bg-white/[0.025] p-1">
                     {(["login", "register"] as const).map((item) => (
-                      <button aria-pressed={mode === item} className={`rounded-lg px-3 py-2 text-sm transition ${mode === item ? "bg-white/10 text-white" : "text-slate-600 hover:text-slate-300"}`} key={item} onClick={() => { setMode(item); setError(null); setPendingVerification(null); }} type="button">
+                      <button
+                        aria-pressed={mode === item}
+                        className={`rounded-lg px-3 py-2 text-sm transition ${mode === item ? "bg-white/10 text-white" : "text-slate-600 hover:text-slate-300"}`}
+                        key={item}
+                        onClick={() => {
+                          setMode(item);
+                          setError(null);
+                          setPendingVerification(null);
+                        }}
+                        type="button"
+                      >
                         {item === "login" ? "登录" : "注册"}
                       </button>
                     ))}
@@ -250,7 +206,12 @@ export default function PrivateAuth(): JSX.Element {
 
                   {mode === "login" ? (
                     <div className="pt-3">
-                      <button className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100 disabled:cursor-wait disabled:opacity-50" disabled={isBusy || !supportsWebAuthn} onClick={handleLogin} type="button">
+                      <button
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100 disabled:cursor-wait disabled:opacity-50"
+                        disabled={isBusy || !supportsWebAuthn}
+                        onClick={handleLogin}
+                        type="button"
+                      >
                         {busyAction === "login" ? <RefreshCw className="size-4 animate-spin" /> : <Fingerprint className="size-4" />}
                         使用 Passkey 登录
                       </button>
@@ -277,7 +238,7 @@ export default function PrivateAuth(): JSX.Element {
                   )}
 
                   {error && (
-                    <div aria-live="polite" className="flex gap-3 rounded-xl border border-rose-300/20 bg-rose-300/[0.06] p-4 text-sm leading-6 text-rose-100">
+                    <div aria-live="polite" className="mt-3 flex gap-3 rounded-xl border border-rose-300/20 bg-rose-300/[0.06] p-4 text-sm leading-6 text-rose-100">
                       <AlertCircle className="mt-0.5 size-4 shrink-0" />
                       <div className="flex-1">
                         <p>{error}</p>
