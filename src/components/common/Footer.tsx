@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { Heart, Terminal } from "lucide-react";
+import { Terminal } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const scrollToTop = () => {
@@ -10,9 +10,9 @@ export default function Footer(): JSX.Element {
   return (
     <footer className="border-t border-white/10 bg-[#05070d] text-slate-400">
       <div className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-8 lg:px-10">
-        <div className="flex flex-col justify-between gap-8 border-b border-white/10 pb-8 sm:flex-row sm:items-center">
+        <div className="border-b border-white/10 pb-8">
           <Link
-            className="flex items-center gap-3 text-white"
+            className="inline-flex items-center gap-3 text-white"
             onClick={scrollToTop}
             to="/"
           >
@@ -23,35 +23,10 @@ export default function Footer(): JSX.Element {
               YANXIAO.ME
             </span>
           </Link>
-
-          <nav className="flex flex-wrap items-center gap-6 text-sm">
-            <Link
-              className="transition hover:text-white"
-              onClick={scrollToTop}
-              to="/"
-            >
-              首页
-            </Link>
-            <Link
-              className="transition hover:text-white"
-              onClick={scrollToTop}
-              to="/notes"
-            >
-              笔记
-            </Link>
-            <Link
-              className="inline-flex items-center gap-1.5 transition hover:text-rose-200"
-              onClick={scrollToTop}
-              to="/wedding"
-            >
-              <Heart className="size-3.5" />
-              婚礼纪念
-            </Link>
-          </nav>
         </div>
 
         <div className="flex flex-col justify-between gap-4 pt-6 text-xs text-slate-600 sm:flex-row sm:items-end">
-          <p>© 2026 yanxiao.me</p>
+          <p>© 2025-2026 yanxiao.me</p>
           <div className="flex flex-col gap-2 sm:items-end">
             <p>
               免责声明：本站部分内容由 AI 生成或辅助整理，信息可能有误，请注意甄别。
