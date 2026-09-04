@@ -165,10 +165,26 @@ export function verifyPasskeyLogin(
   });
 }
 
-export function beginPrivateDeviceAuthorization(): Promise<PrivateDeviceAuthorization> {
-  return request<PrivateDeviceAuthorization>("challenge", {
+export async function beginPrivateDeviceAuthorization(): Promise<PrivateDeviceAuthorization> {
+  const response = await request<unknown>("challenge", {
     body: { deviceAuthorization: true },
   });
+  const value = response as Partial<PrivateDeviceAuthorization> | null;
+  if (
+    !value ||
+    value.status !== "pending" ||
+    typeof value.approvalToken !== "string" ||
+    typeof value.deviceToken !== "string" ||
+    typeof value.expiresAt !== "number" ||
+    !Number.isSafeInteger(value.expiresAt)
+  ) {
+    throw new PrivateAuthApiError(
+      503,
+      "DEVICE_AUTHORIZATION_UNAVAILABLE",
+      "跨浏览器验证服务尚未就绪",
+    );
+  }
+  return value as PrivateDeviceAuthorization;
 }
 
 export function completePrivateDeviceAuthorization(
