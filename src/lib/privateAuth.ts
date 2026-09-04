@@ -17,6 +17,18 @@ export interface PrivateAuthSession {
   user: PrivateAuthUser;
 }
 
+export interface PrivateDeviceAuthorization {
+  status: "pending";
+  approvalToken: string;
+  deviceToken: string;
+  expiresAt: number;
+}
+
+export interface PrivateDeviceAuthorizationPending {
+  status: "pending";
+  expiresAt: number;
+}
+
 export interface SignedPrivateResources {
   expiresAt: number;
   resources: Record<string, string>;
@@ -144,8 +156,43 @@ export function beginPasskeyLogin<T>(): Promise<PublicKeyOptions<T>> {
   return request<PublicKeyOptions<T>>("challenge", { body: {} });
 }
 
-export function verifyPasskeyLogin(credential: unknown): Promise<PrivateAuthSession> {
-  return request<PrivateAuthSession>("verify", { body: { credential } });
+export function verifyPasskeyLogin(
+  credential: unknown,
+  approvalToken?: string,
+): Promise<PrivateAuthSession> {
+  return request<PrivateAuthSession>("verify", {
+    body: { credential, ...(approvalToken ? { approvalToken } : {}) },
+  });
+}
+
+export async function beginPrivateDeviceAuthorization(): Promise<PrivateDeviceAuthorization> {
+  const response = await request<unknown>("challenge", {
+    body: { deviceAuthorization: true },
+  });
+  const value = response as Partial<PrivateDeviceAuthorization> | null;
+  if (
+    !value ||
+    value.status !== "pending" ||
+    typeof value.approvalToken !== "string" ||
+    typeof value.deviceToken !== "string" ||
+    typeof value.expiresAt !== "number" ||
+    !Number.isSafeInteger(value.expiresAt)
+  ) {
+    throw new PrivateAuthApiError(
+      503,
+      "DEVICE_AUTHORIZATION_UNAVAILABLE",
+      "跨浏览器验证服务尚未就绪",
+    );
+  }
+  return value as PrivateDeviceAuthorization;
+}
+
+export function completePrivateDeviceAuthorization(
+  deviceToken: string,
+): Promise<PrivateDeviceAuthorizationPending | PrivateAuthSession> {
+  return request<PrivateDeviceAuthorizationPending | PrivateAuthSession>("verify", {
+    body: { deviceToken },
+  });
 }
 
 export function beginPasskeyRegistration<T>(body: {
