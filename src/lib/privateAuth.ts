@@ -17,6 +17,18 @@ export interface PrivateAuthSession {
   user: PrivateAuthUser;
 }
 
+export interface PrivateDeviceAuthorization {
+  status: "pending";
+  approvalToken: string;
+  deviceToken: string;
+  expiresAt: number;
+}
+
+export interface PrivateDeviceAuthorizationPending {
+  status: "pending";
+  expiresAt: number;
+}
+
 export interface SignedPrivateResources {
   expiresAt: number;
   resources: Record<string, string>;
@@ -144,8 +156,27 @@ export function beginPasskeyLogin<T>(): Promise<PublicKeyOptions<T>> {
   return request<PublicKeyOptions<T>>("challenge", { body: {} });
 }
 
-export function verifyPasskeyLogin(credential: unknown): Promise<PrivateAuthSession> {
-  return request<PrivateAuthSession>("verify", { body: { credential } });
+export function verifyPasskeyLogin(
+  credential: unknown,
+  approvalToken?: string,
+): Promise<PrivateAuthSession> {
+  return request<PrivateAuthSession>("verify", {
+    body: { credential, ...(approvalToken ? { approvalToken } : {}) },
+  });
+}
+
+export function beginPrivateDeviceAuthorization(): Promise<PrivateDeviceAuthorization> {
+  return request<PrivateDeviceAuthorization>("challenge", {
+    body: { deviceAuthorization: true },
+  });
+}
+
+export function completePrivateDeviceAuthorization(
+  deviceToken: string,
+): Promise<PrivateDeviceAuthorizationPending | PrivateAuthSession> {
+  return request<PrivateDeviceAuthorizationPending | PrivateAuthSession>("verify", {
+    body: { deviceToken },
+  });
 }
 
 export function beginPasskeyRegistration<T>(body: {
