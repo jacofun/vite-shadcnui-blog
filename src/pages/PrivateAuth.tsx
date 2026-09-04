@@ -52,6 +52,7 @@ const errorMessages: Record<string, string> = {
   AUTH_STORE_NOT_INITIALIZED: "认证服务尚未初始化，请先完成管理员初始化。",
   CHALLENGE_USED: "这次验证已经使用，请重新开始。",
   DEVICE_AUTHORIZATION_EXPIRED: "本次验证请求已经过期，请重新发起。",
+  DEVICE_AUTHORIZATION_UNAVAILABLE: "跨浏览器验证服务暂未就绪，请稍后再试。",
   INVALID_CHALLENGE: "验证请求已经过期，请重新开始。",
   INVALID_DEVICE_AUTHORIZATION: "本次跨浏览器验证请求无效，请返回微信重新发起。",
   INVALID_INVITATION: "邀请码无效、已经使用或已经过期。",
@@ -93,8 +94,9 @@ function readStoredDeviceAuthorization(): PrivateDeviceAuthorization | null {
       value.status !== "pending" ||
       typeof value.approvalToken !== "string" ||
       typeof value.deviceToken !== "string" ||
+      typeof value.expiresAt !== "number" ||
       !Number.isSafeInteger(value.expiresAt) ||
-      Number(value.expiresAt) * 1000 <= Date.now()
+      value.expiresAt * 1000 <= Date.now()
     ) {
       window.sessionStorage.removeItem(DEVICE_AUTH_STORAGE_KEY);
       return null;
@@ -197,7 +199,6 @@ export default function PrivateAuth(): JSX.Element {
       authStatus !== "signed-out" ||
       session ||
       deviceAuthorization ||
-      deviceStarting ||
       deviceExpired
     ) return;
 
@@ -226,7 +227,6 @@ export default function PrivateAuth(): JSX.Element {
     deviceAuthorization,
     deviceExpired,
     deviceStartRevision,
-    deviceStarting,
     isWeChat,
     session,
   ]);
@@ -475,6 +475,7 @@ export default function PrivateAuth(): JSX.Element {
         <title>私人内容登录 · 彦骁的笔记</title>
         <meta content="使用 Passkey 登录彦骁的私人资源空间。" name="description" />
         <meta content="noindex,nofollow" name="robots" />
+        <meta content="no-referrer" name="referrer" />
       </Helmet>
 
       <main className="relative h-[calc(100dvh-4rem)] overflow-hidden bg-[#070a12] text-slate-100">
