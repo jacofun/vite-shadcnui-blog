@@ -63,6 +63,10 @@ function shouldKeepVerification(error: unknown): boolean {
     (error instanceof PrivateAuthApiError && error.status >= 500);
 }
 
+function isWeChatBrowser(): boolean {
+  return /MicroMessenger/i.test(window.navigator.userAgent);
+}
+
 export default function PrivateAuth(): JSX.Element {
   const {
     ensureSession,
@@ -78,20 +82,21 @@ export default function PrivateAuth(): JSX.Element {
   const [invitationToken, setInvitationToken] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [credentialName, setCredentialName] = useState("我的 Passkey");
+  const isWeChat = isWeChatBrowser();
   const supportsWebAuthn = browserSupportsWebAuthn();
-  const isCheckingSession = authStatus === "idle" || authStatus === "loading";
+  const isCheckingSession = !isWeChat && (authStatus === "idle" || authStatus === "loading");
 
   useEffect(() => {
-    if (authStatus === "idle") {
+    if (!isWeChat && authStatus === "idle") {
       void ensureSession().catch((sessionError: unknown) => setError(readableError(sessionError)));
     }
-  }, [authStatus, ensureSession]);
+  }, [authStatus, ensureSession, isWeChat]);
 
   useEffect(() => {
-    if (session) {
+    if (!isWeChat && session) {
       navigate("/resources", { replace: true });
     }
-  }, [navigate, session]);
+  }, [isWeChat, navigate, session]);
 
   const completeVerification = async (pending: PendingVerification, action: BusyAction) => {
     setBusyAction(action);
@@ -173,7 +178,19 @@ export default function PrivateAuth(): JSX.Element {
                 <h1 className="mt-1.5 text-xl font-semibold tracking-[-0.03em] text-white">私人资源空间</h1>
               </div>
 
-              {isCheckingSession || session ? (
+              {isWeChat ? (
+                <div className="rounded-xl border border-amber-300/20 bg-amber-300/[0.06] p-4">
+                  <div className="flex gap-3 text-sm leading-6 text-amber-100">
+                    <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                    <div>
+                      <p className="font-medium">当前微信浏览器暂不支持登录</p>
+                      <p className="mt-1 text-xs leading-5 text-amber-100/70">
+                        本站使用 Passkey 进行身份验证。请点击微信右上角「···」，选择「在默认浏览器打开」后继续。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : isCheckingSession || session ? (
                 <div aria-live="polite" className="flex min-h-48 flex-col items-center justify-center text-center">
                   <PrivateLoadingProgress label={session ? "正在进入私人资源" : "正在检查登录状态"} loading />
                 </div>
