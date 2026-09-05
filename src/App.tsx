@@ -50,8 +50,8 @@ function App() {
           {showReadingProgress && (
             <div
               aria-hidden="true"
-              className="absolute bottom-0 left-0 z-[120] h-0.5 bg-gradient-to-r from-cyan-300 to-violet-400 transition-[width]"
-              style={{ width: `${readingProgress}%` }}
+              className="absolute bottom-0 left-0 z-[120] h-0.5 w-full origin-left bg-gradient-to-r from-cyan-300 to-violet-400"
+              style={{ transform: `scaleX(${readingProgress / 100})` }}
             />
           )}
         </div>
