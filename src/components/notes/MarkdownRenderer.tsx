@@ -13,13 +13,42 @@ type MarkdownRendererProps = {
   content: string;
 };
 
+type TableAlignment = "left" | "center" | "right" | null;
+
 type Block =
   | { type: "heading"; level: number; text: string }
   | { type: "paragraph"; text: string }
   | { type: "code"; language: string; code: string }
   | { type: "quote"; text: string }
   | { type: "list"; ordered: boolean; items: string[] }
+  | { type: "table"; headers: string[]; rows: string[][]; alignments: TableAlignment[] }
   | { type: "rule" };
+
+function parseTableRow(line: string): string[] {
+  const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+  return trimmed.split("|").map((cell) => cell.trim());
+}
+
+function parseTableAlignment(cell: string): TableAlignment {
+  const value = cell.trim();
+  const left = value.startsWith(":");
+  const right = value.endsWith(":");
+
+  if (left && right) return "center";
+  if (right) return "right";
+  if (left) return "left";
+  return null;
+}
+
+function isTableSeparator(line: string): boolean {
+  if (!line.includes("|")) return false;
+  const cells = parseTableRow(line);
+  return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+}
+
+function startsTable(lines: string[], index: number): boolean {
+  return index + 1 < lines.length && lines[index].includes("|") && isTableSeparator(lines[index + 1]);
+}
 
 function parseBlocks(content: string): Block[] {
   const lines = content.replace(/\r\n/g, "\n").split("\n");
@@ -83,6 +112,25 @@ function parseBlocks(content: string): Block[] {
       continue;
     }
 
+    if (startsTable(lines, index)) {
+      const headers = parseTableRow(line);
+      const separatorCells = parseTableRow(lines[index + 1]);
+      const alignments = headers.map((_, columnIndex) =>
+        parseTableAlignment(separatorCells[columnIndex] ?? "---"),
+      );
+      const rows: string[][] = [];
+      index += 2;
+
+      while (index < lines.length && lines[index].trim() && lines[index].includes("|")) {
+        const cells = parseTableRow(lines[index]);
+        rows.push(headers.map((_, columnIndex) => cells[columnIndex] ?? ""));
+        index += 1;
+      }
+
+      blocks.push({ type: "table", headers, rows, alignments });
+      continue;
+    }
+
     const unorderedItem = line.match(/^[-*]\s+(.+)$/);
     const orderedItem = line.match(/^\d+\.\s+(.+)$/);
 
@@ -118,7 +166,8 @@ function parseBlocks(content: string): Block[] {
       !lines[index].startsWith("> ") &&
       !/^[-*]\s+/.test(lines[index]) &&
       !/^\d+\.\s+/.test(lines[index]) &&
-      !/^---+$/.test(lines[index].trim())
+      !/^---+$/.test(lines[index].trim()) &&
+      !startsTable(lines, index)
     ) {
       paragraphLines.push(lines[index].trim());
       index += 1;
@@ -214,6 +263,56 @@ function CodeBlock({
   );
 }
 
+function TableBlock({
+  alignments,
+  headers,
+  rows,
+}: {
+  alignments: TableAlignment[];
+  headers: string[];
+  rows: string[][];
+}): JSX.Element {
+  const alignmentClass = (alignment: TableAlignment) => {
+    if (alignment === "center") return "text-center";
+    if (alignment === "right") return "text-right";
+    return "text-left";
+  };
+
+  return (
+    <div className="my-8 w-full overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.02]">
+      <table className="min-w-full border-collapse text-sm text-slate-300">
+        <thead className="bg-white/[0.045] text-slate-100">
+          <tr>
+            {headers.map((header, columnIndex) => (
+              <th
+                className={`whitespace-nowrap border-b border-white/10 px-4 py-3 font-semibold ${alignmentClass(alignments[columnIndex])}`}
+                key={columnIndex}
+                scope="col"
+              >
+                {renderInline(header)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr className="border-b border-white/[0.06] last:border-b-0" key={rowIndex}>
+              {row.map((cell, columnIndex) => (
+                <td
+                  className={`whitespace-nowrap px-4 py-3 ${alignmentClass(alignments[columnIndex])}`}
+                  key={columnIndex}
+                >
+                  {renderInline(cell)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function MarkdownRenderer({
   content,
 }: MarkdownRendererProps): JSX.Element {
@@ -296,6 +395,17 @@ export default function MarkdownRenderer({
                 <li key={itemIndex}>{renderInline(item)}</li>
               ))}
             </List>
+          );
+        }
+
+        if (block.type === "table") {
+          return (
+            <TableBlock
+              alignments={block.alignments}
+              headers={block.headers}
+              key={index}
+              rows={block.rows}
+            />
           );
         }
 
