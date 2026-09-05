@@ -1,0 +1,43 @@
+name: Temp Update OSS Cache Policy
+
+on:
+  push:
+    branches:
+      - chatgpt/oss-cache-policy-20260905
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/oss-cache-policy-20260905
+
+      - name: Patch OSS cache metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/workflows/deploy-oss.yml')
+          text = path.read_text()
+          old = '''          # Always overwrite the HTML entry and require clients/CDNs to revalidate it.\n          # Hashed Vite assets can remain cacheable; index.html must stay fresh.\n          ossutil cp             dist/index.html             "${TARGET}index.html"             -f       \n'''
+          new = '''          # Vite emits content-hashed files under assets/. They can be cached for a year\n          # because a content change produces a new object name.\n          if [[ -d dist/assets ]]; then\n            ossutil cp -r \\\n              dist/assets/ \\\n              "${TARGET}assets/" \\\n              --cache-control "public,max-age=31536000,immutable" \\\n              -f\n          fi\n\n          # index.html is the SPA entry point. Always overwrite it and require browsers\n          # and intermediate caches to revalidate before reusing a stored copy.\n          ossutil cp \\\n            dist/index.html \\\n            "${TARGET}index.html" \\\n            --cache-control "no-cache,max-age=0,must-revalidate" \\\n            --content-type "text/html; charset=utf-8" \\\n            -f\n'''
+          if old not in text:
+              raise SystemExit('Expected deployment snippet was not found; refusing to patch.')
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Commit patch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/deploy-oss.yml
+          git commit -m "配置 OSS 静态资源缓存策略"
+          git push origin HEAD:chatgpt/oss-cache-policy-20260905
