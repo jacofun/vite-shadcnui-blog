@@ -1,6 +1,20 @@
 import type { JSX } from "react";
-import { Mail, MessageCircle } from "lucide-react";
+import { Mail } from "lucide-react";
 import { Helmet } from "react-helmet-async";
+
+function WeChatIcon(): JSX.Element {
+  return (
+    <svg
+      aria-hidden="true"
+      className="size-5"
+      fill="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path d="M9.45 4.1c-4.15 0-7.5 2.72-7.5 6.08 0 1.92 1.1 3.64 2.82 4.76l-.7 2.14 2.5-1.25c.9.28 1.86.43 2.88.43.34 0 .68-.02 1.01-.06a5.35 5.35 0 0 1-.18-1.36c0-3.35 3.02-6.07 6.75-6.07.4 0 .8.03 1.18.1C17.42 6.15 13.86 4.1 9.45 4.1Zm-2.6 4.02a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Zm5.2 0a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Z" />
+      <path d="M22.05 14.84c0-2.82-2.8-5.1-6.25-5.1s-6.25 2.28-6.25 5.1 2.8 5.1 6.25 5.1c.83 0 1.62-.13 2.34-.36l2.08 1.04-.58-1.8c1.47-.94 2.41-2.38 2.41-3.98Zm-8.38-1.72a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm4.34 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+    </svg>
+  );
+}
 
 export default function About(): JSX.Element {
   return (
@@ -120,13 +134,13 @@ export default function About(): JSX.Element {
                 </a>
 
                 <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-violet-300/15 bg-violet-300/[0.07] text-violet-200">
-                    <MessageCircle className="size-4.5" />
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-emerald-300/15 bg-emerald-300/[0.07] text-emerald-300">
+                    <WeChatIcon />
                   </span>
                   <span>
                     <span className="block text-xs text-slate-600">微信</span>
                     <span className="mt-0.5 block text-sm text-slate-300">
-                      official_yanxiao
+                      微信号 official_yanxiao
                     </span>
                   </span>
                 </div>
