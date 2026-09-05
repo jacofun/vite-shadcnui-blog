@@ -151,6 +151,18 @@
   }
 }
 
+@keyframes route-loading {
+  0% {
+    transform: translateX(-110%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(310%);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .terminal-preview-float {
     animation: terminal-preview-float 5.5s ease-in-out infinite;
