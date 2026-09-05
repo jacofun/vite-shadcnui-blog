@@ -98,10 +98,23 @@ const components: Components = {
   del: ({ children }) => <del className="text-slate-500 decoration-slate-500">{children}</del>,
   a: ({ children, href }) => {
     const external = typeof href === "string" && /^https?:\/\//.test(href);
+    const anchor = typeof href === "string" && href.startsWith("#") ? href.slice(1) : null;
+
     return (
       <a
         className="text-cyan-300 underline decoration-cyan-300/30 underline-offset-4 transition hover:text-cyan-200"
-        href={href}
+        href={anchor ? undefined : href}
+        onClick={
+          anchor
+            ? (event) => {
+                event.preventDefault();
+                document.getElementById(anchor)?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+              }
+            : undefined
+        }
         rel={external ? "noopener noreferrer" : undefined}
         target={external ? "_blank" : undefined}
       >
