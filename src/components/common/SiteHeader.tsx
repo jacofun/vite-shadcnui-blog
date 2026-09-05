@@ -20,6 +20,7 @@ const navigation = [
   { label: "首页", to: "/" },
   { label: "笔记", to: "/notes" },
   { label: "资源", to: "/resources" },
+  { label: "关于", to: "/about" },
   { label: "婚礼纪念", to: "/wedding", wedding: true },
 ] as const;
 
