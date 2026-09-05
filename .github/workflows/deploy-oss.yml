@@ -206,11 +206,11 @@ jobs:
           set -euo pipefail
 
           TARGET="${OSS_TARGET%/}/"
-          echo "Mirroring dist/ to ${TARGET}"
+          echo "Uploading dist/ to ${TARGET}"
 
-          # OSS_TARGET is dedicated to this website:
-          # remove remote-only objects so OSS exactly matches the current dist/.
-          ossutil sync dist/ "${TARGET}" --delete -f
+          # Keep previous content-hashed assets so clients that still have an older
+          # entry bundle can finish lazy-loading during and after a deployment.
+          ossutil sync dist/ "${TARGET}" -f
 
           # Vite emits content-hashed files under assets/. They can be cached for a year
           # because a content change produces a new object name.
