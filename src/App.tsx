@@ -28,8 +28,14 @@ function App() {
     const updateProgress = () => {
       const available =
         document.documentElement.scrollHeight - window.innerHeight;
-      const next = available > 0 ? (window.scrollY / available) * 100 : 0;
-      setReadingProgress(Math.min(100, Math.max(0, next)));
+      const next = available > 0 ? window.scrollY / available : 0;
+      const clamped = Math.min(1, Math.max(0, next));
+      const viewportWidth = document.documentElement.clientWidth;
+      const aligned =
+        viewportWidth > 0
+          ? Math.round(viewportWidth * clamped) / viewportWidth
+          : clamped;
+      setReadingProgress(aligned);
     };
 
     updateProgress();
@@ -51,7 +57,7 @@ function App() {
             <div
               aria-hidden="true"
               className="absolute bottom-0 left-0 z-[120] h-0.5 w-full origin-left bg-gradient-to-r from-cyan-300 to-violet-400"
-              style={{ transform: `scaleX(${readingProgress / 100})` }}
+              style={{ transform: `scaleX(${readingProgress})` }}
             />
           )}
         </div>
