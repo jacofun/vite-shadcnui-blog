@@ -26,7 +26,7 @@ export default function Footer(): JSX.Element {
         </div>
 
         <div className="flex flex-col justify-between gap-4 pt-6 text-xs text-slate-600 sm:flex-row sm:items-end">
-          <p>© 2025-2026 yanxiao.me</p>
+          <p>© 2025-2026 yanxiao.me 彦骁的笔记</p>
           <div className="flex flex-col gap-2 sm:items-end">
             <p>
               免责声明：本站部分内容由 AI 生成或辅助整理，信息可能有误，请注意甄别。
