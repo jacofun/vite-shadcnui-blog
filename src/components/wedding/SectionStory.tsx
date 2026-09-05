@@ -11,39 +11,22 @@ import { motion } from "framer-motion";
 
 type ImageItem = { src: string; alt?: string; title?: string; subtitle?: string };
 
-const mods = import.meta.glob("@/assets/gallery/story/*.{jpg,jpeg,png}", {
-  eager: true,
-  import: "default",
-  query: {
-    as: "picture",
-    format: "avif;webp;jpg",
-    w: "640;828;1080;1440",
-  },
-});
+const storyImageNames = [
+  "2Y6A6872",
+  "2Y6A7005",
+  "2Y6A7070",
+  "2Y6A7102",
+  "8.2212101",
+  "8.2212290",
+  "8.2212526",
+] as const;
 
-type PictureVariant = {
-  sources?: Array<{ type: string; srcset: string }>;
-  img?: { src: string; width: number; height: number };
-};
-
-const slidesFromFolder = Object.values(mods).map((mod: unknown) => {
-  if (typeof mod === "string") {
-    return {
-      src: mod,
-      width: undefined as number | undefined,
-      height: undefined as number | undefined,
-      sources: [] as Array<{ type: string; srcset: string }>,
-    };
-  }
-
-  const picture = mod as PictureVariant;
-  return {
-    src: picture.img?.src ?? "",
-    width: picture.img?.width,
-    height: picture.img?.height,
-    sources: Array.isArray(picture.sources) ? picture.sources : [],
-  };
-});
+const slidesFromFolder = storyImageNames.map((name) => ({
+  src: `/wedding-assets/story/${name}-1080.webp`,
+  srcSet: [640, 1080, 1440]
+    .map((width) => `/wedding-assets/story/${name}-${width}.webp ${width}w`)
+    .join(", "),
+}));
 
 interface SectionStoryProps {
   images?: ImageItem[];
@@ -139,32 +122,30 @@ export default function SectionStory({
           plugins={[
             ...(autoplayPlugin.current ? [autoplayPlugin.current] : []),
           ]}
-          className={cn("relative w-full [touch-action:auto]")}
+          className="relative w-full [touch-action:auto]"
         >
           <CarouselContent className="w-full">
             {slidesFromFolder.map((item, idx) => (
               <CarouselItem
-                key={item.src || idx}
+                key={item.src}
                 className="basis-[85%] w-full max-h-[80svh] sm:basis-[50%] sm:max-w-3/4"
               >
                 <picture className="inset-0 block h-full w-full sm:cursor-pointer">
-                  {item.sources.map((source) => (
-                    <source
-                      key={source.type}
-                      type={source.type}
-                      srcSet={source.srcset}
-                      sizes="(min-width: 640px) 50vw, 85vw"
-                    />
-                  ))}
+                  <source
+                    type="image/webp"
+                    srcSet={item.srcSet}
+                    sizes="(min-width: 640px) 50vw, 85vw"
+                  />
                   <img
                     src={item.src}
-                    width={item.width}
-                    height={item.height}
+                    srcSet={item.srcSet}
+                    sizes="(min-width: 640px) 50vw, 85vw"
                     alt={`婚礼故事照片 ${idx + 1}`}
                     className="w-full h-full object-cover block select-none object-center transition-opacity rounded-3xl"
                     draggable={false}
                     decoding="async"
                     loading="lazy"
+                    fetchPriority="low"
                   />
                 </picture>
               </CarouselItem>
