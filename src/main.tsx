@@ -10,6 +10,11 @@ import { PrivateAuthProvider } from "./contexts/PrivateAuthContext.tsx";
 import "./index.css";
 import Home from "./pages/Home.tsx";
 
+window.addEventListener("vite:preloadError", (event) => {
+  event.preventDefault();
+  window.location.reload();
+});
+
 const About = lazy(() => import("./pages/About.tsx"));
 const NoteDetail = lazy(() => import("./pages/NoteDetail.tsx"));
 const Notes = lazy(() => import("./pages/Notes.tsx"));
