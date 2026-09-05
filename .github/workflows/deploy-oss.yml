@@ -115,17 +115,14 @@ jobs:
             echo "::error::Missing repository secret ALIYUN_OSS_ACCESS_KEY_ID"
             exit 1
           }
-
           test -n "${OSS_ACCESS_KEY_SECRET}" || {
             echo "::error::Missing repository secret ALIYUN_OSS_ACCESS_KEY_SECRET"
             exit 1
           }
-
           test -n "${OSS_REGION}" || {
             echo "::error::Missing repository variable ALIYUN_OSS_REGION"
             exit 1
           }
-
           test -n "${OSS_TARGET}" || {
             echo "::error::Missing repository variable ALIYUN_OSS_TARGET"
             exit 1
@@ -194,7 +191,7 @@ jobs:
 
           ossutil version
 
-      - name: Deploy to Aliyun OSS
+      - name: Deploy website and wedding assets
         if: github.event_name != 'pull_request'
         env:
           OSS_ACCESS_KEY_ID: ${{ secrets.ALIYUN_OSS_ACCESS_KEY_ID }}
@@ -208,28 +205,101 @@ jobs:
           TARGET="${OSS_TARGET%/}/"
           echo "Uploading dist/ to ${TARGET}"
 
-          # Keep previous content-hashed assets so clients that still have an older
-          # entry bundle can finish lazy-loading during and after a deployment.
-          ossutil sync dist/ "${TARGET}" -f
+          # One sync is enough. Content-hashed Vite assets keep a long cache policy;
+          # index.html is overwritten below with an explicit revalidation policy.
+          ossutil sync \
+            dist/ \
+            "${TARGET}" \
+            --cache-control "public,max-age=31536000,immutable" \
+            -f
 
-          # Vite emits content-hashed files under assets/. They can be cached for a year
-          # because a content change produces a new object name.
-          if [[ -d dist/assets ]]; then
-            ossutil cp -r \
-              dist/assets/ \
-              "${TARGET}assets/" \
-              --cache-control "public,max-age=31536000,immutable" \
-              -f
-          fi
-
-          # index.html is the SPA entry point. Always overwrite it and require browsers
-          # and intermediate caches to revalidate before reusing a stored copy.
           ossutil cp \
             dist/index.html \
             "${TARGET}index.html" \
             --cache-control "no-cache,max-age=0,must-revalidate" \
             --content-type "text/html; charset=utf-8" \
             -f
+
+          if [[ -f dist/404.html ]]; then
+            ossutil cp \
+              dist/404.html \
+              "${TARGET}404.html" \
+              --cache-control "no-cache,max-age=0,must-revalidate" \
+              --content-type "text/html; charset=utf-8" \
+              -f
+          fi
+
+          WEDDING_SOURCE_DIR="src/assets/gallery"
+          WEDDING_TARGET="${TARGET}wedding-assets/"
+          LOCAL_HASH_FILE="${RUNNER_TEMP}/wedding-source.sha256"
+          REMOTE_HASH_FILE="${RUNNER_TEMP}/wedding-source.remote.sha256"
+          WEDDING_BUILD_DIR="${RUNNER_TEMP}/wedding-assets"
+
+          find "${WEDDING_SOURCE_DIR}" -type f \
+            \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \) \
+            -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            | sha256sum \
+            | awk '{print $1}' > "${LOCAL_HASH_FILE}"
+
+          WEDDING_CHANGED=true
+          if ossutil stat "${WEDDING_TARGET}source.sha256" >/dev/null 2>&1; then
+            ossutil cp \
+              "${WEDDING_TARGET}source.sha256" \
+              "${REMOTE_HASH_FILE}" \
+              -f >/dev/null
+            if cmp -s "${LOCAL_HASH_FILE}" "${REMOTE_HASH_FILE}"; then
+              WEDDING_CHANGED=false
+            fi
+          fi
+
+          if [[ "${WEDDING_CHANGED}" == "true" ]]; then
+            echo "Wedding source images changed; generating optimized WebP assets."
+
+            if ! command -v convert >/dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y imagemagick
+            fi
+
+            mkdir -p "${WEDDING_BUILD_DIR}/hero" "${WEDDING_BUILD_DIR}/story"
+
+            for section in hero story; do
+              while IFS= read -r -d '' source; do
+                filename="$(basename "${source}")"
+                stem="${filename%.*}"
+                for width in 640 1080 1440; do
+                  convert \
+                    "${source}" \
+                    -auto-orient \
+                    -strip \
+                    -resize "${width}x>" \
+                    -quality 82 \
+                    "${WEDDING_BUILD_DIR}/${section}/${stem}-${width}.webp"
+                done
+              done < <(
+                find "${WEDDING_SOURCE_DIR}/${section}" -maxdepth 1 -type f \
+                  \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \) \
+                  -print0 | sort -z
+              )
+            done
+
+            echo "Optimized wedding assets:"
+            find "${WEDDING_BUILD_DIR}" -type f -printf '%P %s bytes\n' | sort
+
+            ossutil sync \
+              "${WEDDING_BUILD_DIR}/" \
+              "${WEDDING_TARGET}" \
+              -f
+
+            ossutil cp \
+              "${LOCAL_HASH_FILE}" \
+              "${WEDDING_TARGET}source.sha256" \
+              --content-type "text/plain; charset=utf-8" \
+              -f
+          else
+            echo "Wedding source images unchanged; skipping image generation and upload."
+          fi
 
           echo "Deployment completed."
 
