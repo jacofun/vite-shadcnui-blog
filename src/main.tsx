@@ -10,6 +10,7 @@ import { PrivateAuthProvider } from "./contexts/PrivateAuthContext.tsx";
 import "./index.css";
 import Home from "./pages/Home.tsx";
 
+const About = lazy(() => import("./pages/About.tsx"));
 const NoteDetail = lazy(() => import("./pages/NoteDetail.tsx"));
 const Notes = lazy(() => import("./pages/Notes.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
@@ -36,6 +37,7 @@ const router = createHashRouter([
     element: <App />,
     children: [
       { index: true, element: <Home /> },
+      { path: "about", element: lazyPage(<About />) },
       { path: "notes", element: lazyPage(<Notes />) },
       { path: "notes/:slug", element: lazyPage(<NoteDetail />) },
       { path: "auth", element: lazyPage(<PrivateAuth />) },
