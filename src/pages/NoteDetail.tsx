@@ -77,6 +77,14 @@ export default function NoteDetail(): JSX.Element {
   const previousNote = notes[noteIndex + 1];
   const nextNote = notes[noteIndex - 1];
 
+  const scrollToHeading = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+    setActiveHeading(id);
+  };
+
   return (
     <>
       <Helmet>
@@ -85,10 +93,6 @@ export default function NoteDetail(): JSX.Element {
       </Helmet>
 
       <main className="min-h-screen bg-[#070a12] text-slate-100">
-        <div
-          className="fixed left-0 top-16 z-[120] h-0.5 bg-gradient-to-r from-cyan-300 to-violet-400 transition-[width]"
-          style={{ width: `${Math.min(progress, 100)}%` }}
-        />
         <div className="mx-auto grid max-w-6xl gap-14 px-6 pb-24 pt-12 sm:px-8 lg:grid-cols-[minmax(0,760px)_220px] lg:px-10">
           <article>
             <Link
@@ -163,19 +167,20 @@ export default function NoteDetail(): JSX.Element {
               </p>
               <nav className="space-y-1 border-l border-white/10">
                 {headings.map((heading) => (
-                  <a
-                    className={`block py-1.5 text-xs leading-5 transition ${
+                  <button
+                    className={`block w-full py-1.5 text-left text-xs leading-5 transition ${
                       heading.level === 3 ? "pl-6" : "pl-4"
                     } ${
                       activeHeading === heading.id
                         ? "border-l border-cyan-300 text-cyan-300"
                         : "text-slate-600 hover:text-slate-300"
                     }`}
-                    href={`#${heading.id}`}
                     key={heading.id}
+                    onClick={() => scrollToHeading(heading.id)}
+                    type="button"
                   >
                     {heading.text}
-                  </a>
+                  </button>
                 ))}
               </nav>
             </div>
