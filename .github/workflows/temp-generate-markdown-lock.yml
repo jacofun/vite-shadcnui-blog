@@ -1,0 +1,39 @@
+name: Temp Generate Markdown Lockfile
+
+on:
+  push:
+    branches:
+      - chatgpt/open-source-markdown-renderer-20260905
+
+permissions:
+  contents: write
+
+jobs:
+  lockfile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/open-source-markdown-renderer-20260905
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Generate dependency metadata
+        run: pnpm add react-markdown remark-gfm --save-prod --lockfile-only
+      - name: Commit generated files
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json pnpm-lock.yaml
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "生成 Markdown 开源依赖锁文件"
+          git push origin HEAD:chatgpt/open-source-markdown-renderer-20260905
