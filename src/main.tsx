@@ -7,7 +7,6 @@ import App from "./App.tsx";
 import AppErrorBoundary from "./components/common/AppErrorBoundary.tsx";
 import RouteLoading from "./components/common/RouteLoading.tsx";
 import LegacyEnglishEpisodeRedirect from "./components/routing/LegacyEnglishEpisodeRedirect.tsx";
-import { PrivateAuthProvider } from "./contexts/PrivateAuthContext.tsx";
 import { publicPageImports } from "./lib/routePrefetch.ts";
 import "./index.css";
 import Home from "./pages/Home.tsx";
@@ -40,6 +39,9 @@ const Notes = lazy(publicPageImports.notes);
 const Now = lazy(publicPageImports.now);
 const Timeline = lazy(publicPageImports.timeline);
 const NotFound = lazy(publicPageImports.notFound);
+const PrivateRouteBoundary = lazy(
+  () => import("./components/routing/PrivateRouteBoundary.tsx"),
+);
 const PrivateAuth = lazy(() => import("./pages/PrivateAuth.tsx"));
 const PrivateClipboard = lazy(() => import("./pages/PrivateClipboard.tsx"));
 const PrivateResources = lazy(() => import("./pages/PrivateResources.tsx"));
@@ -66,13 +68,18 @@ const router = createBrowserRouter([
       { path: "timeline", element: lazyPage(<Timeline />) },
       { path: "notes", element: lazyPage(<Notes />) },
       { path: "notes/:slug", element: lazyPage(<NoteDetail />) },
-      { path: "auth", element: lazyPage(<PrivateAuth />) },
-      { path: "resources", element: lazyPage(<PrivateResources />) },
-      { path: "resources/clipboard", element: lazyPage(<PrivateClipboard />) },
-      { path: "resources/new", element: lazyPage(<PrivateResourceCreateCollection />) },
-      { path: "resources/upload", element: lazyPage(<PrivateResourceUpload />) },
-      { path: "resources/:collectionId", element: lazyPage(<PrivateResourceCollection />) },
-      { path: "resources/:collectionId/:itemId", element: lazyPage(<PrivateResourceItem />) },
+      {
+        element: lazyPage(<PrivateRouteBoundary />),
+        children: [
+          { path: "auth", element: lazyPage(<PrivateAuth />) },
+          { path: "resources", element: lazyPage(<PrivateResources />) },
+          { path: "resources/clipboard", element: lazyPage(<PrivateClipboard />) },
+          { path: "resources/new", element: lazyPage(<PrivateResourceCreateCollection />) },
+          { path: "resources/upload", element: lazyPage(<PrivateResourceUpload />) },
+          { path: "resources/:collectionId", element: lazyPage(<PrivateResourceCollection />) },
+          { path: "resources/:collectionId/:itemId", element: lazyPage(<PrivateResourceItem />) },
+        ],
+      },
       { path: "learning/english", element: <Navigate replace to="/resources/6minuteenglish" /> },
       { path: "learning/english/:itemId", element: <LegacyEnglishEpisodeRedirect /> },
       { path: "wedding", element: lazyPage(<WeddingInvitation />) },
@@ -85,9 +92,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <HelmetProvider>
       <AppErrorBoundary>
-        <PrivateAuthProvider>
-          <RouterProvider router={router} />
-        </PrivateAuthProvider>
+        <RouterProvider router={router} />
       </AppErrorBoundary>
     </HelmetProvider>
   </StrictMode>,
