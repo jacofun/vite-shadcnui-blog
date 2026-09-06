@@ -1,5 +1,5 @@
-import { ArrowLeft, CheckCircle2, FileAudio, FileText, RefreshCw, UploadCloud } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent, type JSX } from "react";
+import { ArrowLeft, CheckCircle2, FileAudio, FileText, RefreshCw, UploadCloud, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
@@ -8,7 +8,10 @@ import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
 import {
   beginPrivateResourceUpload,
   completePrivateResourceUpload,
+  PrivateAuthApiError,
+  type PrivateAuthSession,
   type PrivateResourceUploadRequest,
+  type PrivateResourceUploadSession,
 } from "@/lib/privateAuth";
 import { uploadPrivateResourceFile } from "@/lib/privateResourceUpload";
 import {
@@ -18,6 +21,17 @@ import {
 
 const fieldClass = "mt-2 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10";
 const today = new Date().toISOString().slice(0, 10);
+
+type QueueStatus = "pending" | "uploading" | "publishing" | "done" | "error";
+
+interface QueueItem {
+  error?: string;
+  key: string;
+  name: string;
+  progress: number;
+  size: number;
+  status: QueueStatus;
+}
 
 function FileField({
   accept,
@@ -46,9 +60,49 @@ function FileField({
         required={required}
         type="file"
       />
-      {file && <span className="mt-2 block truncate text-xs text-slate-500">{file.name} · {(file.size / 1024 / 1024).toFixed(2)} MB</span>}
+      {file && <span className="mt-2 block break-all text-xs leading-5 text-slate-500">{file.name} · {(file.size / 1024 / 1024).toFixed(2)} MB</span>}
     </label>
   );
+}
+
+function queueKey(file: File, index: number): string {
+  return `${index}:${file.name}:${file.size}:${file.lastModified}`;
+}
+
+function abortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+function retryDelay(attempt: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(new DOMException("上传已取消", "AbortError"));
+      return;
+    }
+    const timer = window.setTimeout(resolve, 350 * attempt);
+    signal.addEventListener("abort", () => {
+      window.clearTimeout(timer);
+      reject(new DOMException("上传已取消", "AbortError"));
+    }, { once: true });
+  });
+}
+
+async function completeUploadWithRetry(
+  session: PrivateAuthSession,
+  uploadToken: string,
+  signal: AbortSignal,
+): ReturnType<typeof completePrivateResourceUpload> {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      return await completePrivateResourceUpload(session, uploadToken, signal);
+    } catch (error) {
+      if (signal.aborted || abortError(error)) throw error;
+      const retryable = !(error instanceof PrivateAuthApiError) || error.status === 429 || error.status >= 500;
+      if (!retryable || attempt === 3) throw error;
+      await retryDelay(attempt, signal);
+    }
+  }
+  throw new Error("资源发布失败");
 }
 
 export default function PrivateResourceUpload(): JSX.Element {
@@ -69,11 +123,16 @@ export default function PrivateResourceUpload(): JSX.Element {
   const [transcriptText, setTranscriptText] = useState<File | null>(null);
   const [transcriptPdf, setTranscriptPdf] = useState<File | null>(null);
   const [genericFiles, setGenericFiles] = useState<File[]>([]);
+  const [genericQueue, setGenericQueue] = useState<QueueItem[]>([]);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<"idle" | "uploading" | "publishing" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const pendingGenericUploadsRef = useRef(new Map<string, PrivateResourceUploadSession>());
+  const pendingLearningUploadRef = useRef<{ fingerprint: string; upload: PrivateResourceUploadSession } | null>(null);
   const canWrite = access.session?.user.role === "owner" ||
     access.session?.user.permissions.includes("private-resources-write");
+  const busy = status === "uploading" || status === "publishing";
 
   useEffect(() => {
     if (access.status !== "ready" || !access.session) return;
@@ -93,45 +152,144 @@ export default function PrivateResourceUpload(): JSX.Element {
     return () => controller.abort();
   }, [access.session, access.status, searchParams]);
 
+  useEffect(() => {
+    pendingGenericUploadsRef.current.clear();
+    pendingLearningUploadRef.current = null;
+    setGenericQueue((current) => current.map((item) => ({ ...item, progress: 0, status: "pending", error: undefined })));
+  }, [collectionId]);
+
+  useEffect(() => {
+    if (!busy) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [busy]);
+
+  useEffect(() => () => abortControllerRef.current?.abort(), []);
+
   const selectedCollection = collections.find((collection) => collection.collectionId === collectionId);
+  const genericOverallProgress = useMemo(() => {
+    const total = genericQueue.reduce((sum, item) => sum + item.size, 0);
+    if (!total) return 0;
+    const loaded = genericQueue.reduce((sum, item) => sum + item.size * item.progress / 100, 0);
+    return Math.round(loaded / total * 100);
+  }, [genericQueue]);
+  const displayedProgress = selectedCollection?.type === "files" ? genericOverallProgress : progress;
+  const hasRetryableQueue = genericQueue.some((item) => item.status === "error" || item.status === "done");
 
   const submitLabel = useMemo(() => {
-    if (status === "uploading") return `正在上传 ${progress}%`;
-    if (status === "publishing") return "正在发布资源";
+    if (status === "uploading") return `正在上传 ${displayedProgress}%`;
+    if (status === "publishing") return "正在核验并发布";
     if (status === "done") return "发布完成";
+    if (selectedCollection?.type === "files" && hasRetryableQueue) return "重试未完成文件";
     return "上传并发布";
-  }, [progress, status]);
+  }, [displayedProgress, hasRetryableQueue, selectedCollection?.type, status]);
+
+  function updateQueue(key: string, patch: Partial<QueueItem>): void {
+    setGenericQueue((current) => current.map((item) => item.key === key ? { ...item, ...patch } : item));
+  }
+
+  function selectGenericFiles(files: File[]): void {
+    pendingGenericUploadsRef.current.clear();
+    setGenericFiles(files);
+    setGenericQueue(files.map((file, index) => ({
+      key: queueKey(file, index),
+      name: file.name,
+      size: file.size,
+      progress: 0,
+      status: "pending",
+    })));
+    setError(null);
+  }
+
+  async function publishGenericFile(
+    file: File,
+    index: number,
+    signal: AbortSignal,
+  ): Promise<void> {
+    if (!access.session) return;
+    const key = queueKey(file, index);
+    let upload = pendingGenericUploadsRef.current.get(key);
+    let reusedUpload = Boolean(upload);
+    if (upload && upload.expiresAt <= Math.floor(Date.now() / 1000) + 10) {
+      pendingGenericUploadsRef.current.delete(key);
+      upload = undefined;
+      reusedUpload = false;
+    }
+
+    updateQueue(key, { error: undefined, status: "uploading" });
+    if (!upload) {
+      upload = await beginPrivateResourceUpload(access.session, {
+        collectionId,
+        file: { originalName: file.name, bytes: file.size },
+      }, signal);
+      pendingGenericUploadsRef.current.set(key, upload);
+    }
+    const target = upload.files.file;
+    if (!target) throw new Error("上传服务未返回 OSS 地址");
+
+    try {
+      await uploadPrivateResourceFile(file, target, ({ loaded }) => {
+        updateQueue(key, {
+          progress: Math.min(100, Math.round(loaded / Math.max(file.size, 1) * 100)),
+          status: "uploading",
+        });
+      }, { allowExisting: reusedUpload, signal });
+      updateQueue(key, { progress: 100, status: "publishing" });
+      await completeUploadWithRetry(access.session, upload.uploadToken, signal);
+      pendingGenericUploadsRef.current.delete(key);
+      updateQueue(key, { error: undefined, progress: 100, status: "done" });
+    } catch (uploadError) {
+      const statusCode = Number((uploadError as { status?: number }).status ?? 0);
+      if (statusCode === 403 || (uploadError instanceof PrivateAuthApiError && uploadError.code === "INVALID_UPLOAD_TOKEN")) {
+        pendingGenericUploadsRef.current.delete(key);
+      }
+      throw uploadError;
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!access.session || !collectionId) return;
+    if (!access.session || !collectionId || busy) return;
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     setError(null);
     setProgress(0);
     setStatus("uploading");
+
     try {
       if (selectedCollection?.type === "files") {
         if (genericFiles.length === 0) throw new Error("请至少选择一个文件");
+        let failed = 0;
         for (let index = 0; index < genericFiles.length; index += 1) {
           const file = genericFiles[index];
-          const upload = await beginPrivateResourceUpload(access.session, {
-            collectionId,
-            file: { originalName: file.name, bytes: file.size },
-          });
-          const target = upload.files.file;
-          if (!target) throw new Error("上传服务未返回 OSS 地址");
-          await uploadPrivateResourceFile(file, target, ({ loaded }) => {
-            const completed = index / genericFiles.length;
-            const current = (loaded / Math.max(file.size, 1)) / genericFiles.length;
-            setProgress(Math.min(100, Math.round((completed + current) * 100)));
-          });
-          setStatus("publishing");
-          await completePrivateResourceUpload(access.session, upload.uploadToken);
-          if (index < genericFiles.length - 1) setStatus("uploading");
+          const key = queueKey(file, index);
+          const existing = genericQueue.find((item) => item.key === key);
+          if (existing?.status === "done") continue;
+          try {
+            await publishGenericFile(file, index, controller.signal);
+          } catch (fileError) {
+            if (controller.signal.aborted || abortError(fileError)) throw fileError;
+            failed += 1;
+            updateQueue(key, {
+              error: fileError instanceof Error ? fileError.message : "上传失败",
+              status: "error",
+            });
+          }
+        }
+        if (failed > 0) {
+          setStatus("idle");
+          setError(`有 ${failed} 个文件未完成，可直接重试；已经发布成功的文件不会重复上传。`);
+          return;
         }
         setStatus("done");
         window.setTimeout(() => navigate(`/resources/${collectionId}`), 600);
         return;
       }
+
       if (!audio || !transcriptText) throw new Error("请选择 MP3 音频和 TXT 文稿");
       const request: PrivateResourceUploadRequest = {
         collectionId,
@@ -151,7 +309,15 @@ export default function PrivateResourceUpload(): JSX.Element {
           } : {}),
         },
       };
-      const upload = await beginPrivateResourceUpload(access.session, request);
+      const fingerprint = JSON.stringify(request);
+      let pending = pendingLearningUploadRef.current;
+      if (pending && (pending.fingerprint !== fingerprint || pending.upload.expiresAt <= Math.floor(Date.now() / 1000) + 10)) {
+        pendingLearningUploadRef.current = null;
+        pending = null;
+      }
+      const reusedUpload = Boolean(pending);
+      const upload = pending?.upload ?? await beginPrivateResourceUpload(access.session, request, controller.signal);
+      pendingLearningUploadRef.current = { fingerprint, upload };
       const localFiles: Record<string, File> = {
         audio,
         transcriptText,
@@ -165,16 +331,26 @@ export default function PrivateResourceUpload(): JSX.Element {
         await uploadPrivateResourceFile(file, target, ({ loaded }) => {
           uploaded.set(role, loaded);
           const loadedTotal = [...uploaded.values()].reduce((sum, value) => sum + value, 0);
-          setProgress(Math.min(100, Math.round((loadedTotal / total) * 100)));
-        });
+          setProgress(Math.min(100, Math.round(loadedTotal / Math.max(total, 1) * 100)));
+        }, { allowExisting: reusedUpload, signal: controller.signal });
       }));
       setStatus("publishing");
-      const published = await completePrivateResourceUpload(access.session, upload.uploadToken);
+      const published = await completeUploadWithRetry(access.session, upload.uploadToken, controller.signal);
+      pendingLearningUploadRef.current = null;
       setStatus("done");
       window.setTimeout(() => navigate(`/resources/${published.collectionId}/${published.itemId}`), 600);
     } catch (uploadError) {
       setStatus("idle");
-      setError(uploadError instanceof Error ? uploadError.message : "资源上传失败");
+      if (controller.signal.aborted || abortError(uploadError)) {
+        setError("上传已取消。已成功发布的文件会保留，未完成的文件可以重新提交。 ");
+      } else {
+        if (uploadError instanceof PrivateAuthApiError && uploadError.code === "INVALID_UPLOAD_TOKEN") {
+          pendingLearningUploadRef.current = null;
+        }
+        setError(uploadError instanceof Error ? uploadError.message : "资源上传失败");
+      }
+    } finally {
+      if (abortControllerRef.current === controller) abortControllerRef.current = null;
     }
   }
 
@@ -196,7 +372,7 @@ export default function PrivateResourceUpload(): JSX.Element {
           <header className="mt-8">
             <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">PRIVATE UPLOAD</p>
             <h1 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">上传资源</h1>
-            <p className="mt-5 text-sm leading-7 text-slate-400">文件将直接上传至私人 OSS，全部核验完成后才会写入合集索引。</p>
+            <p className="mt-5 text-sm leading-7 text-slate-400">文件将直接上传至私人 OSS，全部核验完成后才会写入合集索引。瞬时网络失败会自动重试。</p>
           </header>
 
           {!canWrite && (
@@ -207,42 +383,64 @@ export default function PrivateResourceUpload(): JSX.Element {
             <form className="mt-10 space-y-8" onSubmit={submit}>
               <section className="grid gap-5 rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:grid-cols-2 sm:p-7">
                 <label className="text-sm text-slate-400">所属合集
-                  <select className={fieldClass} onChange={(event) => setCollectionId(event.target.value)} required value={collectionId}>
+                  <select className={fieldClass} disabled={busy} onChange={(event) => setCollectionId(event.target.value)} required value={collectionId}>
                     {collections.map((collection) => <option className="bg-slate-950" key={collection.collectionId} value={collection.collectionId}>{collection.title}</option>)}
                   </select>
                 </label>
                 {selectedCollection?.type === "audio-transcript" && <label className="text-sm text-slate-400">资源 ID（可留空自动生成）
-                  <input className={fieldClass} maxLength={100} onChange={(event) => setItemId(event.target.value)} pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,99}" placeholder="例如 debt-and-money" value={itemId} />
+                  <input className={fieldClass} disabled={busy} maxLength={100} onChange={(event) => setItemId(event.target.value)} pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,99}" placeholder="例如 debt-and-money" value={itemId} />
                 </label>}
                 {selectedCollection?.type === "audio-transcript" && <><label className="text-sm text-slate-400 sm:col-span-2">标题
-                  <input className={fieldClass} maxLength={200} onChange={(event) => setTitle(event.target.value)} required value={title} />
+                  <input className={fieldClass} disabled={busy} maxLength={200} onChange={(event) => setTitle(event.target.value)} required value={title} />
                 </label>
                 <label className="text-sm text-slate-400">发布日期
-                  <input className={fieldClass} onChange={(event) => setPublishedAt(event.target.value)} required type="date" value={publishedAt} />
+                  <input className={fieldClass} disabled={busy} onChange={(event) => setPublishedAt(event.target.value)} required type="date" value={publishedAt} />
                 </label>
                 <label className="text-sm text-slate-400">推荐日期
-                  <input className={fieldClass} onChange={(event) => setRecommendedDate(event.target.value)} required type="date" value={recommendedDate} />
+                  <input className={fieldClass} disabled={busy} onChange={(event) => setRecommendedDate(event.target.value)} required type="date" value={recommendedDate} />
                 </label>
                 <label className="text-sm text-slate-400">难度
-                  <input className={fieldClass} maxLength={20} onChange={(event) => setDifficulty(event.target.value)} required value={difficulty} />
+                  <input className={fieldClass} disabled={busy} maxLength={20} onChange={(event) => setDifficulty(event.target.value)} required value={difficulty} />
                 </label>
                 <label className="text-sm text-slate-400">标签（逗号分隔）
-                  <input className={fieldClass} onChange={(event) => setTags(event.target.value)} placeholder="英语学习, 精听" value={tags} />
+                  <input className={fieldClass} disabled={busy} onChange={(event) => setTags(event.target.value)} placeholder="英语学习, 精听" value={tags} />
                 </label>
                 <label className="text-sm text-slate-400 sm:col-span-2">来源页面（可选）
-                  <input className={fieldClass} onChange={(event) => setSourcePage(event.target.value)} placeholder="https://..." type="url" value={sourcePage} />
+                  <input className={fieldClass} disabled={busy} onChange={(event) => setSourcePage(event.target.value)} placeholder="https://..." type="url" value={sourcePage} />
                 </label>
                 <label className="text-sm text-slate-400 sm:col-span-2">资源说明
-                  <textarea className={`${fieldClass} min-h-28 resize-y`} maxLength={1000} onChange={(event) => setReason(event.target.value)} required value={reason} />
+                  <textarea className={`${fieldClass} min-h-28 resize-y`} disabled={busy} maxLength={1000} onChange={(event) => setReason(event.target.value)} required value={reason} />
                 </label></>}
               </section>
 
               {selectedCollection?.type === "files" ? (
-                <label className="block rounded-2xl border border-dashed border-white/15 bg-white/[0.025] p-6 transition hover:border-cyan-300/30">
-                  <span className="flex items-center gap-2 text-sm font-medium text-slate-200"><UploadCloud className="size-4 text-cyan-300" />选择文件（可多选）</span>
-                  <input className="mt-4 block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-300/10 file:px-3 file:py-2 file:text-xs file:text-cyan-200" multiple onChange={(event) => setGenericFiles(Array.from(event.target.files || []))} required type="file" />
-                  {genericFiles.length > 0 && <span className="mt-3 block text-xs text-slate-500">已选择 {genericFiles.length} 个文件；MP3、MP4、FLV 可在线播放，单文件最大 1 GB。</span>}
-                </label>
+                <section className="rounded-2xl border border-dashed border-white/15 bg-white/[0.025] p-6">
+                  <label className="block">
+                    <span className="flex items-center gap-2 text-sm font-medium text-slate-200"><UploadCloud className="size-4 text-cyan-300" />选择文件（可多选）</span>
+                    <input className="mt-4 block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-300/10 file:px-3 file:py-2 file:text-xs file:text-cyan-200" disabled={busy} multiple onChange={(event) => selectGenericFiles(Array.from(event.target.files || []))} required type="file" />
+                  </label>
+                  {genericQueue.length > 0 && (
+                    <div className="mt-5 space-y-3">
+                      {genericQueue.map((item) => (
+                        <div className="rounded-xl border border-white/[0.07] bg-black/10 px-3 py-3" key={item.key}>
+                          <div className="flex items-start justify-between gap-3 text-xs">
+                            <span className="min-w-0 break-all leading-5 text-slate-300">{item.name}</span>
+                            <span className={item.status === "error" ? "shrink-0 text-rose-300" : item.status === "done" ? "shrink-0 text-emerald-300" : "shrink-0 text-slate-500"}>
+                              {item.status === "pending" && "等待"}
+                              {item.status === "uploading" && `${item.progress}%`}
+                              {item.status === "publishing" && "核验中"}
+                              {item.status === "done" && "完成"}
+                              {item.status === "error" && "失败"}
+                            </span>
+                          </div>
+                          <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.06]"><div className="h-full rounded-full bg-cyan-300 transition-[width]" style={{ width: `${item.progress}%` }} /></div>
+                          {item.error && <p className="mt-2 text-xs leading-5 text-rose-200/90">{item.error}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {genericFiles.length > 0 && <p className="mt-3 text-xs leading-5 text-slate-500">已选择 {genericFiles.length} 个文件；MP3、MP4、FLV 可在线播放，单文件最大 1 GB。失败后可只重试未完成文件。</p>}
+                </section>
               ) : <section className="grid gap-4 sm:grid-cols-2">
                 <FileField accept="audio/mpeg,.mp3" file={audio} icon={FileAudio} label="MP3 音频" onChange={setAudio} required />
                 <FileField accept="text/plain,.txt" file={transcriptText} icon={FileText} label="TXT 文稿" onChange={setTranscriptText} required />
@@ -251,14 +449,20 @@ export default function PrivateResourceUpload(): JSX.Element {
 
               {error && <div className="rounded-2xl border border-rose-300/20 bg-rose-300/[0.06] p-5 text-sm text-rose-100">{error}</div>}
               {status !== "idle" && (
-                <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                  <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-[width]" style={{ width: `${status === "publishing" || status === "done" ? 100 : progress}%` }} />
+                <div>
+                  <div className="flex items-center justify-between text-xs text-slate-500"><span>{status === "publishing" ? "正在核验资源" : status === "done" ? "发布完成" : "正在上传"}</span><span className="font-mono text-cyan-300">{status === "publishing" || status === "done" ? 100 : displayedProgress}%</span></div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-[width]" style={{ width: `${status === "publishing" || status === "done" ? 100 : displayedProgress}%` }} />
+                  </div>
                 </div>
               )}
-              <button className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 py-3.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60" disabled={status !== "idle" || collections.length === 0} type="submit">
-                {status === "done" ? <CheckCircle2 className="size-4" /> : status !== "idle" ? <RefreshCw className="size-4 animate-spin" /> : <UploadCloud className="size-4" />}
-                {submitLabel}
-              </button>
+              <div className="flex gap-3">
+                <button className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 py-3.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60" disabled={busy || status === "done" || collections.length === 0} type="submit">
+                  {status === "done" ? <CheckCircle2 className="size-4" /> : busy ? <RefreshCw className="size-4 animate-spin" /> : <UploadCloud className="size-4" />}
+                  {submitLabel}
+                </button>
+                {busy && <button className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-3.5 text-sm text-slate-300 transition hover:border-rose-300/20 hover:text-rose-200" onClick={() => abortControllerRef.current?.abort()} type="button"><X className="size-4" />取消</button>}
+              </div>
             </form>
           )}
         </div>
