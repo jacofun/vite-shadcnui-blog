@@ -8,10 +8,15 @@ export type NoteMeta = {
   tags: string[];
   draft: boolean;
   readingMinutes: number;
+  series?: string;
+  seriesOrder?: number;
+  aiAssisted: boolean;
+  aiSummary?: string;
 };
 
 export type Note = NoteMeta & {
   content: string;
+  searchText: string;
 };
 
 const noteModules = import.meta.glob<string>("/src/content/notes/*.md", {
@@ -25,25 +30,18 @@ function parseFrontMatter(source: string): {
   content: string;
 } {
   const lines = source.replace(/\r\n/g, "\n").split("\n");
-
-  if (lines[0]?.trim() !== "---") {
-    return { attributes: {}, content: source };
-  }
+  if (lines[0]?.trim() !== "---") return { attributes: {}, content: source };
 
   const closingIndex = lines.findIndex(
     (line, index) => index > 0 && line.trim() === "---",
   );
-
-  if (closingIndex === -1) {
-    return { attributes: {}, content: source };
-  }
+  if (closingIndex === -1) return { attributes: {}, content: source };
 
   const attributes: Record<string, string | string[]> = {};
   let currentListKey: string | null = null;
 
   for (const line of lines.slice(1, closingIndex)) {
     const listItem = line.match(/^\s*-\s+(.+)$/);
-
     if (listItem && currentListKey) {
       const currentValue = attributes[currentListKey];
       attributes[currentListKey] = [
@@ -54,14 +52,10 @@ function parseFrontMatter(source: string): {
     }
 
     const field = line.match(/^([\w-]+):\s*(.*)$/);
-
-    if (!field) {
-      continue;
-    }
+    if (!field) continue;
 
     const [, key, rawValue] = field;
     const value = rawValue.trim().replace(/^["']|["']$/g, "");
-
     if (value) {
       attributes[key] = value;
       currentListKey = null;
@@ -88,23 +82,56 @@ function calculateReadingMinutes(content: string): number {
   return Math.max(1, Math.ceil(chineseCharacters / 350 + latinWords / 180));
 }
 
+function normalizeSearchText(value: string): string {
+  return value
+    .replace(/```[\s\S]*?```/g, " ")
+    .replaceAll("[", " ")
+    .replaceAll("]", " ")
+    .replace(/[#>*_`~()!-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
 function createNote(path: string, source: string): Note {
   const { attributes, content } = parseFrontMatter(source);
   const fileSlug = path.split("/").pop()?.replace(/\.md$/, "") ?? "untitled";
   const value = (key: string, fallback = "") =>
     typeof attributes[key] === "string" ? attributes[key] : fallback;
+  const tags = Array.isArray(attributes.tags) ? attributes.tags : [];
+  const title = value("title", fileSlug);
+  const summary = value("summary", value("excerpt"));
+  const date = value("date");
+  const inferredCategory = tags.some((tag) => ["AI", "开发", "前端工程", "软件工程"].includes(tag))
+    ? "工程与架构"
+    : "未分类";
+  const inferredSeries = tags.some((tag) => ["个人网站", "建站"].includes(tag))
+    ? "建站记录"
+    : undefined;
+  const seriesOrderValue = Number(value("seriesOrder"));
 
-  return {
-    title: value("title", fileSlug),
+  const meta = {
+    title,
     slug: value("slug", fileSlug),
-    summary: value("summary"),
-    date: value("date"),
-    updated: value("updated", value("date")),
-    category: value("category", "未分类"),
-    tags: Array.isArray(attributes.tags) ? attributes.tags : [],
+    summary,
+    date,
+    updated: value("updated", date),
+    category: value("category", inferredCategory),
+    tags,
     draft: value("draft") === "true",
     readingMinutes: calculateReadingMinutes(content),
+    series: value("series") || inferredSeries,
+    seriesOrder: Number.isFinite(seriesOrderValue) && seriesOrderValue > 0 ? seriesOrderValue : undefined,
+    aiAssisted: value("aiAssisted") === "true",
+    aiSummary: value("aiSummary", summary) || undefined,
+  } satisfies NoteMeta;
+
+  return {
+    ...meta,
     content,
+    searchText: normalizeSearchText(
+      [meta.title, meta.summary, meta.category, ...meta.tags, content].join(" "),
+    ),
   };
 }
 
@@ -116,18 +143,43 @@ export const notes = Object.entries(noteModules)
       new Date(right.updated).getTime() - new Date(left.updated).getTime(),
   );
 
-export const noteCategories = Array.from(
-  new Set(notes.map((note) => note.category)),
+export const noteCategories = Array.from(new Set(notes.map((note) => note.category)));
+export const noteTags = Array.from(new Set(notes.flatMap((note) => note.tags))).sort((a, b) =>
+  a.localeCompare(b, "zh-CN"),
 );
 
 export function getNoteBySlug(slug: string): Note | undefined {
   return notes.find((note) => note.slug === slug);
 }
 
+export function getSeriesNotes(series: string): Note[] {
+  return notes
+    .filter((note) => note.series === series)
+    .sort((left, right) => {
+      if (left.seriesOrder && right.seriesOrder) return left.seriesOrder - right.seriesOrder;
+      if (left.seriesOrder) return -1;
+      if (right.seriesOrder) return 1;
+      return new Date(left.date).getTime() - new Date(right.date).getTime();
+    });
+}
+
+export function getRelatedNotes(note: Note, limit = 3): Note[] {
+  return notes
+    .filter((candidate) => candidate.slug !== note.slug)
+    .map((candidate) => {
+      const sharedTags = candidate.tags.filter((tag) => note.tags.includes(tag)).length;
+      const categoryScore = candidate.category === note.category ? 2 : 0;
+      const seriesScore = note.series && candidate.series === note.series ? 4 : 0;
+      return { candidate, score: sharedTags * 2 + categoryScore + seriesScore };
+    })
+    .filter(({ score }) => score > 0)
+    .sort((left, right) => right.score - left.score)
+    .slice(0, limit)
+    .map(({ candidate }) => candidate);
+}
+
 export function formatNoteDate(date: string): string {
-  if (!date) {
-    return "";
-  }
+  if (!date) return "";
 
   return new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
