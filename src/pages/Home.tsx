@@ -37,7 +37,41 @@ export default function Home(): JSX.Element {
               </Link>
             </div>
 
-            <div className="divide-y divide-white/10 border-y border-white/10">
+            <div
+              aria-label="最近更新文章"
+              className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:hidden"
+            >
+              {recentNotes.map((note, index) => (
+                <Link
+                  className="group flex min-h-[246px] min-w-[82%] snap-start flex-col border border-white/10 bg-[#0a0e17] p-5 transition active:scale-[0.99]"
+                  key={note.slug}
+                  to={`/notes/${note.slug}`}
+                >
+                  <div className="flex items-start justify-between gap-4 font-mono text-[10px] tracking-[0.14em] text-slate-600">
+                    <time>{formatNoteDate(note.updated)}</time>
+                    <span>{String(index + 1).padStart(2, "0")} / {String(recentNotes.length).padStart(2, "0")}</span>
+                  </div>
+
+                  <div className="mt-9 flex-1">
+                    <h3 className="text-[1.35rem] font-medium leading-[1.35] tracking-[-0.025em] text-slate-100">
+                      {note.title}
+                    </h3>
+                    <p className="mt-4 line-clamp-2 text-sm leading-6 text-slate-500">{note.summary}</p>
+                  </div>
+
+                  <div className="mt-8 flex items-center justify-between border-t border-white/[0.08] pt-4">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-slate-600">{note.readingMinutes} min read</span>
+                    <span className="flex items-center gap-2 text-xs text-slate-400">
+                      阅读
+                      <ArrowRight className="size-3.5" />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+              <div aria-hidden="true" className="w-2 shrink-0" />
+            </div>
+
+            <div className="hidden divide-y divide-white/10 border-y border-white/10 sm:block">
               {recentNotes.map((note) => (
                 <Link className="group grid gap-3 py-6 transition sm:grid-cols-[110px_1fr_auto] sm:items-center" key={note.slug} to={`/notes/${note.slug}`}>
                   <time className="font-mono text-xs text-slate-600">{formatNoteDate(note.updated)}</time>
