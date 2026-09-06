@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/generate-public-meta.mjs && tsc -b && vite build",
+    "build": "node scripts/generate-public-meta.mjs && tsc -b && vite build && node scripts/generate-route-shells.mjs",
     "lint": "eslint .",
     "check": "pnpm lint && pnpm build",
     "preview": "vite preview"
