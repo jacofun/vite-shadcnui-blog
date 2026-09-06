@@ -85,7 +85,9 @@ function calculateReadingMinutes(content: string): number {
 function normalizeSearchText(value: string): string {
   return value
     .replace(/```[\s\S]*?```/g, " ")
-    .replace(/[#>*_`~\[\]()!-]/g, " ")
+    .replaceAll("[", " ")
+    .replaceAll("]", " ")
+    .replace(/[#>*_`~()!-]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
