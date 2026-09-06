@@ -155,7 +155,7 @@ export default function LivingKnowledgeGraph(): JSX.Element {
             <circle className="living-core-pulse" cx="50" cy="50" fill="url(#livingNodeGlow)" r="5.4" />
           </svg>
 
-          <div className="living-core absolute left-1/2 top-1/2 z-20 flex aspect-square w-[46%] -translate-x-1/2 -translate-y-1/2 items-center justify-center sm:w-[42%]">
+          <div className="living-core absolute left-1/2 top-1/2 z-20 flex aspect-square w-[46%] items-center justify-center sm:w-[42%]">
             <div aria-hidden="true" className="living-core-halo absolute inset-[-14%] rounded-full" />
             <div className="living-core-surface relative flex size-full flex-col items-center justify-center overflow-hidden rounded-full border border-white/[0.14] bg-[#080d18]/90 px-4 text-center shadow-[0_28px_90px_rgba(0,0,0,0.42)] backdrop-blur-xl">
               <div aria-hidden="true" className="living-core-scan absolute inset-0" />
