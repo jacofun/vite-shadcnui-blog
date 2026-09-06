@@ -1,5 +1,6 @@
 name: Test and Deploy Alibaba Cloud FC
 
+# This workflow deliberately updates only the function code package.
 on:
   push:
     branches:
