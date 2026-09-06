@@ -1,6 +1,6 @@
 import { lazy, StrictMode, Suspense, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
-import { createHashRouter, Navigate, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 
 import App from "./App.tsx";
@@ -11,6 +11,23 @@ import { PrivateAuthProvider } from "./contexts/PrivateAuthContext.tsx";
 import { publicPageImports } from "./lib/routePrefetch.ts";
 import "./index.css";
 import Home from "./pages/Home.tsx";
+
+function restoreCleanRoute(): void {
+  const url = new URL(window.location.href);
+  const fallbackPath = url.searchParams.get("__spa");
+
+  if (fallbackPath?.startsWith("/")) {
+    window.history.replaceState(null, "", fallbackPath);
+    return;
+  }
+
+  if (url.hash.startsWith("#/")) {
+    const legacyPath = url.hash.slice(1);
+    window.history.replaceState(null, "", legacyPath);
+  }
+}
+
+restoreCleanRoute();
 
 window.addEventListener("vite:preloadError", (event) => {
   event.preventDefault();
@@ -38,7 +55,7 @@ function lazyPage(element: ReactElement): ReactElement {
   return <Suspense fallback={routeFallback}>{element}</Suspense>;
 }
 
-const router = createHashRouter([
+const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
