@@ -4,9 +4,11 @@ import { createHashRouter, Navigate, RouterProvider } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 
 import App from "./App.tsx";
+import AppErrorBoundary from "./components/common/AppErrorBoundary.tsx";
 import RouteLoading from "./components/common/RouteLoading.tsx";
 import LegacyEnglishEpisodeRedirect from "./components/routing/LegacyEnglishEpisodeRedirect.tsx";
 import { PrivateAuthProvider } from "./contexts/PrivateAuthContext.tsx";
+import { publicPageImports } from "./lib/routePrefetch.ts";
 import "./index.css";
 import Home from "./pages/Home.tsx";
 
@@ -15,10 +17,12 @@ window.addEventListener("vite:preloadError", (event) => {
   window.location.reload();
 });
 
-const About = lazy(() => import("./pages/About.tsx"));
-const NoteDetail = lazy(() => import("./pages/NoteDetail.tsx"));
-const Notes = lazy(() => import("./pages/Notes.tsx"));
-const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const About = lazy(publicPageImports.about);
+const NoteDetail = lazy(publicPageImports.noteDetail);
+const Notes = lazy(publicPageImports.notes);
+const Now = lazy(publicPageImports.now);
+const Timeline = lazy(publicPageImports.timeline);
+const NotFound = lazy(publicPageImports.notFound);
 const PrivateAuth = lazy(() => import("./pages/PrivateAuth.tsx"));
 const PrivateClipboard = lazy(() => import("./pages/PrivateClipboard.tsx"));
 const PrivateResources = lazy(() => import("./pages/PrivateResources.tsx"));
@@ -26,9 +30,7 @@ const PrivateResourceCollection = lazy(() => import("./pages/PrivateResourceColl
 const PrivateResourceItem = lazy(() => import("./pages/PrivateResourceItem.tsx"));
 const PrivateResourceUpload = lazy(() => import("./pages/PrivateResourceUpload.tsx"));
 const PrivateResourceCreateCollection = lazy(() => import("./pages/PrivateResourceCreateCollection.tsx"));
-const WeddingInvitation = lazy(
-  () => import("./pages/WeddingInvitation.tsx"),
-);
+const WeddingInvitation = lazy(publicPageImports.wedding);
 
 const routeFallback = <RouteLoading />;
 
@@ -43,6 +45,8 @@ const router = createHashRouter([
     children: [
       { index: true, element: <Home /> },
       { path: "about", element: lazyPage(<About />) },
+      { path: "now", element: lazyPage(<Now />) },
+      { path: "timeline", element: lazyPage(<Timeline />) },
       { path: "notes", element: lazyPage(<Notes />) },
       { path: "notes/:slug", element: lazyPage(<NoteDetail />) },
       { path: "auth", element: lazyPage(<PrivateAuth />) },
@@ -63,9 +67,11 @@ const router = createHashRouter([
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <HelmetProvider>
-      <PrivateAuthProvider>
-        <RouterProvider router={router} />
-      </PrivateAuthProvider>
+      <AppErrorBoundary>
+        <PrivateAuthProvider>
+          <RouterProvider router={router} />
+        </PrivateAuthProvider>
+      </AppErrorBoundary>
     </HelmetProvider>
   </StrictMode>,
 );
