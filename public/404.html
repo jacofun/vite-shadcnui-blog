@@ -5,6 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#070a12" />
   <title>404 · 彦骁的笔记</title>
+  <script>
+    (() => {
+      const routePrefixes = [
+        "/about",
+        "/now",
+        "/timeline",
+        "/notes",
+        "/wedding",
+        "/auth",
+        "/resources",
+        "/learning",
+      ];
+      const path = window.location.pathname;
+      const isFrontendRoute = routePrefixes.some(
+        (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+      );
+
+      if (isFrontendRoute) {
+        const target = `${path}${window.location.search}${window.location.hash}`;
+        window.location.replace(`/?__spa=${encodeURIComponent(target)}`);
+      }
+    })();
+  </script>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -41,7 +64,7 @@
     <code>404 / OBJECT_NOT_FOUND</code>
     <h1>这里没有对应的页面</h1>
     <p>路径可能已经调整，或者内容仍在整理中。</p>
-    <a href="/#/">返回首页</a>
+    <a href="/">返回首页</a>
   </main>
 </body>
 </html>
