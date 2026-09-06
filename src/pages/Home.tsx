@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 
-import LivingKnowledgeGraph from "@/components/home/LivingKnowledgeGraph";
+import FlatHero from "@/components/home/FlatHero";
 import { formatNoteDate, notes } from "@/lib/notes";
 
 export default function Home(): JSX.Element {
@@ -22,10 +22,10 @@ export default function Home(): JSX.Element {
       </Helmet>
 
       <main className="relative min-h-screen overflow-x-clip bg-[#070a12] text-slate-100">
-        <LivingKnowledgeGraph />
+        <FlatHero />
 
         <div className="relative mx-auto max-w-6xl px-6 pb-24 sm:px-8 lg:px-10">
-          <section className="py-16 sm:py-20">
+          <section className="py-14 sm:py-20">
             <div className="mb-8 flex items-end justify-between gap-4">
               <div>
                 <p className="mb-2 font-mono text-xs tracking-[0.18em] text-slate-600">RECENT NOTES</p>
