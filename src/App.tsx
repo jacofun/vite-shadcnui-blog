@@ -14,7 +14,7 @@ function App() {
     showHeader && (pathname === "/" || pathname.startsWith("/notes"));
   const showFooter =
     !pathname.startsWith("/auth") && !pathname.startsWith("/resources");
-  const showReadingProgress = /^\/notes\/[^/]+$/.test(pathname);
+  const showReadingProgress = /^\/notes\/[^/]+\/?$/.test(pathname);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -43,8 +43,9 @@ function App() {
       const url = new URL(anchor.href, window.location.href);
       if (url.origin !== window.location.origin) return;
 
-      const nextRoute = url.hash.startsWith("#/") ? url.hash.slice(1) : null;
-      if (!nextRoute || nextRoute === pathname) return;
+      const nextPath = url.pathname.replace(/\/$/, "") || "/";
+      const currentPath = pathname.replace(/\/$/, "") || "/";
+      if (nextPath === currentPath && url.search === window.location.search) return;
 
       setRoutePending(true);
     };
@@ -83,7 +84,30 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#070a12]">
-      {routePending && (
+      {showHeader && (
+        <div className="sticky top-0 z-[110]">
+          <SiteHeader />
+          {showAiDisclaimer && <AiDisclaimer />}
+          {routePending && (
+            <div
+              aria-label="正在加载页面"
+              aria-live="polite"
+              className="absolute bottom-0 left-0 z-[130] h-0.5 w-full overflow-hidden bg-white/5"
+              role="progressbar"
+            >
+              <div className="h-full w-1/3 animate-[route-loading_1s_ease-in-out_infinite] bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-400" />
+            </div>
+          )}
+          {showReadingProgress && !routePending && (
+            <div
+              aria-hidden="true"
+              className="absolute bottom-0 left-0 z-[120] h-0.5 w-full origin-left bg-gradient-to-r from-cyan-300 to-violet-400"
+              style={{ transform: `scaleX(${readingProgress})` }}
+            />
+          )}
+        </div>
+      )}
+      {!showHeader && routePending && (
         <div
           aria-label="正在加载页面"
           aria-live="polite"
@@ -91,19 +115,6 @@ function App() {
           role="progressbar"
         >
           <div className="h-full w-1/3 animate-[route-loading_1s_ease-in-out_infinite] bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-400" />
-        </div>
-      )}
-      {showHeader && (
-        <div className="sticky top-0 z-[110]">
-          <SiteHeader />
-          {showAiDisclaimer && <AiDisclaimer />}
-          {showReadingProgress && (
-            <div
-              aria-hidden="true"
-              className="absolute bottom-0 left-0 z-[120] h-0.5 w-full origin-left bg-gradient-to-r from-cyan-300 to-violet-400"
-              style={{ transform: `scaleX(${readingProgress})` }}
-            />
-          )}
         </div>
       )}
       <Outlet />
