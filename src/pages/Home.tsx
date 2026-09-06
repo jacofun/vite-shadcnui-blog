@@ -43,7 +43,7 @@ export default function Home(): JSX.Element {
 
         <div className="relative mx-auto max-w-6xl px-6 pb-24 sm:px-8 lg:px-10">
           <section
-            className="home-hero relative grid min-h-[620px] items-center gap-16 py-24 lg:grid-cols-[1fr_320px]"
+            className="home-hero isolate relative grid min-h-[620px] items-center gap-16 py-24 lg:grid-cols-[1fr_320px]"
             onPointerLeave={resetHeroGlow}
             onPointerMove={moveHeroGlow}
             ref={heroRef}
