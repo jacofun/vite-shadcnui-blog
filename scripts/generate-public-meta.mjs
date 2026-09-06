@@ -56,6 +56,11 @@ function parseFrontMatter(source, fallbackSlug) {
   };
 }
 
+function canonicalRoute(route) {
+  if (route === "/") return "/";
+  return `${route.replace(/\/+$/, "")}/`;
+}
+
 await mkdir(publicDir, { recursive: true });
 await mkdir(generatedDir, { recursive: true });
 
@@ -70,7 +75,7 @@ notes.sort((a, b) => new Date(b.updated || b.date) - new Date(a.updated || a.dat
 
 const rssItems = notes
   .map((note) => {
-    const link = `${siteUrl}/notes/${encodeURIComponent(note.slug)}`;
+    const link = `${siteUrl}${canonicalRoute(`/notes/${encodeURIComponent(note.slug)}`)}`;
     const published = new Date(`${note.date || note.updated}T00:00:00+08:00`).toUTCString();
     return `    <item>\n      <title>${escapeXml(note.title)}</title>\n      <link>${escapeXml(link)}</link>\n      <guid isPermaLink="true">${escapeXml(link)}</guid>\n      <pubDate>${published}</pubDate>\n      <description>${escapeXml(note.summary)}</description>\n${note.tags.map((tag) => `      <category>${escapeXml(tag)}</category>`).join("\n")}\n    </item>`;
   })
@@ -92,7 +97,7 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://w
   .map((route) => {
     const note = notes.find((item) => route === `/notes/${item.slug}`);
     const lastmod = note?.updated || note?.date || new Date().toISOString().slice(0, 10);
-    return `  <url>\n    <loc>${escapeXml(`${siteUrl}${route}`)}</loc>\n    <lastmod>${escapeXml(lastmod)}</lastmod>\n  </url>`;
+    return `  <url>\n    <loc>${escapeXml(`${siteUrl}${canonicalRoute(route)}`)}</loc>\n    <lastmod>${escapeXml(lastmod)}</lastmod>\n  </url>`;
   })
   .join("\n")}\n</urlset>\n`;
 
