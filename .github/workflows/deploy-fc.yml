@@ -178,3 +178,46 @@ jobs:
           ALIYUN_FC_CODE_OSS_BUCKET: ${{ steps.fc_oss.outputs.bucket_name }}
           ALIYUN_FC_CODE_OSS_OBJECT: ${{ steps.fc_oss.outputs.object_name }}
         run: python scripts/deploy-fc-code.py
+
+      - name: Verify deployed function through public route
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          HEALTH_URL="https://yanxiao.me/api/private-auth/session"
+          BODY="${RUNNER_TEMP}/fc-health.json"
+
+          for attempt in 1 2 3 4 5 6; do
+            HTTP_CODE="$(curl -sS \
+              --max-time 20 \
+              --output "${BODY}" \
+              --write-out '%{http_code}' \
+              --header 'Accept: application/json' \
+              --header 'Cache-Control: no-cache' \
+              "${HEALTH_URL}?deploy=${GITHUB_SHA}&attempt=${attempt}" || true)"
+
+            if [[ "${HTTP_CODE}" == "401" ]]; then
+              if python - "${BODY}" <<'PY'
+          import json
+          import sys
+
+          with open(sys.argv[1], "r", encoding="utf-8") as handle:
+              payload = json.load(handle)
+
+          if payload.get("code") != "UNAUTHENTICATED":
+              raise SystemExit(f"unexpected health response: {payload}")
+          PY
+              then
+                echo "Function health check passed through ${HEALTH_URL}."
+                exit 0
+              fi
+            fi
+
+            echo "Health check attempt ${attempt} returned HTTP ${HTTP_CODE}; retrying..."
+            sleep 2
+          done
+
+          echo "::error::Function update completed but the public authentication route did not become healthy."
+          cat "${BODY}" || true
+          exit 1
