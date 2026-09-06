@@ -63,7 +63,8 @@ function HeadingWithCopy({ children, level }: { children: ReactNode; level: 1 | 
           : `${headingClass} mt-8 text-lg`;
 
   const copyAnchor = async () => {
-    const url = `${window.location.href.split("#")[0]}${window.location.hash.split("#")[0]}#${id}`;
+    const routeHash = window.location.hash.split("?")[0];
+    const url = `${window.location.origin}${window.location.pathname}${routeHash}?section=${encodeURIComponent(id)}`;
     await navigator.clipboard.writeText(url);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1400);
