@@ -30,7 +30,6 @@ function parseFrontMatter(source: string): {
   content: string;
 } {
   const lines = source.replace(/\r\n/g, "\n").split("\n");
-
   if (lines[0]?.trim() !== "---") return { attributes: {}, content: source };
 
   const closingIndex = lines.findIndex(
@@ -98,22 +97,31 @@ function createNote(path: string, source: string): Note {
   const value = (key: string, fallback = "") =>
     typeof attributes[key] === "string" ? attributes[key] : fallback;
   const tags = Array.isArray(attributes.tags) ? attributes.tags : [];
+  const title = value("title", fileSlug);
+  const summary = value("summary", value("excerpt"));
+  const date = value("date");
+  const inferredCategory = tags.some((tag) => ["AI", "开发", "前端工程", "软件工程"].includes(tag))
+    ? "工程与架构"
+    : "未分类";
+  const inferredSeries = tags.some((tag) => ["个人网站", "建站"].includes(tag))
+    ? "建站记录"
+    : undefined;
   const seriesOrderValue = Number(value("seriesOrder"));
 
   const meta = {
-    title: value("title", fileSlug),
+    title,
     slug: value("slug", fileSlug),
-    summary: value("summary"),
-    date: value("date"),
-    updated: value("updated", value("date")),
-    category: value("category", "未分类"),
+    summary,
+    date,
+    updated: value("updated", date),
+    category: value("category", inferredCategory),
     tags,
     draft: value("draft") === "true",
     readingMinutes: calculateReadingMinutes(content),
-    series: value("series") || undefined,
+    series: value("series") || inferredSeries,
     seriesOrder: Number.isFinite(seriesOrderValue) && seriesOrderValue > 0 ? seriesOrderValue : undefined,
     aiAssisted: value("aiAssisted") === "true",
-    aiSummary: value("aiSummary") || undefined,
+    aiSummary: value("aiSummary", summary) || undefined,
   } satisfies NoteMeta;
 
   return {
@@ -145,7 +153,12 @@ export function getNoteBySlug(slug: string): Note | undefined {
 export function getSeriesNotes(series: string): Note[] {
   return notes
     .filter((note) => note.series === series)
-    .sort((left, right) => (left.seriesOrder ?? 0) - (right.seriesOrder ?? 0));
+    .sort((left, right) => {
+      if (left.seriesOrder && right.seriesOrder) return left.seriesOrder - right.seriesOrder;
+      if (left.seriesOrder) return -1;
+      if (right.seriesOrder) return 1;
+      return new Date(left.date).getTime() - new Date(right.date).getTime();
+    });
 }
 
 export function getRelatedNotes(note: Note, limit = 3): Note[] {
