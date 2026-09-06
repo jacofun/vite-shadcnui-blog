@@ -1,5 +1,5 @@
 import { ArrowRight, Clipboard, FolderLock, FolderPlus, Headphones, LogOut, RefreshCw, ShieldCheck, UploadCloud } from "lucide-react";
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -17,25 +17,39 @@ export default function PrivateResources(): JSX.Element {
   const auth = usePrivateAuth();
   const access = usePrivateResourceSession();
   const navigate = useNavigate();
+  const loadedUserId = useRef<string | null>(null);
   const [catalog, setCatalog] = useState<PrivateResourceCatalog | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [catalogError, setCatalogError] = useState(false);
   const [loadRevision, setLoadRevision] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     if (access.status !== "ready" || !access.session) return;
     const controller = new AbortController();
-    setCatalog(null);
+    const userId = access.session.user.id;
+    const sameUser = loadedUserId.current === userId;
+
+    if (!sameUser) {
+      loadedUserId.current = userId;
+      setCatalog(null);
+    }
+    setRefreshing(true);
     setError(null);
     setCatalogError(false);
+
     loadPrivateResourceCatalog(access.session, controller.signal, { force: loadRevision > 0 })
       .then(setCatalog)
       .catch((loadError: unknown) => {
         if (controller.signal.aborted) return;
         setCatalogError(true);
         setError(loadError instanceof Error ? loadError.message : "私人资源目录读取失败");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setRefreshing(false);
       });
+
     return () => controller.abort();
   }, [access.session, access.status, loadRevision]);
 
@@ -114,11 +128,11 @@ export default function PrivateResources(): JSX.Element {
             )}
           </div>
 
-          <PrivateLoadingProgress className="mt-14 max-w-xl" failed={catalogError} label="正在读取资源目录" loading={!catalog && !error} />
+          <PrivateLoadingProgress className="mt-14 max-w-xl" failed={catalogError && !catalog} label={catalog ? "正在刷新资源目录" : "正在读取资源目录"} loading={refreshing} />
 
           {error && (
             <div className="mt-12 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-rose-300/20 bg-rose-300/[0.06] p-5 text-sm text-rose-100">
-              <span>{error}</span>
+              <span>{catalog ? `刷新失败：${error}，当前仍显示上次成功读取的内容。` : error}</span>
               {catalogError && (
                 <button className="inline-flex items-center gap-2 rounded-xl border border-rose-200/20 px-4 py-2 text-xs font-medium text-rose-100 transition hover:bg-rose-100/10" onClick={() => setLoadRevision((value) => value + 1)} type="button">
                   <RefreshCw className="size-3.5" />重新加载
