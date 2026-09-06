@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, CalendarDays, File, Music, RefreshCw, Trash2, UploadCloud, Video } from "lucide-react";
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -30,6 +30,7 @@ export default function PrivateResourceCollection(): JSX.Element {
   const { collectionId = "" } = useParams();
   const access = usePrivateResourceSession();
   const navigate = useNavigate();
+  const loadedCollectionId = useRef<string | null>(null);
   const [collection, setCollection] = useState<ResourceCollection | null>(null);
   const [learningIndex, setLearningIndex] = useState<PrivateLearningIndex | null>(null);
   const [fileIndex, setFileIndex] = useState<PrivateFileIndex | null>(null);
@@ -42,11 +43,17 @@ export default function PrivateResourceCollection(): JSX.Element {
   useEffect(() => {
     if (access.status !== "ready" || !access.session) return;
     const controller = new AbortController();
+    const sameCollection = loadedCollectionId.current === collectionId;
+
+    if (!sameCollection) {
+      loadedCollectionId.current = collectionId;
+      setCollection(null);
+      setLearningIndex(null);
+      setFileIndex(null);
+    }
     setIsLoading(true);
     setError(null);
-    setCollection(null);
-    setLearningIndex(null);
-    setFileIndex(null);
+
     loadPrivateResourceCatalog(access.session, controller.signal, { force: loadRevision > 0 }).then(async (catalog) => {
       const selected = catalog.collections.find((item) => item.collectionId === collectionId);
       if (!selected) throw new Error("资源合集不存在");
@@ -73,6 +80,7 @@ export default function PrivateResourceCollection(): JSX.Element {
 
   if (access.status !== "ready") return <PrivateResourceAccessState error={access.error} status={access.status} />;
   const empty = (fileIndex && fileIndex.items.length === 0) || (learningIndex && learningIndex.episodes.length === 0);
+  const hasLoadedContent = Boolean(collection && (fileIndex || learningIndex));
 
   async function deleteCollection(): Promise<void> {
     if (!access.session || !collection || collection.type !== "files" || access.session.user.role !== "owner") return;
@@ -101,8 +109,8 @@ export default function PrivateResourceCollection(): JSX.Element {
             <p className="mt-5 text-base leading-8 text-slate-400">{collection.description}</p>
             <div className="mt-6 flex flex-wrap gap-3">{canWrite && <Link className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-2.5 text-sm text-cyan-200" to={`/resources/upload?collection=${collection.collectionId}`}><UploadCloud className="size-4" />上传到此合集</Link>}{collection.type === "files" && access.session?.user.role === "owner" && <button className="inline-flex items-center gap-2 rounded-xl border border-rose-300/15 bg-rose-300/[0.04] px-4 py-2.5 text-sm text-rose-200 disabled:opacity-50" disabled={deleting} onClick={() => void deleteCollection()} type="button">{deleting ? <RefreshCw className="size-4 animate-spin" /> : <Trash2 className="size-4" />}删除合集</button>}</div>
           </header>}
-          <PrivateLoadingProgress className="mt-14 max-w-xl" failed={Boolean(error)} label="正在读取合集" loading={isLoading} />
-          {error && <div className="mt-12 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-rose-300/20 bg-rose-300/[0.06] p-5 text-sm text-rose-100"><span>{error}</span><button className="inline-flex items-center gap-2 rounded-xl border border-rose-200/20 px-4 py-2 text-xs font-medium text-rose-100 transition hover:bg-rose-100/10" onClick={() => setLoadRevision((value) => value + 1)} type="button"><RefreshCw className="size-3.5" />重新加载</button></div>}
+          <PrivateLoadingProgress className="mt-14 max-w-xl" failed={Boolean(error) && !hasLoadedContent} label={hasLoadedContent ? "正在刷新合集" : "正在读取合集"} loading={isLoading} />
+          {error && <div className="mt-12 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-rose-300/20 bg-rose-300/[0.06] p-5 text-sm text-rose-100"><span>{hasLoadedContent ? `刷新失败：${error}，当前仍显示上次成功读取的内容。` : error}</span><button className="inline-flex items-center gap-2 rounded-xl border border-rose-200/20 px-4 py-2 text-xs font-medium text-rose-100 transition hover:bg-rose-100/10" onClick={() => setLoadRevision((value) => value + 1)} type="button"><RefreshCw className="size-3.5" />重新加载</button></div>}
           {empty && <div className="mt-12 rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-sm text-slate-400">这个合集暂时没有内容。</div>}
           {collection && fileIndex && fileIndex.items.length > 0 && <section className="mt-12 grid gap-4 md:grid-cols-2">
             {fileIndex.items.map((item) => {

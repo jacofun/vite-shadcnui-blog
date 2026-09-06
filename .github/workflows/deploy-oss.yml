@@ -4,9 +4,17 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "functions/private-auth/**"
+      - "scripts/deploy-fc-code.py"
+      - ".github/workflows/deploy-fc.yml"
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - "functions/private-auth/**"
+      - "scripts/deploy-fc-code.py"
+      - ".github/workflows/deploy-fc.yml"
   workflow_dispatch:
 
 permissions:
@@ -41,12 +49,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install and test private authentication function
-        run: |
-          set -euo pipefail
-          npm ci --prefix functions/private-auth
-          npm test --prefix functions/private-auth
-
       - name: Lint
         run: pnpm lint
 
@@ -55,50 +57,13 @@ jobs:
 
       - name: Verify build output
         run: |
+          set -euo pipefail
           test -d dist
           test -f dist/index.html
+          test -f dist/404.html
+          echo "${GITHUB_SHA}" > dist/deploy-version.txt
           echo "Build output:"
           find dist -maxdepth 2 -type f | sort | head -100
-
-      - name: Package private authentication function
-        id: private_function
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          SOURCE_DIR="functions/private-auth"
-          PACKAGE_DIR="${RUNNER_TEMP}/private-auth-package"
-          ARTIFACT_DIR="${RUNNER_TEMP}/private-auth-artifact"
-
-          mkdir -p "${PACKAGE_DIR}" "${ARTIFACT_DIR}"
-          cp "${SOURCE_DIR}/index.js" "${PACKAGE_DIR}/index.js"
-          cp "${SOURCE_DIR}/package.json" "${PACKAGE_DIR}/package.json"
-          cp "${SOURCE_DIR}/package-lock.json" "${PACKAGE_DIR}/package-lock.json"
-          cp -R "${SOURCE_DIR}/node_modules" "${PACKAGE_DIR}/node_modules"
-
-          (
-            cd "${PACKAGE_DIR}"
-            zip -q -r "${ARTIFACT_DIR}/private-auth.zip" \
-              index.js package.json package-lock.json node_modules
-          )
-          (
-            cd "${ARTIFACT_DIR}"
-            sha256sum private-auth.zip > private-auth.sha256
-          )
-
-          ZIP_LIST="${ARTIFACT_DIR}/private-auth.files.txt"
-          unzip -Z1 "${ARTIFACT_DIR}/private-auth.zip" > "${ZIP_LIST}"
-          grep -Fx 'index.js' "${ZIP_LIST}" >/dev/null
-          grep -Fx 'package.json' "${ZIP_LIST}" >/dev/null
-          grep -E '^node_modules/' "${ZIP_LIST}" >/dev/null
-          if grep -Eq '(^|/)\.\.(/|$)' "${ZIP_LIST}"; then
-            echo "::error::Function ZIP contains an unsafe path."
-            exit 1
-          fi
-
-          echo "artifact_dir=${ARTIFACT_DIR}" >> "${GITHUB_OUTPUT}"
-          echo "Function artifact:"
-          cat "${ARTIFACT_DIR}/private-auth.sha256"
 
       - name: Validate deployment configuration
         if: github.event_name != 'pull_request'
@@ -136,39 +101,6 @@ jobs:
               ;;
           esac
 
-      - name: Validate private function artifact configuration
-        if: github.event_name != 'pull_request'
-        env:
-          OSS_ACCESS_KEY_ID: ${{ secrets.ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_ID }}
-          OSS_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_SECRET }}
-          OSS_REGION: ${{ vars.ALIYUN_PRIVATE_LEARNING_OSS_REGION }}
-          OSS_TARGET: ${{ vars.ALIYUN_PRIVATE_LEARNING_OSS_TARGET }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          test -n "${OSS_ACCESS_KEY_ID}" || {
-            echo "::error::Missing secret ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_ID"
-            exit 1
-          }
-          test -n "${OSS_ACCESS_KEY_SECRET}" || {
-            echo "::error::Missing secret ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_SECRET"
-            exit 1
-          }
-          test -n "${OSS_REGION}" || {
-            echo "::error::Missing variable ALIYUN_PRIVATE_LEARNING_OSS_REGION"
-            exit 1
-          }
-          test -n "${OSS_TARGET}" || {
-            echo "::error::Missing variable ALIYUN_PRIVATE_LEARNING_OSS_TARGET"
-            exit 1
-          }
-
-          if [[ ! "${OSS_TARGET}" =~ ^oss://[^/]+(/learning-assets)?/?$ ]]; then
-            echo "::error::ALIYUN_PRIVATE_LEARNING_OSS_TARGET must identify the private bucket or its /learning-assets prefix"
-            exit 1
-          fi
-
       - name: Install ossutil
         if: github.event_name != 'pull_request'
         shell: bash
@@ -205,29 +137,31 @@ jobs:
           TARGET="${OSS_TARGET%/}/"
           echo "Uploading dist/ to ${TARGET}"
 
-          # One sync is enough. Content-hashed Vite assets keep a long cache policy;
-          # index.html is overwritten below with an explicit revalidation policy.
+          # Content-hashed JS/CSS/assets are safe to cache for a year.
           ossutil sync \
             dist/ \
             "${TARGET}" \
             --cache-control "public,max-age=31536000,immutable" \
             -f
 
-          ossutil cp \
-            dist/index.html \
-            "${TARGET}index.html" \
-            --cache-control "no-cache,max-age=0,must-revalidate" \
-            --content-type "text/html; charset=utf-8" \
-            -f
-
-          if [[ -f dist/404.html ]]; then
+          # BrowserRouter route shells are HTML too. Override every HTML object
+          # with revalidation semantics so nested routes cannot remain stale.
+          while IFS= read -r -d '' html_file; do
+            relative_path="${html_file#dist/}"
             ossutil cp \
-              dist/404.html \
-              "${TARGET}404.html" \
+              "${html_file}" \
+              "${TARGET}${relative_path}" \
               --cache-control "no-cache,max-age=0,must-revalidate" \
               --content-type "text/html; charset=utf-8" \
               -f
-          fi
+          done < <(find dist -type f -name '*.html' -print0)
+
+          ossutil cp \
+            dist/deploy-version.txt \
+            "${TARGET}deploy-version.txt" \
+            --cache-control "no-cache,max-age=0,must-revalidate" \
+            --content-type "text/plain; charset=utf-8" \
+            -f
 
           WEDDING_SOURCE_DIR="src/assets/gallery"
           WEDDING_TARGET="${TARGET}wedding-assets/"
@@ -303,38 +237,27 @@ jobs:
 
           echo "Deployment completed."
 
-      - name: Upload private authentication function artifact
+      - name: Verify deployed version
         if: github.event_name != 'pull_request'
-        env:
-          OSS_ACCESS_KEY_ID: ${{ secrets.ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_ID }}
-          OSS_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_SECRET }}
-          OSS_REGION: ${{ vars.ALIYUN_PRIVATE_LEARNING_OSS_REGION }}
-          OSS_TARGET: ${{ vars.ALIYUN_PRIVATE_LEARNING_OSS_TARGET }}
-          ARTIFACT_DIR: ${{ steps.private_function.outputs.artifact_dir }}
         shell: bash
         run: |
           set -euo pipefail
+          EXPECTED="${GITHUB_SHA}"
+          VERSION_URL="https://yanxiao.me/deploy-version.txt?sha=${GITHUB_SHA}"
+          ACTUAL="$(curl \
+            --fail \
+            --silent \
+            --show-error \
+            --location \
+            --retry 6 \
+            --retry-all-errors \
+            --retry-delay 2 \
+            --max-time 20 \
+            "${VERSION_URL}" | tr -d '\r\n')"
 
-          BUCKET_NAME="${OSS_TARGET#oss://}"
-          BUCKET_NAME="${BUCKET_NAME%%/*}"
-          TARGET="oss://${BUCKET_NAME}/functions"
-          ZIP_TARGET="${TARGET}/private-auth.zip"
-          SHA_TARGET="${TARGET}/private-auth.sha256"
+          if [[ "${ACTUAL}" != "${EXPECTED}" ]]; then
+            echo "::error::Deployed version mismatch: expected ${EXPECTED}, got ${ACTUAL:-<empty>}"
+            exit 1
+          fi
 
-          ossutil cp \
-            "${ARTIFACT_DIR}/private-auth.zip" \
-            "${ZIP_TARGET}" \
-            --content-type "application/zip" \
-            --content-disposition "attachment; filename=private-auth.zip" \
-            -f
-          ossutil stat "${ZIP_TARGET}" >/dev/null
-
-          ossutil cp \
-            "${ARTIFACT_DIR}/private-auth.sha256" \
-            "${SHA_TARGET}" \
-            --content-type "text/plain; charset=utf-8" \
-            --content-disposition "inline" \
-            -f
-          ossutil stat "${SHA_TARGET}" >/dev/null
-
-          echo "Uploaded and verified private authentication function artifacts."
+          echo "Verified deployed website version ${ACTUAL}."

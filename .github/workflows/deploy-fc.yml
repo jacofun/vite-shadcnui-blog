@@ -1,6 +1,5 @@
 name: Test and Deploy Alibaba Cloud FC
 
-# This workflow deliberately updates only the function code package.
 on:
   push:
     branches:
@@ -153,7 +152,7 @@ jobs:
 
           BUCKET_AND_PATH="${OSS_TARGET#oss://}"
           BUCKET_NAME="${BUCKET_AND_PATH%%/*}"
-          OBJECT_NAME="functions/fc-cicd/fc-blog-authenticator-${GITHUB_SHA}.zip"
+          OBJECT_NAME="functions/fc-cicd/fc-blog-authenticator-latest.zip"
           OBJECT_URI="oss://${BUCKET_NAME}/${OBJECT_NAME}"
 
           ossutil cp \
