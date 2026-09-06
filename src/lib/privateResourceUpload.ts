@@ -7,6 +7,7 @@ export interface UploadProgress {
 }
 
 export interface UploadOptions {
+  allowExisting?: boolean;
   retries?: number;
   signal?: AbortSignal;
 }
@@ -41,6 +42,7 @@ function uploadAttempt(
   onProgress: (progress: UploadProgress) => void,
   signal: AbortSignal | undefined,
   attempt: number,
+  allowExisting: boolean,
   highestLoaded: { value: number },
 ): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -71,10 +73,10 @@ function uploadAttempt(
         resolve();
         return;
       }
-      // A retry may receive 409 because the previous PUT actually reached OSS but
-      // the client lost the response. The FC completion step verifies size/type
-      // and media magic before publishing, so treating this retry as uploaded is safe.
-      if (attempt > 0 && request.status === 409) {
+      // A retry (including a user retry of the same upload session) may receive
+      // 409 because an earlier PUT reached OSS but its response was lost. The FC
+      // completion step still verifies bytes/type/media magic before publishing.
+      if ((attempt > 0 || allowExisting) && request.status === 409) {
         highestLoaded.value = file.size;
         onProgress({ loaded: file.size, total: file.size });
         resolve();
@@ -110,7 +112,15 @@ export async function uploadPrivateResourceFile(
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
-      await uploadAttempt(file, target, onProgress, options.signal, attempt, highestLoaded);
+      await uploadAttempt(
+        file,
+        target,
+        onProgress,
+        options.signal,
+        attempt,
+        options.allowExisting === true,
+        highestLoaded,
+      );
       logPrivatePerformance("OSS upload", performance.now() - startedAt, {
         bytes: file.size,
         attempts: attempt + 1,
