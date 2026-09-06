@@ -88,7 +88,7 @@ export default function NoteDetail(): JSX.Element {
   const previousNote = notes[noteIndex + 1];
   const nextNote = notes[noteIndex - 1];
   const seriesIndex = seriesNotes.findIndex((item) => item.slug === note.slug);
-  const canonicalUrl = `https://yanxiao.me/#/notes/${note.slug}`;
+  const canonicalUrl = `https://yanxiao.me/notes/${note.slug}/`;
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Article",

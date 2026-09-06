@@ -4,6 +4,7 @@ import path from "node:path";
 const root = process.cwd();
 const notesDir = path.join(root, "src/content/notes");
 const publicDir = path.join(root, "public");
+const generatedDir = path.join(root, ".generated");
 const siteUrl = "https://yanxiao.me";
 
 function escapeXml(value = "") {
@@ -55,7 +56,14 @@ function parseFrontMatter(source, fallbackSlug) {
   };
 }
 
+function canonicalRoute(route) {
+  if (route === "/") return "/";
+  return `${route.replace(/\/+$/, "")}/`;
+}
+
 await mkdir(publicDir, { recursive: true });
+await mkdir(generatedDir, { recursive: true });
+
 const filenames = (await readdir(notesDir)).filter((name) => name.endsWith(".md"));
 const notes = [];
 for (const filename of filenames) {
@@ -67,7 +75,7 @@ notes.sort((a, b) => new Date(b.updated || b.date) - new Date(a.updated || a.dat
 
 const rssItems = notes
   .map((note) => {
-    const link = `${siteUrl}/#/notes/${encodeURIComponent(note.slug)}`;
+    const link = `${siteUrl}${canonicalRoute(`/notes/${encodeURIComponent(note.slug)}`)}`;
     const published = new Date(`${note.date || note.updated}T00:00:00+08:00`).toUTCString();
     return `    <item>\n      <title>${escapeXml(note.title)}</title>\n      <link>${escapeXml(link)}</link>\n      <guid isPermaLink="true">${escapeXml(link)}</guid>\n      <pubDate>${published}</pubDate>\n      <description>${escapeXml(note.summary)}</description>\n${note.tags.map((tag) => `      <category>${escapeXml(tag)}</category>`).join("\n")}\n    </item>`;
   })
@@ -75,14 +83,46 @@ const rssItems = notes
 
 const rss = `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0">\n  <channel>\n    <title>彦骁的笔记</title>\n    <link>${siteUrl}/</link>\n    <description>技术、AI、金融市场，以及一些值得长期留下来的记录。</description>\n    <language>zh-cn</language>\n    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>\n    <atom:link xmlns:atom="http://www.w3.org/2005/Atom" href="${siteUrl}/feed.xml" rel="self" type="application/rss+xml" />\n${rssItems}\n  </channel>\n</rss>\n`;
 
-// The site currently uses HashRouter. Fragment routes are not useful sitemap URLs,
-// so only the canonical document URL is declared here instead of publishing false paths.
-const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>${siteUrl}/</loc>\n    <lastmod>${new Date().toISOString().slice(0, 10)}</lastmod>\n  </url>\n</urlset>\n`;
+const publicRoutes = [
+  "/",
+  "/notes",
+  "/about",
+  "/now",
+  "/timeline",
+  "/wedding",
+  ...notes.map((note) => `/notes/${note.slug}`),
+];
 
-const robots = `User-agent: *\nAllow: /\nDisallow: /private/\nSitemap: ${siteUrl}/sitemap.xml\n`;
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${publicRoutes
+  .map((route) => {
+    const note = notes.find((item) => route === `/notes/${item.slug}`);
+    const lastmod = note?.updated || note?.date || new Date().toISOString().slice(0, 10);
+    return `  <url>\n    <loc>${escapeXml(`${siteUrl}${canonicalRoute(route)}`)}</loc>\n    <lastmod>${escapeXml(lastmod)}</lastmod>\n  </url>`;
+  })
+  .join("\n")}\n</urlset>\n`;
+
+const robots = `User-agent: *\nAllow: /\nDisallow: /auth\nDisallow: /resources\nDisallow: /private/\nSitemap: ${siteUrl}/sitemap.xml\n`;
+
+const routeShells = [
+  "/notes",
+  "/about",
+  "/now",
+  "/timeline",
+  "/wedding",
+  "/auth",
+  "/resources",
+  "/resources/clipboard",
+  "/resources/new",
+  "/resources/upload",
+  "/learning/english",
+  ...notes.map((note) => `/notes/${note.slug}`),
+];
 
 await writeFile(path.join(publicDir, "feed.xml"), rss, "utf8");
 await writeFile(path.join(publicDir, "sitemap.xml"), sitemap, "utf8");
 await writeFile(path.join(publicDir, "robots.txt"), robots, "utf8");
+await writeFile(path.join(generatedDir, "route-shells.txt"), `${routeShells.join("\n")}\n`, "utf8");
 
-console.log(`Generated feed.xml (${notes.length} notes), sitemap.xml and robots.txt`);
+console.log(
+  `Generated feed.xml (${notes.length} notes), sitemap.xml, robots.txt and ${routeShells.length} route shells`,
+);
