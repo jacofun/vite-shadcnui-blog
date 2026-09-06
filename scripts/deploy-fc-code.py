@@ -36,23 +36,10 @@ def main() -> int:
     config.endpoint = f"fcv3.{region}.aliyuncs.com"
     client = FcClient(config)
 
-    current = client.get_function(function_name, fc_models.GetFunctionRequest()).body
-    current_runtime = getattr(current, "runtime", None)
-    current_handler = getattr(current, "handler", None)
-
     print(
-        f"Target FC function: {function_name} ({region}), "
-        f"runtime={current_runtime}, handler={current_handler}"
+        f"Deploying code only to FC function: {function_name} ({region}); "
+        "existing environment variables and function settings are omitted from the update request"
     )
-
-    if current_runtime != expected_runtime:
-        raise RuntimeError(
-            f"Refusing deployment: runtime is {current_runtime!r}, expected {expected_runtime!r}"
-        )
-    if current_handler != expected_handler:
-        raise RuntimeError(
-            f"Refusing deployment: handler is {current_handler!r}, expected {expected_handler!r}"
-        )
 
     zip_file = base64.b64encode(zip_path.read_bytes()).decode("ascii")
     update_input = fc_models.UpdateFunctionInput(
@@ -67,10 +54,15 @@ def main() -> int:
     last_modified = getattr(response, "last_modified_time", None)
 
     if deployed_runtime != expected_runtime or deployed_handler != expected_handler:
-        raise RuntimeError("Function configuration changed unexpectedly after code deployment")
+        raise RuntimeError(
+            "Function code was updated, but the returned configuration does not match "
+            f"runtime={expected_runtime!r}, handler={expected_handler!r}; "
+            f"actual runtime={deployed_runtime!r}, handler={deployed_handler!r}"
+        )
 
     print(
         f"FC code deployment succeeded: function={function_name}, "
+        f"runtime={deployed_runtime}, handler={deployed_handler}, "
         f"codeSize={code_size}, lastModifiedTime={last_modified}"
     )
     return 0
