@@ -10,6 +10,7 @@ import {
 import { Heart, Menu } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
+import { prefetchPrimaryPublicRoutes, prefetchPublicRoute } from "@/lib/routePrefetch";
 import { terminalOpenEvent } from "@/lib/terminal";
 
 const TerminalDialog = lazy(
@@ -19,6 +20,7 @@ const TerminalDialog = lazy(
 const navigation = [
   { label: "首页", to: "/" },
   { label: "笔记", to: "/notes" },
+  { label: "现在", to: "/now" },
   { label: "资源", to: "/resources" },
   { label: "关于", to: "/about" },
   { label: "婚礼纪念", to: "/wedding", wedding: true },
@@ -46,10 +48,7 @@ export default function SiteHeader(): JSX.Element {
   const [hasTerminalMounted, setHasTerminalMounted] = useState(isTerminalOpen);
 
   const updateTerminalOpen = useCallback((open: boolean) => {
-    if (open) {
-      setHasTerminalMounted(true);
-    }
-
+    if (open) setHasTerminalMounted(true);
     setIsTerminalOpen(open);
 
     try {
@@ -64,6 +63,11 @@ export default function SiteHeader(): JSX.Element {
   }, [location.pathname]);
 
   useEffect(() => {
+    const timer = window.setTimeout(prefetchPrimaryPublicRoutes, 900);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey && event.code === "Backquote") {
         event.preventDefault();
@@ -72,10 +76,7 @@ export default function SiteHeader(): JSX.Element {
           if (nextValue) setHasTerminalMounted(true);
 
           try {
-            window.sessionStorage.setItem(
-              terminalOpenStorageKey,
-              String(nextValue),
-            );
+            window.sessionStorage.setItem(terminalOpenStorageKey, String(nextValue));
           } catch {
             // The shortcut remains usable when session storage is unavailable.
           }
@@ -84,13 +85,10 @@ export default function SiteHeader(): JSX.Element {
         });
       }
 
-      if (event.key === "Escape") {
-        setMobileMenuOpen(false);
-      }
+      if (event.key === "Escape") setMobileMenuOpen(false);
     };
 
     const handleTerminalOpen = () => updateTerminalOpen(true);
-
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener(terminalOpenEvent, handleTerminalOpen);
 
@@ -102,16 +100,18 @@ export default function SiteHeader(): JSX.Element {
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
-
     const handlePointerDown = (event: PointerEvent) => {
-      if (!headerRef.current?.contains(event.target as Node)) {
-        setMobileMenuOpen(false);
-      }
+      if (!headerRef.current?.contains(event.target as Node)) setMobileMenuOpen(false);
     };
-
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [mobileMenuOpen]);
+
+  const preloadProps = (to: string) => ({
+    onFocus: () => prefetchPublicRoute(to),
+    onMouseEnter: () => prefetchPublicRoute(to),
+    onTouchStart: () => prefetchPublicRoute(to),
+  });
 
   return (
     <>
@@ -121,24 +121,18 @@ export default function SiteHeader(): JSX.Element {
         ref={headerRef}
       >
         <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-8 lg:px-10">
-          <Link
-            className="text-sm font-semibold tracking-[0.16em] text-white transition hover:text-cyan-100"
-            to="/"
-          >
+          <Link className="text-sm font-semibold tracking-[0.16em] text-white transition hover:text-cyan-100" to="/">
             <span className="hidden min-[360px]:inline">YANXIAO.ME</span>
             <span className="min-[360px]:hidden">YX</span>
           </Link>
 
-          <nav
-            aria-label="主导航"
-            className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex"
-          >
+          <nav aria-label="主导航" className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 md:flex lg:gap-8">
             {navigation.map((item) => {
               const isActive = isNavigationActive(location.pathname, item.to);
               const isWedding = "wedding" in item && item.wedding;
-
               return (
                 <Link
+                  {...preloadProps(item.to)}
                   aria-current={isActive ? "page" : undefined}
                   className={`relative inline-flex items-center gap-1.5 py-2 text-sm transition after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-center after:transition-transform ${
                     isWedding
@@ -160,9 +154,9 @@ export default function SiteHeader(): JSX.Element {
           </nav>
 
           <button
+            aria-controls="mobile-navigation"
             aria-expanded={mobileMenuOpen}
             aria-label={mobileMenuOpen ? "收起导航菜单" : "展开导航菜单"}
-            aria-controls="mobile-navigation"
             className="flex size-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-slate-300 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white md:hidden"
             onClick={() => setMobileMenuOpen((open) => !open)}
             type="button"
@@ -179,9 +173,9 @@ export default function SiteHeader(): JSX.Element {
               {navigation.map((item) => {
                 const isActive = isNavigationActive(location.pathname, item.to);
                 const isWedding = "wedding" in item && item.wedding;
-
                 return (
                   <Link
+                    {...preloadProps(item.to)}
                     aria-current={isActive ? "page" : undefined}
                     className={`relative flex min-h-11 items-center justify-between rounded-xl px-4 py-2.5 text-sm transition after:absolute after:inset-x-4 after:bottom-1 after:h-px ${
                       isWedding
@@ -207,10 +201,7 @@ export default function SiteHeader(): JSX.Element {
 
       {hasTerminalMounted && (
         <Suspense fallback={null}>
-          <TerminalDialog
-            onOpenChange={updateTerminalOpen}
-            open={isTerminalOpen}
-          />
+          <TerminalDialog onOpenChange={updateTerminalOpen} open={isTerminalOpen} />
         </Suspense>
       )}
     </>
