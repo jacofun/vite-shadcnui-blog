@@ -31,5 +31,5 @@ export function prefetchPublicRoute(pathname: string): void {
 }
 
 export function prefetchPrimaryPublicRoutes(): void {
-  ["/notes", "/about", "/now", "/timeline"].forEach(prefetchPublicRoute);
+  ["/notes", "/about"].forEach(prefetchPublicRoute);
 }
