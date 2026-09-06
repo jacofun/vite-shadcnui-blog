@@ -1,0 +1,118 @@
+name: Test and Deploy Alibaba Cloud FC
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "functions/private-auth/**"
+      - "scripts/deploy-fc-code.py"
+      - ".github/workflows/deploy-fc.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "functions/private-auth/**"
+      - "scripts/deploy-fc-code.py"
+      - ".github/workflows/deploy-fc.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aliyun-fc-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Test, Package and Deploy FC
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: functions/private-auth/package-lock.json
+
+      - name: Install function dependencies
+        run: npm ci --prefix functions/private-auth
+
+      - name: Test function
+        run: npm test --prefix functions/private-auth
+
+      - name: Package function code
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SOURCE_DIR="functions/private-auth"
+          PACKAGE_DIR="${RUNNER_TEMP}/fc-blog-authenticator-package"
+          ZIP_PATH="${RUNNER_TEMP}/fc-blog-authenticator.zip"
+
+          rm -rf "${PACKAGE_DIR}" "${ZIP_PATH}"
+          mkdir -p "${PACKAGE_DIR}"
+
+          cp "${SOURCE_DIR}/index.js" "${PACKAGE_DIR}/index.js"
+          cp "${SOURCE_DIR}/package.json" "${PACKAGE_DIR}/package.json"
+          cp "${SOURCE_DIR}/package-lock.json" "${PACKAGE_DIR}/package-lock.json"
+          cp -R "${SOURCE_DIR}/node_modules" "${PACKAGE_DIR}/node_modules"
+
+          (
+            cd "${PACKAGE_DIR}"
+            zip -q -r "${ZIP_PATH}" index.js package.json package-lock.json node_modules
+          )
+
+          unzip -t "${ZIP_PATH}" >/dev/null
+          unzip -Z1 "${ZIP_PATH}" | grep -Fx 'index.js' >/dev/null
+          unzip -Z1 "${ZIP_PATH}" | grep -E '^node_modules/' >/dev/null
+
+          echo "zip_path=${ZIP_PATH}" >> "${GITHUB_OUTPUT}"
+          echo "Function package size: $(du -h "${ZIP_PATH}" | cut -f1)"
+          sha256sum "${ZIP_PATH}"
+
+      - name: Setup Python
+        if: github.event_name != 'pull_request'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install FC deployment SDK
+        if: github.event_name != 'pull_request'
+        run: python -m pip install --disable-pip-version-check "alibabacloud_fc20230330==4.7.9"
+
+      - name: Validate FC deployment credentials
+        if: github.event_name != 'pull_request'
+        env:
+          ALIYUN_FC_ACCESS_KEY_ID: ${{ secrets.ALIYUN_FC_ACCESS_KEY_ID }}
+          ALIYUN_FC_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_FC_ACCESS_KEY_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ALIYUN_FC_ACCESS_KEY_ID}" || {
+            echo "::error::Missing repository secret ALIYUN_FC_ACCESS_KEY_ID"
+            exit 1
+          }
+          test -n "${ALIYUN_FC_ACCESS_KEY_SECRET}" || {
+            echo "::error::Missing repository secret ALIYUN_FC_ACCESS_KEY_SECRET"
+            exit 1
+          }
+
+      - name: Deploy code to Function Compute
+        if: github.event_name != 'pull_request'
+        env:
+          ALIYUN_FC_ACCESS_KEY_ID: ${{ secrets.ALIYUN_FC_ACCESS_KEY_ID }}
+          ALIYUN_FC_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_FC_ACCESS_KEY_SECRET }}
+          ALIYUN_FC_REGION: cn-beijing
+          ALIYUN_FC_FUNCTION_NAME: fc-blog-authenticator
+          ALIYUN_FC_EXPECTED_RUNTIME: nodejs20
+          ALIYUN_FC_EXPECTED_HANDLER: index.handler
+          ALIYUN_FC_CODE_ZIP: ${{ steps.package.outputs.zip_path }}
+        run: python scripts/deploy-fc-code.py
