@@ -2,6 +2,8 @@ import { Check, Copy, Link2, X } from "lucide-react";
 import {
   Children,
   isValidElement,
+  useEffect,
+  useRef,
   useState,
   type JSX,
   type ReactNode,
@@ -18,6 +20,14 @@ function textFromNode(node: ReactNode): string {
   if (Array.isArray(node)) return node.map(textFromNode).join("");
   if (isValidElement<{ children?: ReactNode }>(node)) return textFromNode(node.props.children);
   return "";
+}
+
+function revealKind(element: HTMLElement): string {
+  if (/^H[1-4]$/.test(element.tagName)) return "heading";
+  if (element.tagName === "BLOCKQUOTE") return "quote";
+  if (element.tagName === "BUTTON" && element.querySelector("img")) return "media";
+  if (element.tagName === "DIV" && (element.querySelector("pre") || element.querySelector("table"))) return "panel";
+  return "text";
 }
 
 function CodeBlock({ children }: { children: ReactNode }): JSX.Element {
@@ -157,8 +167,51 @@ const components: Components = {
 };
 
 export default function MarkdownRenderer({ content }: MarkdownRendererProps): JSX.Element {
+  const contentRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const root = contentRef.current;
+    if (!root) return;
+
+    const elements = Array.from(root.children).filter((child): child is HTMLElement => child instanceof HTMLElement);
+    if (elements.length === 0) return;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const viewportRevealLine = window.innerHeight * 0.9;
+
+    for (const element of elements) {
+      element.dataset.noteRevealKind = revealKind(element);
+      element.dataset.noteReveal = reduceMotion || element.getBoundingClientRect().top <= viewportRevealLine
+        ? "visible"
+        : "pending";
+    }
+
+    if (reduceMotion || !("IntersectionObserver" in window)) {
+      for (const element of elements) element.dataset.noteReveal = "visible";
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const target = entry.target as HTMLElement;
+        target.dataset.noteReveal = "visible";
+        observer.unobserve(target);
+      }
+    }, {
+      rootMargin: "0px 0px -8% 0px",
+      threshold: 0.08,
+    });
+
+    for (const element of elements) {
+      if (element.dataset.noteReveal !== "visible") observer.observe(element);
+    }
+
+    return () => observer.disconnect();
+  }, [content]);
+
   return (
-    <div className="note-content">
+    <div className="note-content" ref={contentRef}>
       <ReactMarkdown components={components} remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
     </div>
   );
