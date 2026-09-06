@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-import base64
 import os
 import sys
-from pathlib import Path
 
 from alibabacloud_fc20230330.client import Client as FcClient
 from alibabacloud_fc20230330 import models as fc_models
@@ -22,13 +20,11 @@ def main() -> int:
     function_name = required_env("ALIYUN_FC_FUNCTION_NAME")
     access_key_id = required_env("ALIYUN_FC_ACCESS_KEY_ID")
     access_key_secret = required_env("ALIYUN_FC_ACCESS_KEY_SECRET")
-    zip_path = Path(required_env("ALIYUN_FC_CODE_ZIP"))
+    oss_bucket_name = required_env("ALIYUN_FC_CODE_OSS_BUCKET")
+    oss_object_name = required_env("ALIYUN_FC_CODE_OSS_OBJECT")
 
     expected_runtime = os.environ.get("ALIYUN_FC_EXPECTED_RUNTIME", "nodejs20")
     expected_handler = os.environ.get("ALIYUN_FC_EXPECTED_HANDLER", "index.handler")
-
-    if not zip_path.is_file():
-        raise RuntimeError(f"Function package does not exist: {zip_path}")
 
     config = open_api_models.Config(
         access_key_id=access_key_id,
@@ -40,13 +36,16 @@ def main() -> int:
     client = FcClient(config)
 
     print(
-        f"Deploying code only to FC function: {function_name} ({region}); "
+        f"Deploying code only to FC function: {function_name} ({region}) "
+        f"from oss://{oss_bucket_name}/{oss_object_name}; "
         "existing environment variables and function settings are omitted from the update request"
     )
 
-    zip_file = base64.b64encode(zip_path.read_bytes()).decode("ascii")
     update_input = fc_models.UpdateFunctionInput(
-        code=fc_models.InputCodeLocation(zip_file=zip_file)
+        code=fc_models.InputCodeLocation(
+            oss_bucket_name=oss_bucket_name,
+            oss_object_name=oss_object_name,
+        )
     )
     request = fc_models.UpdateFunctionRequest(body=update_input)
     runtime = RuntimeOptions(
