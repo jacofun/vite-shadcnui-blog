@@ -5,10 +5,8 @@ import {
   type JSX,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { ArrowRight, LockKeyhole, Terminal } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-
-import { openTerminal } from "@/lib/terminal";
 
 type FlatHeroStyle = CSSProperties & Record<`--${string}`, string | number>;
 
@@ -17,7 +15,9 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 const flatHeroCss = `
 .flat-hero {
   touch-action: pan-y;
-  background: #070a12;
+  background:
+    radial-gradient(80% 55% at 84% 42%, rgb(34 211 238 / 0.045), transparent 72%),
+    #070a12;
 }
 
 .flat-stage {
@@ -28,101 +28,115 @@ const flatHeroCss = `
 
 .flat-grid {
   background-image:
-    linear-gradient(rgba(148, 163, 184, 0.032) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.032) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 72%, transparent 100%);
-  opacity: 0.5;
-  transform: translate3d(calc(var(--flat-touch-x) * 0.45), 0, 0);
-  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    linear-gradient(rgba(148, 163, 184, 0.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.026) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 68%, transparent 100%);
+  opacity: 0.45;
+  transform: translate3d(calc(var(--flat-touch-x) * 0.32), 0, 0);
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .flat-copy,
 .flat-meta,
-.flat-nav,
-.flat-footer-mark {
-  transform: translate3d(calc(var(--flat-touch-x) * 0.12), 0, 0);
-  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+.flat-bottom-row {
+  transform: translate3d(calc(var(--flat-touch-x) * 0.08), 0, 0);
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.flat-title-accent {
-  background-size: 170% 100%;
-  background-position: 0% 50%;
+.flat-ghost-word {
+  right: -0.12em;
+  top: 46%;
+  font-size: clamp(7rem, 34vw, 20rem);
+  font-weight: 700;
+  line-height: 0.7;
+  letter-spacing: -0.08em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgb(148 163 184 / 0.075);
+  opacity: 0.9;
+  transform: translate3d(calc(var(--flat-touch-x) * -0.55 + var(--flat-ghost-shift)), -50%, 0);
+  user-select: none;
+  white-space: nowrap;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.flat-accent-line {
+.flat-signal {
+  left: -12vw;
+  top: 48%;
+  width: 124vw;
   height: 1px;
-  width: min(86vw, 920px);
-  background: linear-gradient(90deg, transparent, rgb(103 232 249 / 0.32) 28%, rgb(148 163 184 / 0.11) 62%, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(148 163 184 / 0.04) 12%,
+    rgb(103 232 249 / 0.18) 47%,
+    rgb(167 139 250 / 0.12) 66%,
+    transparent 100%
+  );
   transform: translate3d(calc(var(--flat-touch-x) + var(--flat-line-shift)), 0, 0);
-  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.flat-accent-line::after {
+.flat-signal::before,
+.flat-signal::after {
   content: "";
   position: absolute;
   top: -1px;
-  left: 0;
-  width: 42px;
   height: 3px;
-  background: linear-gradient(90deg, transparent, rgb(103 232 249 / 0.78), transparent);
-  opacity: 0.72;
+  border-radius: 999px;
+  opacity: 0;
 }
 
-.flat-accent-line-a {
-  left: -18vw;
-  top: 33%;
+.flat-signal::before {
+  left: 7%;
+  width: 72px;
+  background: linear-gradient(90deg, transparent, rgb(103 232 249 / 0.9), transparent);
 }
 
-.flat-accent-line-b {
-  right: -26vw;
-  top: 68%;
-  opacity: 0.55;
-  transform: translate3d(calc(0px - var(--flat-touch-x) - var(--flat-line-shift)), 0, 0);
+.flat-signal::after {
+  left: 42%;
+  width: 46px;
+  background: linear-gradient(90deg, transparent, rgb(196 181 253 / 0.72), transparent);
 }
 
-.flat-primary-link,
-.flat-nav-link {
-  -webkit-tap-highlight-color: transparent;
-  transition: color 180ms ease, transform 180ms ease;
+.flat-title-accent {
+  background-size: 180% 100%;
+  background-position: 0% 50%;
 }
 
 .flat-primary-link {
-  position: relative;
-  padding-bottom: 5px;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
 }
 
-.flat-primary-link::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 1px;
-  background: rgb(103 232 249 / 0.55);
-  transform-origin: left;
-  transform: scaleX(0.34);
-  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.flat-primary-link:hover::after,
-.flat-primary-link:focus-visible::after {
-  transform: scaleX(1);
-}
-
-.flat-nav-link:hover,
-.flat-nav-link:focus-visible {
-  color: rgb(165 243 252);
+.flat-primary-link:hover,
+.flat-primary-link:focus-visible {
+  background: rgb(207 250 254);
   outline: none;
 }
 
-.flat-nav-link:active,
 .flat-primary-link:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.985);
 }
 
-.flat-signal-dot {
-  box-shadow: 0 0 8px rgb(34 211 238 / 0.55);
+.flat-topic {
+  position: relative;
+}
+
+.flat-topic + .flat-topic::before {
+  content: "/";
+  position: absolute;
+  left: -0.8rem;
+  color: rgb(51 65 85 / 0.9);
+}
+
+.flat-index-line {
+  width: 52px;
+  height: 1px;
+  background: linear-gradient(90deg, rgb(103 232 249 / 0.52), rgb(103 232 249 / 0));
 }
 
 @keyframes flat-title-flow {
@@ -130,51 +144,48 @@ const flatHeroCss = `
   50% { background-position: 100% 50%; }
 }
 
-@keyframes flat-line-scan {
-  from { transform: translateX(-42px); opacity: 0; }
-  12% { opacity: 0.8; }
-  88% { opacity: 0.8; }
-  to { transform: translateX(min(86vw, 920px)); opacity: 0; }
+@keyframes flat-signal-run {
+  0% { transform: translateX(-90px); opacity: 0; }
+  10% { opacity: 0.9; }
+  84% { opacity: 0.9; }
+  100% { transform: translateX(112vw); opacity: 0; }
 }
 
-@keyframes flat-dot-pulse {
-  0%, 100% { opacity: 0.45; }
+@keyframes flat-ghost-breathe {
+  0%, 100% { opacity: 0.7; }
   50% { opacity: 1; }
 }
 
 @media (max-width: 639px) {
   .flat-stage {
-    min-height: min(76svh, 690px);
+    min-height: min(66svh, 610px);
   }
 
-  .flat-meta {
-    margin-bottom: clamp(2.25rem, 7svh, 4.25rem);
+  .flat-ghost-word {
+    top: 47%;
+    font-size: clamp(7rem, 39vw, 10rem);
   }
 
-  .flat-accent-line-a {
-    top: 30%;
-  }
-
-  .flat-accent-line-b {
-    top: 72%;
+  .flat-signal {
+    top: 49%;
   }
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .flat-title-accent {
-    animation: flat-title-flow 8s ease-in-out infinite;
+    animation: flat-title-flow 7.5s ease-in-out infinite;
   }
 
-  .flat-accent-line::after {
-    animation: flat-line-scan 6.5s linear infinite;
+  .flat-signal::before {
+    animation: flat-signal-run 6.8s linear infinite;
   }
 
-  .flat-accent-line-b::after {
-    animation-delay: -3.1s;
+  .flat-signal::after {
+    animation: flat-signal-run 9.2s linear -4.1s infinite;
   }
 
-  .flat-signal-dot {
-    animation: flat-dot-pulse 2.6s ease-in-out infinite;
+  .flat-ghost-word {
+    animation: flat-ghost-breathe 8s ease-in-out infinite;
   }
 }
 
@@ -183,17 +194,18 @@ const flatHeroCss = `
   .flat-grid,
   .flat-copy,
   .flat-meta,
-  .flat-nav,
-  .flat-footer-mark,
-  .flat-accent-line {
+  .flat-bottom-row,
+  .flat-ghost-word,
+  .flat-signal {
     transform: none !important;
     opacity: 1 !important;
     transition: none !important;
   }
 
   .flat-title-accent,
-  .flat-accent-line::after,
-  .flat-signal-dot {
+  .flat-signal::before,
+  .flat-signal::after,
+  .flat-ghost-word {
     animation: none !important;
   }
 }
@@ -215,15 +227,17 @@ export default function FlatHero(): JSX.Element {
         hero.style.setProperty("--flat-scroll-y", "0px");
         hero.style.setProperty("--flat-scroll-opacity", "1");
         hero.style.setProperty("--flat-line-shift", "0px");
+        hero.style.setProperty("--flat-ghost-shift", "0px");
         return;
       }
 
       const rect = hero.getBoundingClientRect();
-      const travel = Math.max(Math.min(hero.offsetHeight * 0.8, 620), 360);
+      const travel = Math.max(Math.min(hero.offsetHeight * 0.82, 560), 320);
       const progress = clamp(-rect.top / travel, 0, 1);
-      hero.style.setProperty("--flat-scroll-y", `${(-24 * progress).toFixed(2)}px`);
-      hero.style.setProperty("--flat-scroll-opacity", (1 - progress * 0.42).toFixed(4));
-      hero.style.setProperty("--flat-line-shift", `${(34 * progress).toFixed(2)}px`);
+      hero.style.setProperty("--flat-scroll-y", `${(-18 * progress).toFixed(2)}px`);
+      hero.style.setProperty("--flat-scroll-opacity", (1 - progress * 0.34).toFixed(4));
+      hero.style.setProperty("--flat-line-shift", `${(42 * progress).toFixed(2)}px`);
+      hero.style.setProperty("--flat-ghost-shift", `${(-26 * progress).toFixed(2)}px`);
     };
 
     const scheduleScroll = () => {
@@ -248,7 +262,7 @@ export default function FlatHero(): JSX.Element {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const nx = clamp(((event.clientX - rect.left) / Math.max(rect.width, 1) - 0.5) * 2, -1, 1);
-    const strength = event.pointerType === "touch" ? 12 : 8;
+    const strength = event.pointerType === "touch" ? 9 : 6;
     event.currentTarget.style.setProperty("--flat-touch-x", `${(nx * strength).toFixed(2)}px`);
   };
 
@@ -261,11 +275,12 @@ export default function FlatHero(): JSX.Element {
     "--flat-scroll-y": "0px",
     "--flat-scroll-opacity": "1",
     "--flat-line-shift": "0px",
+    "--flat-ghost-shift": "0px",
   };
 
   return (
     <section
-      className="flat-hero relative isolate overflow-hidden border-b border-white/[0.08]"
+      className="flat-hero relative isolate overflow-hidden border-b border-white/[0.07]"
       onPointerCancel={resetField}
       onPointerLeave={resetField}
       onPointerMove={moveField}
@@ -275,51 +290,43 @@ export default function FlatHero(): JSX.Element {
     >
       <style>{flatHeroCss}</style>
       <div aria-hidden="true" className="flat-grid pointer-events-none absolute inset-0" />
-      <div aria-hidden="true" className="flat-accent-line flat-accent-line-a pointer-events-none absolute" />
-      <div aria-hidden="true" className="flat-accent-line flat-accent-line-b pointer-events-none absolute" />
+      <div aria-hidden="true" className="flat-ghost-word pointer-events-none absolute font-sans">NOTES</div>
+      <div aria-hidden="true" className="flat-signal pointer-events-none absolute" />
 
-      <div className="flat-stage relative mx-auto flex min-h-[72svh] w-full max-w-6xl flex-col justify-center px-6 pb-12 pt-16 sm:min-h-[680px] sm:px-8 sm:pb-16 lg:px-10">
-        <div className="flat-meta mb-10 flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.2em] text-slate-600 sm:text-[10px]">
-          <span>YANXIAO.ME / NOTES</span>
-          <span>EST. 2018</span>
+      <div className="flat-stage relative mx-auto flex min-h-[62svh] w-full max-w-6xl flex-col justify-center px-6 pb-10 pt-14 sm:min-h-[620px] sm:px-8 sm:pb-14 lg:px-10">
+        <div className="flat-meta mb-12 flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.2em] text-slate-600 sm:mb-16 sm:text-[10px]">
+          <span>YANXIAO.ME</span>
+          <span>FIELD NOTES / 2018—</span>
         </div>
 
-        <div className="flat-copy max-w-4xl">
-          <p className="mb-4 text-xs font-medium tracking-[0.22em] text-cyan-300/80 sm:text-sm">PERSONAL NOTES</p>
-          <h1 className="flat-title text-[clamp(4rem,20vw,8.5rem)] font-semibold leading-[0.82] tracking-[-0.075em] text-white sm:text-[clamp(5.5rem,12vw,9rem)]">
-            <span className="block">彦骁的</span>
-            <span className="flat-title-accent block bg-gradient-to-r from-cyan-200 via-sky-200 to-violet-300 bg-clip-text text-transparent">笔记</span>
+        <div className="flat-copy relative z-10 max-w-3xl">
+          <div className="mb-5 flex items-center gap-3">
+            <span className="flat-index-line" />
+            <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-cyan-200/65 sm:text-[10px]">PERSONAL NOTES</span>
+          </div>
+
+          <h1 className="flat-title whitespace-nowrap text-[clamp(2.65rem,12vw,4.4rem)] font-semibold leading-[0.94] tracking-[-0.06em] text-white sm:text-[clamp(4rem,7vw,6.2rem)]">
+            彦骁的<span className="flat-title-accent bg-gradient-to-r from-cyan-200 via-sky-200 to-violet-300 bg-clip-text text-transparent">笔记</span>
           </h1>
 
-          <div className="mt-8 grid gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-            <p className="max-w-xl text-sm leading-7 text-slate-400 sm:text-base sm:leading-8">
-              技术、AI、金融市场，以及一些值得长期留下来的记录。
-            </p>
+          <p className="mt-6 max-w-lg text-sm leading-7 text-slate-400 sm:mt-7 sm:text-base sm:leading-8">
+            技术、AI、金融市场，以及一些值得长期留下来的记录。
+          </p>
 
-            <Link className="flat-primary-link inline-flex w-fit items-center gap-2 text-sm font-medium text-slate-100" to="/notes">
-              浏览全部笔记
-              <ArrowRight className="size-4" />
-            </Link>
-          </div>
+          <Link className="flat-primary-link mt-7 inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-slate-950 sm:mt-8" to="/notes">
+            浏览全部笔记
+            <ArrowRight className="size-4" />
+          </Link>
         </div>
 
-        <nav aria-label="首页快捷入口" className="flat-nav mt-12 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-white/[0.08] pt-5 text-xs text-slate-500 sm:mt-14 sm:text-sm">
-          <Link className="flat-nav-link" to="/now">现在</Link>
-          <Link className="flat-nav-link" to="/timeline">时间轴</Link>
-          <Link className="flat-nav-link" to="/about">关于</Link>
-          <Link className="flat-nav-link inline-flex items-center gap-1.5" to="/resources">
-            <LockKeyhole className="size-3.5" />
-            私人资源
-          </Link>
-          <button className="flat-nav-link inline-flex items-center gap-1.5" onClick={openTerminal} type="button">
-            <Terminal className="size-3.5" />
-            终端
-          </button>
-        </nav>
-
-        <div aria-hidden="true" className="flat-footer-mark mt-8 flex items-center gap-3 font-mono text-[8px] uppercase tracking-[0.18em] text-slate-700 sm:text-[9px]">
-          <span className="flat-signal-dot size-1 rounded-full bg-cyan-300" />
-          <span>scroll to continue</span>
+        <div className="flat-bottom-row relative z-10 mt-14 flex items-end justify-between gap-6 border-t border-white/[0.07] pt-4 sm:mt-20">
+          <div className="flex flex-wrap gap-x-6 gap-y-2 font-mono text-[8px] uppercase tracking-[0.18em] text-slate-700 sm:text-[9px]">
+            <span className="flat-topic">TECH</span>
+            <span className="flat-topic">AI</span>
+            <span className="flat-topic">MARKET</span>
+            <span className="flat-topic">LIFE</span>
+          </div>
+          <span className="hidden font-mono text-[8px] uppercase tracking-[0.18em] text-slate-800 sm:inline">SCROLL / 01</span>
         </div>
       </div>
     </section>
