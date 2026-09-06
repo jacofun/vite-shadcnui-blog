@@ -7,6 +7,7 @@ from pathlib import Path
 from alibabacloud_fc20230330.client import Client as FcClient
 from alibabacloud_fc20230330 import models as fc_models
 from alibabacloud_tea_openapi import models as open_api_models
+from alibabacloud_tea_util.models import RuntimeOptions
 
 
 def required_env(name: str) -> str:
@@ -32,6 +33,8 @@ def main() -> int:
     config = open_api_models.Config(
         access_key_id=access_key_id,
         access_key_secret=access_key_secret,
+        connect_timeout=10000,
+        read_timeout=120000,
     )
     config.endpoint = f"fcv3.{region}.aliyuncs.com"
     client = FcClient(config)
@@ -46,7 +49,16 @@ def main() -> int:
         code=fc_models.InputCodeLocation(zip_file=zip_file)
     )
     request = fc_models.UpdateFunctionRequest(body=update_input)
-    response = client.update_function(function_name, request).body
+    runtime = RuntimeOptions(
+        connect_timeout=10000,
+        read_timeout=120000,
+    )
+    response = client.update_function_with_options(
+        function_name,
+        request,
+        {},
+        runtime,
+    ).body
 
     deployed_runtime = getattr(response, "runtime", None)
     deployed_handler = getattr(response, "handler", None)
