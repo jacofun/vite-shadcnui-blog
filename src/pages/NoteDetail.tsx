@@ -7,7 +7,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import MarkdownRenderer from "@/components/notes/MarkdownRenderer";
 import { extractMarkdownHeadings } from "@/lib/markdown";
@@ -22,6 +22,8 @@ import NotFound from "@/pages/NotFound";
 
 export default function NoteDetail(): JSX.Element {
   const { slug = "" } = useParams();
+  const [searchParams] = useSearchParams();
+  const requestedSection = searchParams.get("section");
   const note = getNoteBySlug(slug);
   const [progress, setProgress] = useState(0);
   const [activeHeading, setActiveHeading] = useState("");
@@ -68,6 +70,17 @@ export default function NoteDetail(): JSX.Element {
     elements.forEach((element) => observer.observe(element));
     return () => observer.disconnect();
   }, [note]);
+
+  useEffect(() => {
+    if (!requestedSection || !note) return;
+    const timer = window.setTimeout(() => {
+      const target = document.getElementById(requestedSection);
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      setActiveHeading(requestedSection);
+    }, 60);
+    return () => window.clearTimeout(timer);
+  }, [note, requestedSection]);
 
   if (!note) return <NotFound />;
 
