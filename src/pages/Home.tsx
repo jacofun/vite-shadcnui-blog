@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import { useRef, type JSX, type PointerEvent as ReactPointerEvent } from "react";
 import { ArrowRight, LockKeyhole, Terminal } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
@@ -8,6 +8,21 @@ import { openTerminal } from "@/lib/terminal";
 
 export default function Home(): JSX.Element {
   const recentNotes = notes.slice(0, 4);
+  const heroRef = useRef<HTMLElement | null>(null);
+
+  const moveHeroGlow = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.pointerType === "touch") return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / Math.max(rect.width, 1)) * 100;
+    const y = ((event.clientY - rect.top) / Math.max(rect.height, 1)) * 100;
+    event.currentTarget.style.setProperty("--hero-pointer-x", `${x.toFixed(2)}%`);
+    event.currentTarget.style.setProperty("--hero-pointer-y", `${y.toFixed(2)}%`);
+    event.currentTarget.style.setProperty("--hero-pointer-opacity", "1");
+  };
+
+  const resetHeroGlow = () => {
+    heroRef.current?.style.setProperty("--hero-pointer-opacity", "0.62");
+  };
 
   return (
     <>
@@ -22,17 +37,23 @@ export default function Home(): JSX.Element {
       </Helmet>
 
       <main className="relative min-h-screen overflow-x-clip bg-[#070a12] text-slate-100">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.04)_1px,transparent_1px)] bg-[size:56px_56px]" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(520px_circle_at_18%_12%,rgba(34,211,238,0.09),transparent_68%)]" />
-        <div className="pointer-events-none absolute -right-48 top-32 size-[34rem] rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.08)_0%,rgba(139,92,246,0)_68%)]" />
+        <div className="home-grid-drift pointer-events-none absolute -inset-14 bg-[linear-gradient(rgba(148,163,184,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.04)_1px,transparent_1px)] bg-[size:56px_56px]" />
+        <div className="home-ambient-glow home-ambient-glow-cyan pointer-events-none absolute inset-0 bg-[radial-gradient(520px_circle_at_18%_12%,rgba(34,211,238,0.09),transparent_68%)]" />
+        <div className="home-ambient-glow home-ambient-glow-violet pointer-events-none absolute -right-48 top-32 size-[34rem] rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.08)_0%,rgba(139,92,246,0)_68%)]" />
 
         <div className="relative mx-auto max-w-6xl px-6 pb-24 sm:px-8 lg:px-10">
-          <section className="grid min-h-[620px] items-center gap-16 py-24 lg:grid-cols-[1fr_320px]">
+          <section
+            className="home-hero isolate relative grid min-h-[620px] items-center gap-16 py-24 lg:grid-cols-[1fr_320px]"
+            onPointerLeave={resetHeroGlow}
+            onPointerMove={moveHeroGlow}
+            ref={heroRef}
+          >
+            <div className="home-pointer-glow pointer-events-none absolute -inset-x-[18vw] inset-y-0 -z-10" />
             <div>
               <p className="mb-5 font-mono text-xs tracking-[0.2em] text-cyan-300">YANXIAO.ME / NOTES</p>
               <h1 className="text-5xl font-semibold leading-[1.08] tracking-[-0.05em] text-white sm:text-7xl">
                 彦骁的
-                <span className="bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-400 bg-clip-text text-transparent">笔记</span>
+                <span className="home-title-gradient bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-400 bg-clip-text text-transparent">笔记</span>
               </h1>
               <p className="mt-7 max-w-xl text-lg leading-8 text-slate-400 sm:text-xl">
                 技术、AI、金融市场，以及一些值得长期留下来的记录。
