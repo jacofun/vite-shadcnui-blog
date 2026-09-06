@@ -14,6 +14,191 @@ type FlatHeroStyle = CSSProperties & Record<`--${string}`, string | number>;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
+const flatHeroCss = `
+.flat-hero {
+  touch-action: pan-y;
+  background: #070a12;
+}
+
+.flat-stage {
+  opacity: var(--flat-scroll-opacity);
+  transform: translate3d(0, var(--flat-scroll-y), 0);
+  will-change: transform, opacity;
+}
+
+.flat-grid {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.032) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.032) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 72%, transparent 100%);
+  opacity: 0.5;
+  transform: translate3d(calc(var(--flat-touch-x) * 0.45), 0, 0);
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.flat-copy,
+.flat-meta,
+.flat-nav,
+.flat-footer-mark {
+  transform: translate3d(calc(var(--flat-touch-x) * 0.12), 0, 0);
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.flat-title-accent {
+  background-size: 170% 100%;
+  background-position: 0% 50%;
+}
+
+.flat-accent-line {
+  height: 1px;
+  width: min(86vw, 920px);
+  background: linear-gradient(90deg, transparent, rgb(103 232 249 / 0.32) 28%, rgb(148 163 184 / 0.11) 62%, transparent);
+  transform: translate3d(calc(var(--flat-touch-x) + var(--flat-line-shift)), 0, 0);
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.flat-accent-line::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 42px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgb(103 232 249 / 0.78), transparent);
+  opacity: 0.72;
+}
+
+.flat-accent-line-a {
+  left: -18vw;
+  top: 33%;
+}
+
+.flat-accent-line-b {
+  right: -26vw;
+  top: 68%;
+  opacity: 0.55;
+  transform: translate3d(calc(0px - var(--flat-touch-x) - var(--flat-line-shift)), 0, 0);
+}
+
+.flat-primary-link,
+.flat-nav-link {
+  -webkit-tap-highlight-color: transparent;
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.flat-primary-link {
+  position: relative;
+  padding-bottom: 5px;
+}
+
+.flat-primary-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: rgb(103 232 249 / 0.55);
+  transform-origin: left;
+  transform: scaleX(0.34);
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.flat-primary-link:hover::after,
+.flat-primary-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.flat-nav-link:hover,
+.flat-nav-link:focus-visible {
+  color: rgb(165 243 252);
+  outline: none;
+}
+
+.flat-nav-link:active,
+.flat-primary-link:active {
+  transform: translateY(1px);
+}
+
+.flat-signal-dot {
+  box-shadow: 0 0 8px rgb(34 211 238 / 0.55);
+}
+
+@keyframes flat-title-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes flat-line-scan {
+  from { transform: translateX(-42px); opacity: 0; }
+  12% { opacity: 0.8; }
+  88% { opacity: 0.8; }
+  to { transform: translateX(min(86vw, 920px)); opacity: 0; }
+}
+
+@keyframes flat-dot-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@media (max-width: 639px) {
+  .flat-stage {
+    min-height: min(76svh, 690px);
+  }
+
+  .flat-meta {
+    margin-bottom: clamp(2.25rem, 7svh, 4.25rem);
+  }
+
+  .flat-accent-line-a {
+    top: 30%;
+  }
+
+  .flat-accent-line-b {
+    top: 72%;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .flat-title-accent {
+    animation: flat-title-flow 8s ease-in-out infinite;
+  }
+
+  .flat-accent-line::after {
+    animation: flat-line-scan 6.5s linear infinite;
+  }
+
+  .flat-accent-line-b::after {
+    animation-delay: -3.1s;
+  }
+
+  .flat-signal-dot {
+    animation: flat-dot-pulse 2.6s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flat-stage,
+  .flat-grid,
+  .flat-copy,
+  .flat-meta,
+  .flat-nav,
+  .flat-footer-mark,
+  .flat-accent-line {
+    transform: none !important;
+    opacity: 1 !important;
+    transition: none !important;
+  }
+
+  .flat-title-accent,
+  .flat-accent-line::after,
+  .flat-signal-dot {
+    animation: none !important;
+  }
+}
+`;
+
 export default function FlatHero(): JSX.Element {
   const heroRef = useRef<HTMLElement | null>(null);
   const frameRef = useRef<number | null>(null);
@@ -65,19 +250,14 @@ export default function FlatHero(): JSX.Element {
     const nx = clamp(((event.clientX - rect.left) / Math.max(rect.width, 1) - 0.5) * 2, -1, 1);
     const strength = event.pointerType === "touch" ? 12 : 8;
     event.currentTarget.style.setProperty("--flat-touch-x", `${(nx * strength).toFixed(2)}px`);
-    event.currentTarget.style.setProperty("--flat-touch-progress", ((nx + 1) / 2).toFixed(4));
   };
 
   const resetField = () => {
-    const hero = heroRef.current;
-    if (!hero) return;
-    hero.style.setProperty("--flat-touch-x", "0px");
-    hero.style.setProperty("--flat-touch-progress", "0.5");
+    heroRef.current?.style.setProperty("--flat-touch-x", "0px");
   };
 
   const style: FlatHeroStyle = {
     "--flat-touch-x": "0px",
-    "--flat-touch-progress": "0.5",
     "--flat-scroll-y": "0px",
     "--flat-scroll-opacity": "1",
     "--flat-line-shift": "0px",
@@ -93,6 +273,7 @@ export default function FlatHero(): JSX.Element {
       ref={heroRef}
       style={style}
     >
+      <style>{flatHeroCss}</style>
       <div aria-hidden="true" className="flat-grid pointer-events-none absolute inset-0" />
       <div aria-hidden="true" className="flat-accent-line flat-accent-line-a pointer-events-none absolute" />
       <div aria-hidden="true" className="flat-accent-line flat-accent-line-b pointer-events-none absolute" />
