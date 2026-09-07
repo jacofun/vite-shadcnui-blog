@@ -1,19 +1,61 @@
 import { ArrowLeft, CalendarDays, ExternalLink, File, RefreshCw, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState, type JSX } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import FixedAudioPlayer from "@/components/resources/FixedAudioPlayer";
 import FlvVideoPlayer from "@/components/resources/FlvVideoPlayer";
-import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
 import PrivateLoadingProgress from "@/components/resources/PrivateLoadingProgress";
+import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
+import PrivateVideoPlayer from "@/components/resources/PrivateVideoPlayer";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
-import { deletePrivateResourceFile, signLegacyPrivateLearningEpisode, signPrivateResourcePaths } from "@/lib/privateAuth";
+import {
+  deletePrivateResourceFile,
+  signLegacyPrivateLearningEpisode,
+  signPrivateResourcePaths,
+  type PrivateAuthSession,
+} from "@/lib/privateAuth";
 import { fetchPrivateFileItem, formatFileBytes, type PrivateFileItem } from "@/lib/privateFiles";
-import { fetchPrivateLearningEpisode, fetchPrivateLearningTranscript, type PrivateLearningEpisode } from "@/lib/privateLearning";
-import { loadPrivateResourceCatalog, privateResourceItemPath, usesLegacyPrivateAuth, type PrivateResourceCollection } from "@/lib/privateResources";
+import {
+  fetchPrivateLearningEpisode,
+  fetchPrivateLearningTranscript,
+  type PrivateLearningEpisode,
+} from "@/lib/privateLearning";
+import {
+  isPrivateMediaSourceExpiring,
+  type PrivateMediaSource,
+} from "@/lib/privateMedia";
+import {
+  loadPrivateResourceCatalog,
+  privateResourceItemPath,
+  usesLegacyPrivateAuth,
+  type PrivateResourceCollection,
+} from "@/lib/privateResources";
 
 const itemIdPattern = /^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/;
+
+type MediaTarget =
+  | { kind: "file"; objectPath: string }
+  | { kind: "episode"; collection: PrivateResourceCollection; itemId: string };
+
+async function signEpisodeAudio(
+  session: PrivateAuthSession,
+  collection: PrivateResourceCollection,
+  itemId: string,
+): Promise<PrivateMediaSource> {
+  let signed;
+  try {
+    signed = await signPrivateResourcePaths(session, {
+      audio: privateResourceItemPath(collection, itemId, "audio.mp3"),
+    });
+  } catch (signError) {
+    if (!usesLegacyPrivateAuth(signError) || collection.collectionId !== "6minuteenglish") throw signError;
+    signed = await signLegacyPrivateLearningEpisode(session, itemId);
+  }
+  const audio = signed.resources.audio;
+  if (!audio) throw new Error("认证服务未返回媒体地址");
+  return { url: audio, expiresAt: signed.expiresAt };
+}
 
 export default function PrivateResourceItem(): JSX.Element {
   const { collectionId = "", itemId = "" } = useParams();
@@ -23,22 +65,74 @@ export default function PrivateResourceItem(): JSX.Element {
   const [episode, setEpisode] = useState<PrivateLearningEpisode | null>(null);
   const [file, setFile] = useState<PrivateFileItem | null>(null);
   const [transcript, setTranscript] = useState("");
-  const [mediaUrl, setMediaUrl] = useState("");
+  const [mediaSource, setMediaSource] = useState<PrivateMediaSource | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const transcriptSections = useMemo(() => transcript.split(/\n{2,}/).map((section) => section.trim()).filter(Boolean), [transcript]);
+  const mediaSourceRef = useRef<PrivateMediaSource | null>(null);
+  const mediaTargetRef = useRef<MediaTarget | null>(null);
+  const mediaRefreshPromiseRef = useRef<Promise<PrivateMediaSource> | null>(null);
+  const transcriptSections = useMemo(
+    () => transcript.split(/\n{2,}/).map((section) => section.trim()).filter(Boolean),
+    [transcript],
+  );
+
+  const updateMediaSource = useCallback((nextSource: PrivateMediaSource | null) => {
+    mediaSourceRef.current = nextSource;
+    setMediaSource(nextSource);
+  }, []);
+
+  const refreshMediaSource = useCallback(async (force = false): Promise<PrivateMediaSource> => {
+    const current = mediaSourceRef.current;
+    if (!force && current && !isPrivateMediaSourceExpiring(current)) return current;
+    if (mediaRefreshPromiseRef.current) return mediaRefreshPromiseRef.current;
+
+    const session = access.session;
+    const target = mediaTargetRef.current;
+    if (!session || !target) throw new Error("播放凭证不可用，请重新进入私人资源。");
+
+    const refreshPromise = (async () => {
+      let nextSource: PrivateMediaSource;
+      if (target.kind === "file") {
+        const signed = await signPrivateResourcePaths(session, { file: target.objectPath });
+        const url = signed.resources.file;
+        if (!url) throw new Error("认证服务未返回媒体地址");
+        nextSource = { url, expiresAt: signed.expiresAt };
+      } else {
+        nextSource = await signEpisodeAudio(session, target.collection, target.itemId);
+      }
+      updateMediaSource(nextSource);
+      return nextSource;
+    })();
+
+    mediaRefreshPromiseRef.current = refreshPromise;
+    try {
+      return await refreshPromise;
+    } finally {
+      if (mediaRefreshPromiseRef.current === refreshPromise) mediaRefreshPromiseRef.current = null;
+    }
+  }, [access.session, updateMediaSource]);
 
   useEffect(() => {
     if (access.status !== "ready" || !access.session || !itemIdPattern.test(itemId)) return;
     const controller = new AbortController();
     const session = access.session;
+
+    setCollection(null);
+    setEpisode(null);
+    setFile(null);
+    setTranscript("");
+    updateMediaSource(null);
+    mediaTargetRef.current = null;
+    mediaRefreshPromiseRef.current = null;
     setIsLoading(true);
     setError(null);
+
     loadPrivateResourceCatalog(session, controller.signal).then(async (catalog) => {
       const selected = catalog.collections.find((item) => item.collectionId === collectionId);
       if (!selected) throw new Error("资源合集不存在");
       setCollection(selected);
+
       if (selected.type === "files") {
         const metadataPath = `${selected.basePath}/items/${itemId}/metadata.json`;
         const signedMetadata = await signPrivateResourcePaths(session, { metadata: metadataPath }, controller.signal);
@@ -46,14 +140,20 @@ export default function PrivateResourceItem(): JSX.Element {
         if (!metadataUrl) throw new Error("认证服务未返回文件信息地址");
         const metadata = await fetchPrivateFileItem(metadataUrl, controller.signal);
         setFile(metadata);
+
         if (metadata.mediaType !== "file") {
+          mediaTargetRef.current = { kind: "file", objectPath: metadata.objectPath };
           const signedFile = await signPrivateResourcePaths(session, { file: metadata.objectPath }, controller.signal);
-          if (!signedFile.resources.file) throw new Error("认证服务未返回媒体地址");
-          setMediaUrl(signedFile.resources.file);
+          const url = signedFile.resources.file;
+          if (!url) throw new Error("认证服务未返回媒体地址");
+          updateMediaSource({ url, expiresAt: signedFile.expiresAt });
         }
         return;
       }
+
       if (selected.type !== "audio-transcript") throw new Error(`暂不支持 ${selected.type} 类型的资源`);
+      mediaTargetRef.current = { kind: "episode", collection: selected, itemId };
+
       let signed;
       try {
         signed = await signPrivateResourcePaths(session, {
@@ -65,6 +165,7 @@ export default function PrivateResourceItem(): JSX.Element {
         if (!usesLegacyPrivateAuth(signError) || selected.collectionId !== "6minuteenglish") throw signError;
         signed = await signLegacyPrivateLearningEpisode(session, itemId, controller.signal);
       }
+
       const { audio, metadata, transcriptText } = signed.resources;
       if (!audio || !metadata || !transcriptText) throw new Error("认证服务返回的资源地址不完整");
       const [episodeMetadata, transcriptContent] = await Promise.all([
@@ -73,16 +174,22 @@ export default function PrivateResourceItem(): JSX.Element {
       ]);
       setEpisode(episodeMetadata);
       setTranscript(transcriptContent);
-      setMediaUrl(audio);
+      updateMediaSource({ url: audio, expiresAt: signed.expiresAt });
     }).catch((loadError: unknown) => {
-      if (!controller.signal.aborted) setError(loadError instanceof Error ? loadError.message : "私人资源读取失败");
+      if (!controller.signal.aborted) {
+        setError(loadError instanceof Error ? loadError.message : "私人资源读取失败");
+      }
     }).finally(() => {
       if (!controller.signal.aborted) setIsLoading(false);
     });
-    return () => controller.abort();
-  }, [access.session, access.status, collectionId, itemId]);
 
-  if (access.status !== "ready") return <PrivateResourceAccessState error={access.error} status={access.status} />;
+    return () => controller.abort();
+  }, [access.session, access.status, collectionId, itemId, updateMediaSource]);
+
+  if (access.status !== "ready") {
+    return <PrivateResourceAccessState error={access.error} status={access.status} />;
+  }
+
   const invalidItem = !itemIdPattern.test(itemId);
   const collectionPath = collection ? `/resources/${collection.collectionId}` : "/resources";
   const title = file?.originalName || episode?.title;
@@ -104,32 +211,91 @@ export default function PrivateResourceItem(): JSX.Element {
 
   return (
     <>
-      <Helmet><title>{title ? `${title} · ${collection?.title ?? "私人资源"}` : "私人资源 · 彦骁的笔记"}</title><meta content="noindex,nofollow" name="robots" /></Helmet>
+      <Helmet>
+        <title>{title ? `${title} · ${collection?.title ?? "私人资源"}` : "私人资源 · 彦骁的笔记"}</title>
+        <meta content="noindex,nofollow" name="robots" />
+      </Helmet>
       <main className={`min-h-[calc(100svh-4rem)] bg-[#070a12] px-6 pt-10 text-slate-100 sm:px-8 sm:pt-14 lg:px-10 ${episode || file?.format === "mp3" ? "pb-48" : "pb-20"}`}>
         <article className="mx-auto max-w-3xl">
-          <Link className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-cyan-300" to={collectionPath}><ArrowLeft className="size-4" />返回{collection?.title ?? "私人资源"}</Link>
+          <Link className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-cyan-300" to={collectionPath}>
+            <ArrowLeft className="size-4" />返回{collection?.title ?? "私人资源"}
+          </Link>
           <div className={isLoading ? "flex min-h-[50vh] items-center" : ""}>
             <PrivateLoadingProgress failed={Boolean(error)} label="正在读取资源" loading={isLoading} />
           </div>
-          {(error || invalidItem) && <div className="mt-10 rounded-2xl border border-rose-300/20 bg-rose-300/[0.06] p-5 text-sm text-rose-100">{invalidItem ? "资源标识无效。" : error}</div>}
-          {file && <>
-            <header className="mt-9 border-b border-white/10 pb-9">
-              <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">PRIVATE FILE</p>
-              <h1 className="mt-4 max-w-full break-all text-3xl font-semibold tracking-[-0.035em] text-white sm:text-5xl">{file.originalName}</h1>
-              <p className="mt-5 text-sm text-slate-500">{file.format.toUpperCase()} · {formatFileBytes(file.bytes)} · {new Date(file.uploadedAt).toLocaleString()}</p>
-              {canWrite && <button className="mt-6 inline-flex items-center gap-2 rounded-xl border border-rose-300/15 bg-rose-300/[0.04] px-4 py-2.5 text-sm text-rose-200 disabled:opacity-50" disabled={deleting} onClick={() => void deleteFile()} type="button">{deleting ? <RefreshCw className="size-4 animate-spin" /> : <Trash2 className="size-4" />}删除文件</button>}
-            </header>
-            <section className="mt-9">
-              {file.format === "mp3" && mediaUrl && <FixedAudioPlayer audioUrl={mediaUrl} title={file.originalName} />}
-              {file.format === "mp4" && mediaUrl && <video className="aspect-video w-full rounded-2xl bg-black" controls controlsList="nodownload" onContextMenu={(event) => event.preventDefault()} playsInline src={mediaUrl} />}
-              {file.format === "flv" && mediaUrl && <FlvVideoPlayer src={mediaUrl} />}
-              {file.mediaType === "file" && <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-sm text-slate-400"><File className="size-6 text-cyan-300" />该文件已安全保存；按当前设计不提供打开或下载入口。</div>}
-            </section>
-          </>}
-          {episode && <><header className="mt-9 border-b border-white/10 pb-9"><div className="flex flex-wrap items-center gap-3 text-xs text-slate-500"><span className="rounded-full border border-cyan-300/15 bg-cyan-300/[0.07] px-2.5 py-1 text-cyan-200">{episode.difficulty}</span><span className="inline-flex items-center gap-1.5"><CalendarDays className="size-3.5" />推荐于 {episode.recommendedDate.replaceAll("-", ".")}</span></div><h1 className="mt-5 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-5xl">{episode.title}</h1><p className="mt-6 leading-8 text-slate-400">{episode.reason}</p>{episode.sourcePage && <a className="mt-6 inline-flex items-center gap-2 text-xs text-slate-500 hover:text-cyan-300" href={episode.sourcePage} rel="noreferrer" target="_blank">资源来源 <ExternalLink className="size-3.5" /></a>}</header><section className="pt-10"><p className="font-mono text-xs tracking-[0.18em] text-cyan-300">TRANSCRIPT</p><h2 className="mt-3 text-2xl font-semibold text-white">节目文本</h2><div className="mt-8 space-y-6 text-[15px] leading-8 text-slate-300">{transcriptSections.map((section, index) => <p className="whitespace-pre-wrap" key={`${index}-${section.slice(0, 24)}`}>{section}</p>)}</div></section></>}
+          {(error || invalidItem) && (
+            <div className="mt-10 rounded-2xl border border-rose-300/20 bg-rose-300/[0.06] p-5 text-sm text-rose-100">
+              {invalidItem ? "资源标识无效。" : error}
+            </div>
+          )}
+
+          {file && (
+            <>
+              <header className="mt-9 border-b border-white/10 pb-9">
+                <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">PRIVATE FILE</p>
+                <h1 className="mt-4 max-w-full break-all text-3xl font-semibold tracking-[-0.035em] text-white sm:text-5xl">{file.originalName}</h1>
+                <p className="mt-5 text-sm text-slate-500">{file.format.toUpperCase()} · {formatFileBytes(file.bytes)} · {new Date(file.uploadedAt).toLocaleString()}</p>
+                {canWrite && (
+                  <button
+                    className="mt-6 inline-flex items-center gap-2 rounded-xl border border-rose-300/15 bg-rose-300/[0.04] px-4 py-2.5 text-sm text-rose-200 disabled:opacity-50"
+                    disabled={deleting}
+                    onClick={() => void deleteFile()}
+                    type="button"
+                  >
+                    {deleting ? <RefreshCw className="size-4 animate-spin" /> : <Trash2 className="size-4" />}删除文件
+                  </button>
+                )}
+              </header>
+              <section className="mt-9">
+                {file.format === "mp3" && mediaSource && (
+                  <FixedAudioPlayer refreshSource={refreshMediaSource} source={mediaSource} title={file.originalName} />
+                )}
+                {file.format === "mp4" && mediaSource && (
+                  <PrivateVideoPlayer refreshSource={refreshMediaSource} source={mediaSource} />
+                )}
+                {file.format === "flv" && mediaSource && (
+                  <FlvVideoPlayer refreshSource={refreshMediaSource} source={mediaSource} />
+                )}
+                {file.mediaType === "file" && (
+                  <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-sm text-slate-400">
+                    <File className="size-6 text-cyan-300" />该文件已安全保存；按当前设计不提供打开或下载入口。
+                  </div>
+                )}
+              </section>
+            </>
+          )}
+
+          {episode && (
+            <>
+              <header className="mt-9 border-b border-white/10 pb-9">
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                  <span className="rounded-full border border-cyan-300/15 bg-cyan-300/[0.07] px-2.5 py-1 text-cyan-200">{episode.difficulty}</span>
+                  <span className="inline-flex items-center gap-1.5"><CalendarDays className="size-3.5" />推荐于 {episode.recommendedDate.replaceAll("-", ".")}</span>
+                </div>
+                <h1 className="mt-5 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-5xl">{episode.title}</h1>
+                <p className="mt-6 leading-8 text-slate-400">{episode.reason}</p>
+                {episode.sourcePage && (
+                  <a className="mt-6 inline-flex items-center gap-2 text-xs text-slate-500 hover:text-cyan-300" href={episode.sourcePage} rel="noreferrer" target="_blank">
+                    资源来源 <ExternalLink className="size-3.5" />
+                  </a>
+                )}
+              </header>
+              <section className="pt-10">
+                <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">TRANSCRIPT</p>
+                <h2 className="mt-3 text-2xl font-semibold text-white">节目文本</h2>
+                <div className="mt-8 space-y-6 text-[15px] leading-8 text-slate-300">
+                  {transcriptSections.map((section, index) => (
+                    <p className="whitespace-pre-wrap" key={`${index}-${section.slice(0, 24)}`}>{section}</p>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
         </article>
       </main>
-      {episode && mediaUrl && <FixedAudioPlayer audioUrl={mediaUrl} title={episode.title} />}
+      {episode && mediaSource && (
+        <FixedAudioPlayer refreshSource={refreshMediaSource} source={mediaSource} title={episode.title} />
+      )}
     </>
   );
 }
