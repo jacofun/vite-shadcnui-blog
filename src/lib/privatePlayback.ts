@@ -72,10 +72,11 @@ export function writePrivatePlaybackState(
   media: Pick<HTMLMediaElement, "currentTime" | "duration" | "ended" | "playbackRate">,
 ): void {
   try {
-    if (media.ended || !Number.isFinite(media.currentTime)) return;
-
-    if (media.currentTime < PRIVATE_PLAYBACK_MIN_SECONDS) {
-      window.localStorage.removeItem(key);
+    if (
+      media.ended ||
+      !Number.isFinite(media.currentTime) ||
+      media.currentTime < PRIVATE_PLAYBACK_MIN_SECONDS
+    ) {
       return;
     }
 
