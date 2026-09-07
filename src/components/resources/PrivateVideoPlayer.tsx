@@ -1,5 +1,18 @@
+import {
+  MediaControlBar,
+  MediaController,
+  MediaFullscreenButton,
+  MediaMuteButton,
+  MediaPlaybackRateButton,
+  MediaPlayButton,
+  MediaSeekBackwardButton,
+  MediaSeekForwardButton,
+  MediaTimeDisplay,
+  MediaTimeRange,
+  MediaVolumeRange,
+} from "media-chrome/react";
 import { RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type JSX } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type JSX } from "react";
 
 import PrivatePlaybackResumePrompt from "@/components/resources/PrivatePlaybackResumePrompt";
 import { usePrivatePlayback } from "@/hooks/usePrivatePlayback";
@@ -14,6 +27,23 @@ interface Props {
 }
 
 const MEDIA_READY_TIMEOUT_MS = 8_000;
+
+const controllerStyles = {
+  "--media-background-color": "transparent",
+  "--media-control-background": "transparent",
+  "--media-control-hover-background": "rgba(255, 255, 255, 0.10)",
+  "--media-primary-color": "rgb(241 245 249)",
+  "--media-secondary-color": "rgb(8 12 21)",
+  "--media-time-range-buffered-color": "rgba(148, 163, 184, 0.30)",
+  "--media-range-track-background": "rgba(226, 232, 240, 0.22)",
+  "--media-range-bar-color": "rgb(103 232 249)",
+} as CSSProperties;
+
+const playButtonStyles = {
+  "--media-control-height": "42px",
+  "--media-button-icon-width": "28px",
+  "--media-button-icon-height": "28px",
+} as CSSProperties;
 
 function waitForMetadata(video: HTMLVideoElement): Promise<void> {
   if (video.readyState >= 1) return Promise.resolve();
@@ -173,7 +203,7 @@ export default function PrivateVideoPlayer({ source, refreshSource }: Props): JS
     try {
       await video.play();
     } catch {
-      // Native controls remain available if programmatic playback is rejected.
+      // Media Chrome controls remain available if programmatic playback is rejected.
     }
   };
 
@@ -189,33 +219,79 @@ export default function PrivateVideoPlayer({ source, refreshSource }: Props): JS
     try {
       await video.play();
     } catch {
-      // Native controls remain available if programmatic playback is rejected.
+      // Media Chrome controls remain available if programmatic playback is rejected.
+    }
+  };
+
+  const togglePlayback = async () => {
+    const video = videoRef.current;
+    if (!video || refreshingRef.current) return;
+    if (!video.paused) {
+      video.pause();
+      return;
+    }
+    if (isPrivateMediaSourceExpiring(sourceRef.current)) {
+      playIntentRef.current = true;
+      await refreshMedia(false, true);
+      return;
+    }
+    try {
+      await video.play();
+    } catch {
+      // The visible control bar remains the fallback on browsers requiring an explicit control tap.
     }
   };
 
   return (
     <div className="space-y-3">
-      {refreshing && <p className="flex items-center gap-2 text-sm text-cyan-300"><RefreshCw className="size-4 animate-spin" />正在恢复播放…</p>}
-      {!refreshing && error && <p className="rounded-xl border border-rose-300/20 bg-rose-300/[0.06] p-4 text-sm text-rose-100">{error}</p>}
-      {resumeState && !refreshing && (
-        <PrivatePlaybackResumePrompt
-          className="justify-end"
-          onDismiss={dismissResume}
-          onRestart={() => void restart()}
-          onResume={() => void resume()}
-          position={resumeState.position}
+      <div className="flex min-h-7 items-center justify-end">
+        {refreshing && <p className="flex items-center gap-2 text-xs text-cyan-300"><RefreshCw className="size-3.5 animate-spin" />正在恢复播放…</p>}
+        {!refreshing && error && <p className="rounded-lg border border-rose-300/20 bg-rose-300/[0.06] px-3 py-1.5 text-xs text-rose-100">{error}</p>}
+        {resumeState && !refreshing && !error && (
+          <PrivatePlaybackResumePrompt
+            className="justify-end"
+            onDismiss={dismissResume}
+            onRestart={() => void restart()}
+            onResume={() => void resume()}
+            position={resumeState.position}
+          />
+        )}
+      </div>
+
+      <MediaController
+        className="relative block aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_24px_70px_rgba(0,0,0,0.32)]"
+        style={controllerStyles}
+      >
+        <video
+          className="h-full w-full bg-black object-contain"
+          controlsList="nodownload"
+          onClick={() => void togglePlayback()}
+          onContextMenu={(event) => event.preventDefault()}
+          playsInline
+          preload="metadata"
+          ref={videoRef}
+          slot="media"
+          src={source.url}
         />
-      )}
-      <video
-        className="aspect-video w-full rounded-2xl bg-black"
-        controls
-        controlsList="nodownload"
-        onContextMenu={(event) => event.preventDefault()}
-        playsInline
-        preload="metadata"
-        ref={videoRef}
-        src={source.url}
-      />
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/90 via-black/55 to-transparent" />
+
+        <MediaControlBar className="absolute inset-x-0 bottom-11 z-10 flex h-8 items-center bg-transparent px-3">
+          <MediaTimeRange aria-label="视频进度" />
+        </MediaControlBar>
+
+        <MediaControlBar className="absolute inset-x-0 bottom-0 z-10 flex h-12 items-center bg-black/20 px-1.5 backdrop-blur-sm sm:px-2">
+          <MediaSeekBackwardButton aria-label="后退 10 秒" seekOffset={10} />
+          <MediaPlayButton aria-label="播放或暂停" style={playButtonStyles} />
+          <MediaSeekForwardButton aria-label="前进 10 秒" seekOffset={10} />
+          <MediaTimeDisplay className="hidden sm:inline-flex" showDuration />
+          <div className="flex-1" />
+          <MediaPlaybackRateButton aria-label="调整播放速度" />
+          <MediaMuteButton aria-label="静音" />
+          <MediaVolumeRange className="hidden w-24 sm:inline-flex" />
+          <MediaFullscreenButton aria-label="全屏" />
+        </MediaControlBar>
+      </MediaController>
     </div>
   );
 }
