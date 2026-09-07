@@ -1,5 +1,6 @@
 export const publicPageImports = {
   about: () => import("@/pages/About.tsx"),
+  fragments: () => import("@/pages/Fragments.tsx"),
   notes: () => import("@/pages/Notes.tsx"),
   noteDetail: () => import("@/pages/NoteDetail.tsx"),
   now: () => import("@/pages/Now.tsx"),
@@ -12,6 +13,7 @@ const prefetched = new Set<string>();
 
 function importerForPath(pathname: string): (() => Promise<unknown>) | undefined {
   if (pathname === "/about") return publicPageImports.about;
+  if (pathname === "/fragments") return publicPageImports.fragments;
   if (pathname === "/notes") return publicPageImports.notes;
   if (pathname.startsWith("/notes/")) return publicPageImports.noteDetail;
   if (pathname === "/now") return publicPageImports.now;
@@ -31,5 +33,5 @@ export function prefetchPublicRoute(pathname: string): void {
 }
 
 export function prefetchPrimaryPublicRoutes(): void {
-  ["/notes", "/about"].forEach(prefetchPublicRoute);
+  ["/notes", "/about", "/fragments"].forEach(prefetchPublicRoute);
 }

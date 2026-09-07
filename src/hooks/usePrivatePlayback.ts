@@ -20,6 +20,20 @@ interface PrivatePlaybackController {
   suppressNextMetadataRestore: () => void;
 }
 
+function currentPlaybackTitle(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  return document.title.split(" · ")[0]?.trim() || undefined;
+}
+
+function consumeContinueIntent(): boolean {
+  if (typeof window === "undefined") return false;
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("continue") !== "1") return false;
+  url.searchParams.delete("continue");
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  return true;
+}
+
 export function usePrivatePlayback<T extends HTMLMediaElement>(
   mediaRef: RefObject<T | null>,
 ): PrivatePlaybackController {
@@ -78,7 +92,10 @@ export function usePrivatePlayback<T extends HTMLMediaElement>(
       const now = Date.now();
       if (!force && now - lastSavedAtRef.current < SAVE_INTERVAL_MS) return;
       lastSavedAtRef.current = now;
-      writePrivatePlaybackState(storageKey, media);
+      writePrivatePlaybackState(storageKey, media, {
+        title: currentPlaybackTitle(),
+        mediaKind: media.tagName === "VIDEO" ? "video" : "audio",
+      });
     };
 
     const loadedMetadata = () => {
@@ -93,7 +110,16 @@ export function usePrivatePlayback<T extends HTMLMediaElement>(
         updateResumeState(null);
         return;
       }
+
       media.playbackRate = saved.playbackRate;
+      if (consumeContinueIntent()) {
+        dismissedRef.current = true;
+        updateResumeState(null);
+        media.currentTime = saved.position;
+        void media.play().catch(() => undefined);
+        return;
+      }
+
       updateResumeState(saved);
     };
 

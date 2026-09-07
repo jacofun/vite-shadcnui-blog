@@ -20,6 +20,7 @@ const TerminalDialog = lazy(
 const navigation = [
   { label: "首页", to: "/" },
   { label: "笔记", to: "/notes" },
+  { label: "碎片", to: "/fragments" },
   { label: "现在", to: "/now" },
   { label: "资源", to: "/resources" },
   { label: "关于", to: "/about" },
@@ -126,7 +127,7 @@ export default function SiteHeader(): JSX.Element {
             <span className="min-[360px]:hidden">YX</span>
           </Link>
 
-          <nav aria-label="主导航" className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 md:flex lg:gap-8">
+          <nav aria-label="主导航" className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-5 md:flex lg:gap-7">
             {navigation.map((item) => {
               const isActive = isNavigationActive(location.pathname, item.to);
               const isWedding = "wedding" in item && item.wedding;
