@@ -10,7 +10,7 @@ import {
   MediaTimeRange,
   MediaVolumeRange,
 } from "media-chrome/react";
-import { useEffect, useRef, useState, type CSSProperties, type JSX } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type JSX } from "react";
 
 import {
   isPrivateMediaSourceExpiring,
@@ -117,7 +117,7 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
 
   sourceRef.current = source;
 
-  const refreshMedia = async (force: boolean, resumeAfterRefresh: boolean): Promise<void> => {
+  const refreshMedia = useCallback(async (force: boolean, resumeAfterRefresh: boolean): Promise<void> => {
     const audio = audioRef.current;
     if (!audio || refreshingRef.current) return;
 
@@ -152,7 +152,7 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
       refreshingRef.current = false;
       setRefreshing(false);
     }
-  };
+  }, [refreshSource]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -260,7 +260,7 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
       audio.removeEventListener("error", mediaError);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [storageKey]);
+  }, [refreshMedia, storageKey]);
 
   useEffect(() => {
     const audio = audioRef.current;
