@@ -61,11 +61,12 @@ export default function ScheduleSection(): JSX.Element {
         <CountdownTimer targetDate={EVENT_START_AT} />
       </motion.div>
 
-      <div className="w-[calc(100%_-_2.5rem)] max-w-[360px] rounded-3xl border border-border/20 bg-background/100 p-4 shadow-sm backdrop-blur">
+      <div className="w-[calc(100%_-_4rem)] max-w-[320px] overflow-hidden rounded-3xl border border-border/20 bg-background/100 p-3 shadow-sm backdrop-blur">
         <Calendar
           mode="single"
           selected={EVENT_CALENDAR_DATE}
           defaultMonth={EVENT_CALENDAR_DATE}
+          showOutsideDays={false}
           modifiers={{ highlighted: EVENT_CALENDAR_DATE }}
           locale={zhCN}
           weekStartsOn={1}
@@ -76,7 +77,7 @@ export default function ScheduleSection(): JSX.Element {
             before: EVENT_CALENDAR_DATE,
             after: EVENT_CALENDAR_DATE,
           }}
-          className="mx-auto h-full w-full"
+          className="mx-auto h-auto w-fit p-2 [--cell-size:1.875rem]"
         />
       </div>
 
@@ -107,7 +108,7 @@ export default function ScheduleSection(): JSX.Element {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         viewport={{ once: true, amount: 0.3 }}
-        className="relative aspect-square w-[calc(100%_-_2.5rem)] max-w-[360px] overflow-hidden rounded-3xl border border-border/40 shadow-sm pointer-events-none"
+        className="relative aspect-square w-[calc(100%_-_4rem)] max-w-[320px] overflow-hidden rounded-3xl border border-border/40 shadow-sm pointer-events-none"
       >
         <iframe
           key={iframeKey}
