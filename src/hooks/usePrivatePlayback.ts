@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 
 import {
+  PRIVATE_PLAYBACK_MIN_SECONDS,
   clearPrivatePlaybackState,
   privatePlaybackStorageKey,
   readPrivatePlaybackState,
@@ -19,8 +20,8 @@ interface PrivatePlaybackController {
   suppressNextMetadataRestore: () => void;
 }
 
-export function usePrivatePlayback(
-  mediaRef: RefObject<HTMLMediaElement | null>,
+export function usePrivatePlayback<T extends HTMLMediaElement>(
+  mediaRef: RefObject<T | null>,
 ): PrivatePlaybackController {
   const storageKey = privatePlaybackStorageKey();
   const lastSavedAtRef = useRef(0);
@@ -96,6 +97,12 @@ export function usePrivatePlayback(
       updateResumeState(saved);
     };
 
+    const play = () => {
+      if (resumeStateRef.current && media.currentTime < PRIVATE_PLAYBACK_MIN_SECONDS) {
+        dismissedRef.current = true;
+        updateResumeState(null);
+      }
+    };
     const pause = () => save(true);
     const rateChange = () => save(true);
     const ended = () => {
@@ -105,6 +112,7 @@ export function usePrivatePlayback(
     };
 
     media.addEventListener("loadedmetadata", loadedMetadata);
+    media.addEventListener("play", play);
     media.addEventListener("timeupdate", save);
     media.addEventListener("pause", pause);
     media.addEventListener("ratechange", rateChange);
@@ -115,6 +123,7 @@ export function usePrivatePlayback(
     return () => {
       save(true);
       media.removeEventListener("loadedmetadata", loadedMetadata);
+      media.removeEventListener("play", play);
       media.removeEventListener("timeupdate", save);
       media.removeEventListener("pause", pause);
       media.removeEventListener("ratechange", rateChange);
