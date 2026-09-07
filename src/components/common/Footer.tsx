@@ -11,20 +11,10 @@ export default function Footer(): JSX.Element {
       <div className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-8 lg:px-10">
         <div className="border-b border-white/10 pb-8">
           <Link
-            className="inline-flex items-center gap-3 text-white"
+            className="inline-flex items-center text-white"
             onClick={scrollToTop}
             to="/"
           >
-            <span className="flex size-9 overflow-hidden rounded-xl border border-cyan-300/20 bg-cyan-300/10">
-              <img
-                alt=""
-                aria-hidden="true"
-                className="h-full w-full object-cover"
-                height="96"
-                src="/images/footer-avatar.webp"
-                width="96"
-              />
-            </span>
             <span className="text-sm font-semibold tracking-[0.14em]">
               YANXIAO.ME
             </span>
