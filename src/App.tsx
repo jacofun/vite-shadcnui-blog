@@ -9,7 +9,8 @@ function App() {
   const { pathname } = useLocation();
   const [readingProgress, setReadingProgress] = useState(0);
   const [routePending, setRoutePending] = useState(false);
-  const showHeader = !pathname.startsWith("/wedding");
+  const isWedding = pathname.startsWith("/wedding");
+  const showHeader = !isWedding;
   const showAiDisclaimer =
     showHeader && (pathname === "/" || pathname.startsWith("/notes"));
   const showFooter =
@@ -83,7 +84,7 @@ function App() {
   }, [showReadingProgress, pathname]);
 
   return (
-    <div className="min-h-screen bg-[#070a12]">
+    <div className={`min-h-screen ${isWedding ? "bg-[#fff1ec]" : "bg-[#070a12]"}`}>
       {showHeader && (
         <div className="sticky top-0 z-[110]">
           <SiteHeader />
