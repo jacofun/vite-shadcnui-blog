@@ -1,5 +1,4 @@
 import type { JSX } from "react";
-import { Terminal } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const scrollToTop = () => {
@@ -16,8 +15,15 @@ export default function Footer(): JSX.Element {
             onClick={scrollToTop}
             to="/"
           >
-            <span className="flex size-9 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10">
-              <Terminal className="size-4 text-cyan-300" />
+            <span className="flex size-9 overflow-hidden rounded-xl border border-cyan-300/20 bg-cyan-300/10">
+              <img
+                alt=""
+                aria-hidden="true"
+                className="h-full w-full object-cover"
+                height="96"
+                src="/images/footer-avatar.webp"
+                width="96"
+              />
             </span>
             <span className="text-sm font-semibold tracking-[0.14em]">
               YANXIAO.ME
