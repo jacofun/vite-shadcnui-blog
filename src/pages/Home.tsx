@@ -86,6 +86,17 @@ export default function Home(): JSX.Element {
                 </Link>
               ))}
             </div>
+
+            <Link
+              className="group mt-10 flex items-center justify-between gap-6 border-y border-white/[0.08] py-5 transition hover:border-cyan-300/20"
+              to="/fragments"
+            >
+              <div>
+                <p className="font-mono text-[10px] tracking-[0.18em] text-slate-600">FRAGMENTS</p>
+                <p className="mt-2 text-sm text-slate-400 transition group-hover:text-slate-200">照片、截图、声音，还有一些没必要单独写成文章的东西。</p>
+              </div>
+              <ArrowRight className="size-4 shrink-0 text-slate-600 transition-transform group-hover:translate-x-1 group-hover:text-cyan-300" />
+            </Link>
           </section>
         </div>
       </main>

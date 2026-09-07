@@ -1,4 +1,4 @@
-import { ArrowRight, Clipboard, FolderLock, FolderPlus, Headphones, LogOut, RefreshCw, ShieldCheck, UploadCloud } from "lucide-react";
+import { ArrowRight, Clipboard, FolderLock, FolderPlus, Headphones, LogOut, Play, RefreshCw, ShieldCheck, UploadCloud, Video } from "lucide-react";
 import { useEffect, useRef, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
@@ -8,6 +8,11 @@ import PrivateLoadingProgress from "@/components/resources/PrivateLoadingProgres
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
 import { usePrivateAuth } from "@/hooks/usePrivateAuth";
 import { logoutPrivateAuth } from "@/lib/privateAuth";
+import {
+  formatPrivatePlaybackTime,
+  listPrivatePlaybackStates,
+  type PrivatePlaybackEntry,
+} from "@/lib/privatePlayback";
 import {
   loadPrivateResourceCatalog,
   type PrivateResourceCatalog,
@@ -19,11 +24,17 @@ export default function PrivateResources(): JSX.Element {
   const navigate = useNavigate();
   const loadedUserId = useRef<string | null>(null);
   const [catalog, setCatalog] = useState<PrivateResourceCatalog | null>(null);
+  const [continueEntry, setContinueEntry] = useState<PrivatePlaybackEntry | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [catalogError, setCatalogError] = useState(false);
   const [loadRevision, setLoadRevision] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    if (access.status !== "ready") return;
+    setContinueEntry(listPrivatePlaybackStates()[0] ?? null);
+  }, [access.status]);
 
   useEffect(() => {
     if (access.status !== "ready" || !access.session) return;
@@ -60,6 +71,14 @@ export default function PrivateResources(): JSX.Element {
   const canUpload = access.session?.user.role === "owner" ||
     access.session?.user.permissions.includes("private-resources-write") === true;
   const roleLabel = access.session?.user.role === "owner" ? "站点所有者" : "受邀成员";
+  const continueParts = continueEntry?.route.split("/").filter(Boolean) ?? [];
+  const continueCollectionId = continueParts[1] ?? "";
+  const continueItemId = continueParts[2] ?? "";
+  const continueCollection = catalog?.collections.find((item) => item.collectionId === continueCollectionId);
+  const continueTitle = continueEntry?.state.title || (continueItemId ? `${continueCollection?.title ?? "私人资源"} · ${continueItemId}` : "继续播放");
+  const continueProgress = continueEntry?.state.duration
+    ? Math.min(100, Math.max(0, (continueEntry.state.position / continueEntry.state.duration) * 100))
+    : null;
 
   async function logout(): Promise<void> {
     if (!access.session || loggingOut) return;
@@ -127,6 +146,41 @@ export default function PrivateResources(): JSX.Element {
               </aside>
             )}
           </div>
+
+          {continueEntry && (
+            <section aria-label="继续播放" className="mt-12 max-w-3xl">
+              <div className="mb-3 flex items-center justify-between gap-4">
+                <p className="font-mono text-[10px] tracking-[0.18em] text-slate-600">CONTINUE PLAYING</p>
+                <span className="text-[11px] text-slate-600">{formatPrivatePlaybackTime(continueEntry.state.position)}</span>
+              </div>
+              <Link
+                className="group block overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] p-5 transition hover:border-cyan-300/25 hover:bg-white/[0.055]"
+                to={`${continueEntry.route}?continue=1`}
+              >
+                <div className="flex items-center gap-4">
+                  <span className="grid size-12 shrink-0 place-items-center rounded-full border border-cyan-300/20 bg-cyan-300/[0.09] text-cyan-200 transition group-hover:bg-cyan-300/[0.14]">
+                    {continueEntry.state.mediaKind === "video" ? <Video className="size-5" /> : <Headphones className="size-5" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-medium text-white">{continueTitle}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {continueCollection?.title ?? "私人资源"}
+                      {continueEntry.state.duration ? ` · ${formatPrivatePlaybackTime(continueEntry.state.position)} / ${formatPrivatePlaybackTime(continueEntry.state.duration)}` : ` · 已播放到 ${formatPrivatePlaybackTime(continueEntry.state.position)}`}
+                    </p>
+                  </div>
+                  <span className="inline-flex shrink-0 items-center gap-2 text-xs text-cyan-200">
+                    <Play className="size-3.5 fill-current" />
+                    <span className="hidden sm:inline">继续</span>
+                  </span>
+                </div>
+                {continueProgress !== null && (
+                  <div className="mt-4 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-sky-400" style={{ width: `${continueProgress}%` }} />
+                  </div>
+                )}
+              </Link>
+            </section>
+          )}
 
           <PrivateLoadingProgress className="mt-14 max-w-xl" failed={catalogError && !catalog} label={catalog ? "正在刷新资源目录" : "正在读取资源目录"} loading={refreshing} />
 

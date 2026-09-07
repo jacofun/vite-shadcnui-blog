@@ -34,6 +34,7 @@ window.addEventListener("vite:preloadError", (event) => {
 });
 
 const About = lazy(publicPageImports.about);
+const Fragments = lazy(publicPageImports.fragments);
 const NoteDetail = lazy(publicPageImports.noteDetail);
 const Notes = lazy(publicPageImports.notes);
 const Now = lazy(publicPageImports.now);
@@ -64,6 +65,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: "about", element: lazyPage(<About />) },
+      { path: "fragments", element: lazyPage(<Fragments />) },
       { path: "now", element: lazyPage(<Now />) },
       { path: "timeline", element: lazyPage(<Timeline />) },
       { path: "notes", element: lazyPage(<Notes />) },

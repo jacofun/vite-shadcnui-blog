@@ -3,6 +3,13 @@ export interface PrivatePlaybackState {
   duration?: number;
   playbackRate: number;
   updatedAt: number;
+  title?: string;
+  mediaKind?: "audio" | "video";
+}
+
+export interface PrivatePlaybackEntry {
+  route: string;
+  state: PrivatePlaybackState;
 }
 
 const PLAYBACK_STORAGE_PREFIX = "yanxiao:private-playback:v1:";
@@ -17,6 +24,12 @@ export function privatePlaybackStorageKey(): string {
 
 function isValidPlaybackRate(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0.5 && value <= 3;
+}
+
+function normalizeTitle(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const title = value.trim();
+  return title ? title.slice(0, 200) : undefined;
 }
 
 export function readPrivatePlaybackState(
@@ -61,6 +74,8 @@ export function readPrivatePlaybackState(
       duration: effectiveDuration,
       playbackRate: value.playbackRate,
       updatedAt: value.updatedAt,
+      title: normalizeTitle(value.title),
+      mediaKind: value.mediaKind === "audio" || value.mediaKind === "video" ? value.mediaKind : undefined,
     };
   } catch {
     return null;
@@ -70,6 +85,7 @@ export function readPrivatePlaybackState(
 export function writePrivatePlaybackState(
   key: string,
   media: Pick<HTMLMediaElement, "currentTime" | "duration" | "ended" | "playbackRate">,
+  metadata: { title?: string; mediaKind?: "audio" | "video" } = {},
 ): void {
   try {
     if (
@@ -94,10 +110,34 @@ export function writePrivatePlaybackState(
       duration,
       playbackRate: isValidPlaybackRate(media.playbackRate) ? media.playbackRate : 1,
       updatedAt: Date.now(),
+      title: normalizeTitle(metadata.title),
+      mediaKind: metadata.mediaKind,
     };
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch {
     // Playback persistence is a convenience only; media playback must not depend on storage.
+  }
+}
+
+export function listPrivatePlaybackStates(): PrivatePlaybackEntry[] {
+  try {
+    const keys: string[] = [];
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      if (key?.startsWith(PLAYBACK_STORAGE_PREFIX)) keys.push(key);
+    }
+
+    return keys
+      .map((key) => {
+        const route = key.slice(PLAYBACK_STORAGE_PREFIX.length);
+        if (!/^\/resources\/[^/]+\/[^/]+$/.test(route)) return null;
+        const state = readPrivatePlaybackState(key);
+        return state ? { route, state } : null;
+      })
+      .filter((entry): entry is PrivatePlaybackEntry => entry !== null)
+      .sort((a, b) => b.state.updatedAt - a.state.updatedAt);
+  } catch {
+    return [];
   }
 }
 
