@@ -10,11 +10,17 @@ import {
   MediaTimeRange,
   MediaVolumeRange,
 } from "media-chrome/react";
-import { useEffect, useRef, useState, type CSSProperties, type JSX } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type JSX } from "react";
+
+import {
+  isPrivateMediaSourceExpiring,
+  type PrivateMediaSource,
+} from "@/lib/privateMedia";
 
 interface Props {
-  audioUrl: string;
+  source: PrivateMediaSource;
   title: string;
+  refreshSource: (force?: boolean) => Promise<PrivateMediaSource>;
 }
 
 interface SavedPlaybackState {
@@ -27,6 +33,7 @@ const PLAYBACK_STORAGE_PREFIX = "yanxiao:private-playback:v1:";
 const RESUME_MIN_SECONDS = 10;
 const RESUME_END_GUARD_SECONDS = 10;
 const SAVE_INTERVAL_MS = 4_000;
+const MEDIA_READY_TIMEOUT_MS = 8_000;
 
 const mediaStyles = {
   "--media-background-color": "transparent",
@@ -78,11 +85,74 @@ function formatTime(seconds: number): string {
   return `${minutes}:${String(remainder).padStart(2, "0")}`;
 }
 
-export default function FixedAudioPlayer({ audioUrl, title }: Props): JSX.Element {
+function waitForMetadata(audio: HTMLAudioElement): Promise<void> {
+  if (audio.readyState >= 1) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => finish(new Error("媒体地址刷新后加载超时")), MEDIA_READY_TIMEOUT_MS);
+    const loaded = () => finish();
+    const failed = () => finish(new Error("媒体地址刷新后仍无法加载"));
+    const finish = (error?: Error) => {
+      window.clearTimeout(timeout);
+      audio.removeEventListener("loadedmetadata", loaded);
+      audio.removeEventListener("error", failed);
+      if (error) reject(error);
+      else resolve();
+    };
+    audio.addEventListener("loadedmetadata", loaded, { once: true });
+    audio.addEventListener("error", failed, { once: true });
+  });
+}
+
+export default function FixedAudioPlayer({ source, title, refreshSource }: Props): JSX.Element {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastSavedAt = useRef(0);
+  const sourceRef = useRef(source);
+  const refreshingRef = useRef(false);
+  const playIntentRef = useRef(false);
+  const consecutiveRecoveryAttemptsRef = useRef(0);
   const [resumePosition, setResumePosition] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const storageKey = playbackStorageKey();
+
+  sourceRef.current = source;
+
+  const refreshMedia = useCallback(async (force: boolean, resumeAfterRefresh: boolean): Promise<void> => {
+    const audio = audioRef.current;
+    if (!audio || refreshingRef.current) return;
+
+    const position = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+    const rate = audio.playbackRate;
+    const shouldResume = resumeAfterRefresh || !audio.paused || playIntentRef.current;
+    refreshingRef.current = true;
+    setRefreshing(true);
+    setPlaybackError(null);
+
+    if (!audio.paused) audio.pause();
+
+    try {
+      const nextSource = await refreshSource(force);
+      sourceRef.current = nextSource;
+      if (audio.currentSrc !== nextSource.url && audio.src !== nextSource.url) {
+        audio.src = nextSource.url;
+        audio.load();
+        await waitForMetadata(audio);
+      }
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        audio.currentTime = Math.min(position, Math.max(0, audio.duration - 0.25));
+      } else if (position > 0) {
+        audio.currentTime = position;
+      }
+      audio.playbackRate = rate;
+      if (shouldResume) await audio.play();
+    } catch (error) {
+      playIntentRef.current = false;
+      setPlaybackError(error instanceof Error ? error.message : "播放地址恢复失败");
+    } finally {
+      refreshingRef.current = false;
+      setRefreshing(false);
+    }
+  }, [refreshSource]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -106,6 +176,7 @@ export default function FixedAudioPlayer({ audioUrl, title }: Props): JSX.Elemen
     };
 
     const loaded = () => {
+      if (refreshingRef.current) return;
       const saved = readPlaybackState(storageKey);
       if (!saved) {
         setResumePosition(null);
@@ -122,10 +193,24 @@ export default function FixedAudioPlayer({ audioUrl, title }: Props): JSX.Elemen
         setResumePosition(null);
       }
     };
+    const play = () => {
+      playIntentRef.current = true;
+      if (!refreshingRef.current && isPrivateMediaSourceExpiring(sourceRef.current)) {
+        void refreshMedia(false, true);
+      }
+    };
+    const playing = () => {
+      consecutiveRecoveryAttemptsRef.current = 0;
+      setPlaybackError(null);
+    };
     const timeUpdate = () => save(false);
-    const pause = () => save(true);
+    const pause = () => {
+      save(true);
+      if (!refreshingRef.current) playIntentRef.current = false;
+    };
     const rateChange = () => save(true);
     const ended = () => {
+      playIntentRef.current = false;
       setResumePosition(null);
       try {
         window.localStorage.removeItem(storageKey);
@@ -133,27 +218,78 @@ export default function FixedAudioPlayer({ audioUrl, title }: Props): JSX.Elemen
         // Ignore storage failures.
       }
     };
+    const mediaError = () => {
+      if (refreshingRef.current) return;
+      if (consecutiveRecoveryAttemptsRef.current >= 1) {
+        setPlaybackError("媒体仍无法播放，请重新进入私人资源后再试。");
+        return;
+      }
+      consecutiveRecoveryAttemptsRef.current += 1;
+      void refreshMedia(true, playIntentRef.current);
+    };
+    const visibility = () => {
+      if (
+        document.visibilityState === "visible" &&
+        !refreshingRef.current &&
+        isPrivateMediaSourceExpiring(sourceRef.current)
+      ) {
+        void refreshMedia(false, !audio.paused);
+      }
+    };
 
     audio.addEventListener("loadedmetadata", loaded);
+    audio.addEventListener("play", play);
+    audio.addEventListener("playing", playing);
     audio.addEventListener("timeupdate", timeUpdate);
     audio.addEventListener("pause", pause);
     audio.addEventListener("ratechange", rateChange);
     audio.addEventListener("ended", ended);
+    audio.addEventListener("error", mediaError);
+    document.addEventListener("visibilitychange", visibility);
     if (audio.readyState >= 1) loaded();
 
     return () => {
       save(true);
       audio.removeEventListener("loadedmetadata", loaded);
+      audio.removeEventListener("play", play);
+      audio.removeEventListener("playing", playing);
       audio.removeEventListener("timeupdate", timeUpdate);
       audio.removeEventListener("pause", pause);
       audio.removeEventListener("ratechange", rateChange);
       audio.removeEventListener("ended", ended);
+      audio.removeEventListener("error", mediaError);
+      document.removeEventListener("visibilitychange", visibility);
     };
-  }, [audioUrl, storageKey]);
+  }, [refreshMedia, storageKey]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || audio.currentSrc === source.url || audio.src === source.url) return;
+    const position = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+    const rate = audio.playbackRate;
+    const shouldResume = !audio.paused;
+    refreshingRef.current = true;
+    audio.src = source.url;
+    audio.load();
+    void waitForMetadata(audio).then(async () => {
+      audio.playbackRate = rate;
+      if (position > 0) audio.currentTime = position;
+      if (shouldResume) await audio.play();
+    }).catch(() => undefined).finally(() => {
+      refreshingRef.current = false;
+    });
+  }, [source.url]);
 
   const resume = async () => {
     const audio = audioRef.current;
     if (!audio || resumePosition === null) return;
+    if (isPrivateMediaSourceExpiring(sourceRef.current)) {
+      audio.currentTime = resumePosition;
+      setResumePosition(null);
+      playIntentRef.current = true;
+      await refreshMedia(false, true);
+      return;
+    }
     audio.currentTime = resumePosition;
     setResumePosition(null);
     try {
@@ -173,6 +309,11 @@ export default function FixedAudioPlayer({ audioUrl, title }: Props): JSX.Elemen
     } catch {
       // Ignore storage failures.
     }
+    if (isPrivateMediaSourceExpiring(sourceRef.current)) {
+      playIntentRef.current = true;
+      await refreshMedia(false, true);
+      return;
+    }
     try {
       await audio.play();
     } catch {
@@ -188,16 +329,20 @@ export default function FixedAudioPlayer({ audioUrl, title }: Props): JSX.Elemen
       <div className="mx-auto max-w-6xl px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-8 lg:px-10">
         <div className="flex min-w-0 items-center justify-between gap-3 px-2 pb-1">
           <p className="truncate text-xs font-medium text-slate-400">{title}</p>
-          {resumePosition !== null && (
-            <div className="flex shrink-0 items-center gap-2 text-[11px]">
-              <span className="hidden text-slate-500 sm:inline">上次播放到 {formatTime(resumePosition)}</span>
-              <button className="rounded-lg border border-cyan-300/20 bg-cyan-300/[0.08] px-2.5 py-1 text-cyan-200 transition hover:bg-cyan-300/[0.14]" onClick={() => void resume()} type="button">继续</button>
-              <button className="rounded-lg border border-white/10 px-2.5 py-1 text-slate-400 transition hover:text-slate-200" onClick={() => void restart()} type="button">从头</button>
-            </div>
-          )}
+          <div className="flex shrink-0 items-center gap-2 text-[11px]">
+            {refreshing && <span className="text-cyan-300">正在恢复播放…</span>}
+            {!refreshing && playbackError && <span className="max-w-44 truncate text-rose-300 sm:max-w-none">{playbackError}</span>}
+            {resumePosition !== null && !refreshing && (
+              <>
+                <span className="hidden text-slate-500 sm:inline">上次播放到 {formatTime(resumePosition)}</span>
+                <button className="rounded-lg border border-cyan-300/20 bg-cyan-300/[0.08] px-2.5 py-1 text-cyan-200 transition hover:bg-cyan-300/[0.14]" onClick={() => void resume()} type="button">继续</button>
+                <button className="rounded-lg border border-white/10 px-2.5 py-1 text-slate-400 transition hover:text-slate-200" onClick={() => void restart()} type="button">从头</button>
+              </>
+            )}
+          </div>
         </div>
         <MediaController audio className="block w-full overflow-hidden rounded-xl bg-white/[0.035]" style={mediaStyles}>
-          <audio key={audioUrl} preload="metadata" ref={audioRef} slot="media" src={audioUrl} />
+          <audio preload="metadata" ref={audioRef} slot="media" src={source.url} />
           <MediaControlBar className="flex w-full items-center px-1">
             <MediaTimeDisplay showDuration />
             <MediaTimeRange />
