@@ -12,6 +12,8 @@ import {
 } from "media-chrome/react";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type JSX } from "react";
 
+import PrivatePlaybackResumePrompt from "@/components/resources/PrivatePlaybackResumePrompt";
+import { usePrivatePlayback } from "@/hooks/usePrivatePlayback";
 import {
   isPrivateMediaSourceExpiring,
   type PrivateMediaSource,
@@ -23,16 +25,6 @@ interface Props {
   refreshSource: (force?: boolean) => Promise<PrivateMediaSource>;
 }
 
-interface SavedPlaybackState {
-  playbackRate: number;
-  position: number;
-  updatedAt: number;
-}
-
-const PLAYBACK_STORAGE_PREFIX = "yanxiao:private-playback:v1:";
-const RESUME_MIN_SECONDS = 10;
-const RESUME_END_GUARD_SECONDS = 10;
-const SAVE_INTERVAL_MS = 4_000;
 const MEDIA_READY_TIMEOUT_MS = 8_000;
 
 const mediaStyles = {
@@ -51,39 +43,6 @@ const playButtonStyles = {
   "--media-button-icon-width": "32px",
   "--media-button-icon-height": "32px",
 } as CSSProperties;
-
-function playbackStorageKey(): string {
-  const route = typeof window === "undefined" ? "private-resource" : window.location.pathname;
-  return `${PLAYBACK_STORAGE_PREFIX}${route}`;
-}
-
-function readPlaybackState(key: string): SavedPlaybackState | null {
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return null;
-    const value = JSON.parse(raw) as Partial<SavedPlaybackState>;
-    if (
-      typeof value.position !== "number" || !Number.isFinite(value.position) || value.position < 0 ||
-      typeof value.playbackRate !== "number" || !Number.isFinite(value.playbackRate) || value.playbackRate < 0.5 || value.playbackRate > 3
-    ) {
-      return null;
-    }
-    return {
-      position: value.position,
-      playbackRate: value.playbackRate,
-      updatedAt: typeof value.updatedAt === "number" ? value.updatedAt : 0,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function formatTime(seconds: number): string {
-  const total = Math.max(0, Math.floor(seconds));
-  const minutes = Math.floor(total / 60);
-  const remainder = total % 60;
-  return `${minutes}:${String(remainder).padStart(2, "0")}`;
-}
 
 function waitForMetadata(audio: HTMLAudioElement): Promise<void> {
   if (audio.readyState >= 1) return Promise.resolve();
@@ -105,15 +64,13 @@ function waitForMetadata(audio: HTMLAudioElement): Promise<void> {
 
 export default function FixedAudioPlayer({ source, title, refreshSource }: Props): JSX.Element {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const lastSavedAt = useRef(0);
   const sourceRef = useRef(source);
   const refreshingRef = useRef(false);
   const playIntentRef = useRef(false);
   const consecutiveRecoveryAttemptsRef = useRef(0);
-  const [resumePosition, setResumePosition] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
-  const storageKey = playbackStorageKey();
+  const playback = usePrivatePlayback(audioRef);
 
   sourceRef.current = source;
 
@@ -134,6 +91,7 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
       const nextSource = await refreshSource(force);
       sourceRef.current = nextSource;
       if (audio.currentSrc !== nextSource.url && audio.src !== nextSource.url) {
+        playback.suppressNextMetadataRestore();
         audio.src = nextSource.url;
         audio.load();
         await waitForMetadata(audio);
@@ -152,47 +110,12 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
       refreshingRef.current = false;
       setRefreshing(false);
     }
-  }, [refreshSource]);
+  }, [playback, refreshSource]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const save = (force = false) => {
-      if (!Number.isFinite(audio.currentTime) || audio.currentTime < RESUME_MIN_SECONDS || audio.ended) return;
-      const now = Date.now();
-      if (!force && now - lastSavedAt.current < SAVE_INTERVAL_MS) return;
-      lastSavedAt.current = now;
-      try {
-        const value: SavedPlaybackState = {
-          position: audio.currentTime,
-          playbackRate: audio.playbackRate,
-          updatedAt: now,
-        };
-        window.localStorage.setItem(storageKey, JSON.stringify(value));
-      } catch {
-        // Playback persistence is a convenience only; player operation must not depend on storage.
-      }
-    };
-
-    const loaded = () => {
-      if (refreshingRef.current) return;
-      const saved = readPlaybackState(storageKey);
-      if (!saved) {
-        setResumePosition(null);
-        return;
-      }
-      audio.playbackRate = saved.playbackRate;
-      if (
-        saved.position >= RESUME_MIN_SECONDS &&
-        Number.isFinite(audio.duration) &&
-        saved.position <= Math.max(0, audio.duration - RESUME_END_GUARD_SECONDS)
-      ) {
-        setResumePosition(saved.position);
-      } else {
-        setResumePosition(null);
-      }
-    };
     const play = () => {
       playIntentRef.current = true;
       if (!refreshingRef.current && isPrivateMediaSourceExpiring(sourceRef.current)) {
@@ -203,20 +126,11 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
       consecutiveRecoveryAttemptsRef.current = 0;
       setPlaybackError(null);
     };
-    const timeUpdate = () => save(false);
     const pause = () => {
-      save(true);
       if (!refreshingRef.current) playIntentRef.current = false;
     };
-    const rateChange = () => save(true);
     const ended = () => {
       playIntentRef.current = false;
-      setResumePosition(null);
-      try {
-        window.localStorage.removeItem(storageKey);
-      } catch {
-        // Ignore storage failures.
-      }
     };
     const mediaError = () => {
       if (refreshingRef.current) return;
@@ -237,30 +151,22 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
       }
     };
 
-    audio.addEventListener("loadedmetadata", loaded);
     audio.addEventListener("play", play);
     audio.addEventListener("playing", playing);
-    audio.addEventListener("timeupdate", timeUpdate);
     audio.addEventListener("pause", pause);
-    audio.addEventListener("ratechange", rateChange);
     audio.addEventListener("ended", ended);
     audio.addEventListener("error", mediaError);
     document.addEventListener("visibilitychange", visibility);
-    if (audio.readyState >= 1) loaded();
 
     return () => {
-      save(true);
-      audio.removeEventListener("loadedmetadata", loaded);
       audio.removeEventListener("play", play);
       audio.removeEventListener("playing", playing);
-      audio.removeEventListener("timeupdate", timeUpdate);
       audio.removeEventListener("pause", pause);
-      audio.removeEventListener("ratechange", rateChange);
       audio.removeEventListener("ended", ended);
       audio.removeEventListener("error", mediaError);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [refreshMedia, storageKey]);
+  }, [refreshMedia]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -269,6 +175,7 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
     const rate = audio.playbackRate;
     const shouldResume = !audio.paused;
     refreshingRef.current = true;
+    playback.suppressNextMetadataRestore();
     audio.src = source.url;
     audio.load();
     void waitForMetadata(audio).then(async () => {
@@ -278,20 +185,16 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
     }).catch(() => undefined).finally(() => {
       refreshingRef.current = false;
     });
-  }, [source.url]);
+  }, [playback, source.url]);
 
   const resume = async () => {
     const audio = audioRef.current;
-    if (!audio || resumePosition === null) return;
+    if (!audio || !playback.prepareResume()) return;
     if (isPrivateMediaSourceExpiring(sourceRef.current)) {
-      audio.currentTime = resumePosition;
-      setResumePosition(null);
       playIntentRef.current = true;
       await refreshMedia(false, true);
       return;
     }
-    audio.currentTime = resumePosition;
-    setResumePosition(null);
     try {
       await audio.play();
     } catch {
@@ -302,13 +205,7 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
   const restart = async () => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.currentTime = 0;
-    setResumePosition(null);
-    try {
-      window.localStorage.removeItem(storageKey);
-    } catch {
-      // Ignore storage failures.
-    }
+    playback.prepareRestart();
     if (isPrivateMediaSourceExpiring(sourceRef.current)) {
       playIntentRef.current = true;
       await refreshMedia(false, true);
@@ -332,12 +229,13 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
           <div className="flex shrink-0 items-center gap-2 text-[11px]">
             {refreshing && <span className="text-cyan-300">正在恢复播放…</span>}
             {!refreshing && playbackError && <span className="max-w-44 truncate text-rose-300 sm:max-w-none">{playbackError}</span>}
-            {resumePosition !== null && !refreshing && (
-              <>
-                <span className="hidden text-slate-500 sm:inline">上次播放到 {formatTime(resumePosition)}</span>
-                <button className="rounded-lg border border-cyan-300/20 bg-cyan-300/[0.08] px-2.5 py-1 text-cyan-200 transition hover:bg-cyan-300/[0.14]" onClick={() => void resume()} type="button">继续</button>
-                <button className="rounded-lg border border-white/10 px-2.5 py-1 text-slate-400 transition hover:text-slate-200" onClick={() => void restart()} type="button">从头</button>
-              </>
+            {playback.resumeState && !refreshing && (
+              <PrivatePlaybackResumePrompt
+                onDismiss={playback.dismissResume}
+                onRestart={() => void restart()}
+                onResume={() => void resume()}
+                position={playback.resumeState.position}
+              />
             )}
           </div>
         </div>
