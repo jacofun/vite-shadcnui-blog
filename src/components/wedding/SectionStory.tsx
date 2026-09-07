@@ -36,18 +36,12 @@ interface SectionStoryProps {
 export default function SectionStory({
   className,
 }: SectionStoryProps): JSX.Element {
-  const isLargeScreen =
-    typeof window !== "undefined" &&
-    window.matchMedia("(min-width: 640px)").matches;
-
   const autoplayPlugin = useRef(
-    isLargeScreen
-      ? undefined
-      : Autoplay({
-          delay: 4000,
-          stopOnInteraction: false,
-          stopOnMouseEnter: false,
-        })
+    Autoplay({
+      delay: 4000,
+      stopOnInteraction: false,
+      stopOnMouseEnter: false,
+    })
   );
 
   const [api, setApi] = useState<CarouselApi | null>(null);
@@ -79,7 +73,7 @@ export default function SectionStory({
       id="story"
       data-section="story"
       className={cn(
-        "relative w-full flex items-center md:max-w-3/4 mx-auto gap-6 flex-col min-h-[50svh] h-auto bg-[#fff1ec] overflow-hidden select-none py-8 [touch-action:auto]",
+        "relative mx-auto flex min-h-[50svh] h-auto w-full flex-col items-center gap-6 overflow-hidden bg-[#fff1ec] py-8 select-none [touch-action:auto]",
         className
       )}
       aria-roledescription="carousel"
@@ -95,7 +89,7 @@ export default function SectionStory({
           viewport={{ once: true, amount: 0.3 }}
           className="w-full space-y-3"
         >
-          <h2 className="text-3xl font-semibold tracking-[0.2em] text-foreground sm:text-4xl">
+          <h2 className="text-3xl font-semibold tracking-[0.2em] text-foreground">
             遇见
           </h2>
           <p className="text-base text-muted-foreground">
@@ -115,31 +109,30 @@ export default function SectionStory({
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
         viewport={{ once: true, amount: 0.3 }}
+        className="w-full"
       >
         <Carousel
           setApi={setApi}
           opts={{ loop: true, align: "center" }}
-          plugins={[
-            ...(autoplayPlugin.current ? [autoplayPlugin.current] : []),
-          ]}
+          plugins={[autoplayPlugin.current]}
           className="relative w-full [touch-action:auto]"
         >
           <CarouselContent className="w-full">
             {slidesFromFolder.map((item, idx) => (
               <CarouselItem
                 key={item.src}
-                className="basis-[85%] w-full max-h-[80svh] sm:basis-[50%] sm:max-w-3/4"
+                className="basis-[85%] w-full max-h-[80svh]"
               >
-                <picture className="inset-0 block h-full w-full sm:cursor-pointer">
+                <picture className="inset-0 block h-full w-full cursor-pointer">
                   <source
                     type="image/webp"
                     srcSet={item.srcSet}
-                    sizes="(min-width: 640px) 50vw, 85vw"
+                    sizes="(min-width: 768px) 366px, 85vw"
                   />
                   <img
                     src={item.src}
                     srcSet={item.srcSet}
-                    sizes="(min-width: 640px) 50vw, 85vw"
+                    sizes="(min-width: 768px) 366px, 85vw"
                     alt={`婚礼故事照片 ${idx + 1}`}
                     className="w-full h-full object-cover block select-none object-center transition-opacity rounded-3xl"
                     draggable={false}
@@ -161,7 +154,7 @@ export default function SectionStory({
                 aria-label={`Go to slide ${index + 1}`}
                 aria-current={index === selected ? "true" : undefined}
                 className={cn(
-                  "h-2.5 w-2.5 rounded-full transition-all sm:cursor-pointer",
+                  "h-2.5 w-2.5 rounded-full transition-all cursor-pointer",
                   index === selected
                     ? "bg-white w-5 opacity-100 scale-100"
                     : "bg-white/60 opacity-70 scale-75 hover:opacity-100"
