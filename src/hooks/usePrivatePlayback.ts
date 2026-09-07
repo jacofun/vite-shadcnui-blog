@@ -98,11 +98,13 @@ export function usePrivatePlayback<T extends HTMLMediaElement>(
     };
 
     const play = () => {
-      if (resumeStateRef.current && media.currentTime < PRIVATE_PLAYBACK_MIN_SECONDS) {
+      if (media.currentTime < PRIVATE_PLAYBACK_MIN_SECONDS) {
+        clearPrivatePlaybackState(storageKey);
         dismissedRef.current = true;
         updateResumeState(null);
       }
     };
+    const timeUpdate = () => save(false);
     const pause = () => save(true);
     const rateChange = () => save(true);
     const ended = () => {
@@ -113,7 +115,7 @@ export function usePrivatePlayback<T extends HTMLMediaElement>(
 
     media.addEventListener("loadedmetadata", loadedMetadata);
     media.addEventListener("play", play);
-    media.addEventListener("timeupdate", save);
+    media.addEventListener("timeupdate", timeUpdate);
     media.addEventListener("pause", pause);
     media.addEventListener("ratechange", rateChange);
     media.addEventListener("ended", ended);
@@ -124,7 +126,7 @@ export function usePrivatePlayback<T extends HTMLMediaElement>(
       save(true);
       media.removeEventListener("loadedmetadata", loadedMetadata);
       media.removeEventListener("play", play);
-      media.removeEventListener("timeupdate", save);
+      media.removeEventListener("timeupdate", timeUpdate);
       media.removeEventListener("pause", pause);
       media.removeEventListener("ratechange", rateChange);
       media.removeEventListener("ended", ended);
