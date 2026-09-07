@@ -59,18 +59,13 @@ export default function HeroCarousel({
   });
 
   const msg = likedMessages[Math.floor(Math.random() * likedMessages.length)];
-  const isLargeScreen =
-    typeof window !== "undefined" &&
-    window.matchMedia("(min-width: 640px)").matches;
   const fadePlugin = useMemo(() => Fade(), []);
   const autoplayPlugin = useRef(
-    isLargeScreen
-      ? undefined
-      : Autoplay({
-          delay: 4000,
-          stopOnInteraction: false,
-          stopOnMouseEnter: false,
-        })
+    Autoplay({
+      delay: 4000,
+      stopOnInteraction: false,
+      stopOnMouseEnter: false,
+    })
   );
   const [api, setApi] = useState<CarouselApi | null>(null);
   const [selected, setSelected] = useState(0);
@@ -96,7 +91,7 @@ export default function HeroCarousel({
   return (
     <section
       className={cn(
-        "relative w-full h-[90svh] sm:h-[60dvh] overflow-hidden select-none md:max-w-3/4 mx-auto",
+        "relative h-[90svh] w-full overflow-hidden select-none",
         className
       )}
       aria-roledescription="carousel"
@@ -104,10 +99,7 @@ export default function HeroCarousel({
       <Carousel
         setApi={setApi}
         opts={{ loop: true, align: "start", duration: 10, dragFree: false }}
-        plugins={[
-          fadePlugin,
-          ...(autoplayPlugin.current ? [autoplayPlugin.current] : []),
-        ]}
+        plugins={[fadePlugin, autoplayPlugin.current]}
         className="select-none absolute inset-0 h-full w-full [touch-action:auto]"
       >
         <div
@@ -122,16 +114,16 @@ export default function HeroCarousel({
         <CarouselContent className="absolute inset-0 w-full h-full ml-0">
           {slidesFromFolder.map((item, idx) => (
             <CarouselItem key={item.src} className="pl-0 h-full w-full basis-full">
-              <picture className="absolute inset-0 block h-full w-full sm:cursor-pointer">
+              <picture className="absolute inset-0 block h-full w-full cursor-pointer">
                 <source
                   type="image/webp"
                   srcSet={item.srcSet}
-                  sizes="(min-width: 768px) 75vw, 100vw"
+                  sizes="(min-width: 768px) 430px, 100vw"
                 />
                 <img
                   src={item.src}
                   srcSet={item.srcSet}
-                  sizes="(min-width: 768px) 75vw, 100vw"
+                  sizes="(min-width: 768px) 430px, 100vw"
                   alt={`婚礼照片 ${idx + 1}`}
                   draggable={false}
                   className="h-full w-full object-cover"
@@ -153,7 +145,7 @@ export default function HeroCarousel({
               aria-label={`Go to slide ${i + 1}`}
               aria-current={i === selected ? "true" : undefined}
               className={cn(
-                "h-2.5 w-2.5 rounded-full transition-all sm:cursor-pointer",
+                "h-2.5 w-2.5 rounded-full transition-all cursor-pointer",
                 i === selected
                   ? "bg-white w-5 opacity-100 scale-100"
                   : "bg-white/60 opacity-70 scale-75 hover:opacity-100"
@@ -165,17 +157,17 @@ export default function HeroCarousel({
 
       <div className="pointer-events-none absolute w-full inset-x-0 bottom-0 z-20 px-8 pb-10 text-white select-none">
         <div className="max-w-xl space-y-5 text-left">
-          <p className="text-xs uppercase tracking-[0.6em] text-white/70 sm:text-sm">
+          <p className="text-xs uppercase tracking-[0.6em] text-white/70">
             Wedding Invitation
           </p>
-          <p className="text-xs uppercase tracking-[0.6em] text-white/70 sm:text-sm">
+          <p className="text-xs uppercase tracking-[0.6em] text-white/70">
             婚礼邀请
           </p>
-          <h1 className="text-2xl font-bold sm:text-5xl">吴彦骁 & 焦芮</h1>
-          <p className="text-base text-white/80 sm:text-lg">
+          <h1 className="text-2xl font-bold">吴彦骁 & 焦芮</h1>
+          <p className="text-base text-white/80">
             我们诚挚邀请您，共同见证一段温暖和喜悦。
           </p>
-          <div className="space-y-2 text-sm text-white/85 sm:text-base">
+          <div className="space-y-2 text-sm text-white/85">
             <div className="flex items-center gap-2">
               <MapPin className="size-4 text-white/70" />
               <span>宁夏吴忠 · 青铜峡宾馆</span>
@@ -187,7 +179,7 @@ export default function HeroCarousel({
           </div>
         </div>
 
-        <div className="py-6 z-40 mx-auto pb-24 sm:pb-28">
+        <div className="py-6 z-40 mx-auto pb-24">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -198,7 +190,7 @@ export default function HeroCarousel({
             <Button
               size="lg"
               variant="secondary"
-              className="bg-white/90 sm:cursor-pointer text-black sm:text-xl select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.90] active:bg-white"
+              className="bg-white/90 cursor-pointer text-black select-none transition-transform focus-visible:ring-white/60 hover:bg-white active:scale-[0.90] active:bg-white"
               onClick={() => {
                 document.getElementById("schedule")?.scrollIntoView({
                   behavior: "smooth",
@@ -213,7 +205,7 @@ export default function HeroCarousel({
               size="lg"
               variant="outline"
               className={cn(
-                "border-white/70 bg-black/30 sm:text-xl sm:cursor-pointer text-white select-none transition-transform active:scale-[0.90] hover:bg-white/50",
+                "border-white/70 bg-black/30 cursor-pointer text-white select-none transition-transform active:scale-[0.90] hover:bg-white/50",
                 liked && "bg-white/20 ring-1 ring-white/50"
               )}
               aria-pressed={liked}

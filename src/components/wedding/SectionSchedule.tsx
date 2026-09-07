@@ -25,7 +25,7 @@ export default function ScheduleSection(): JSX.Element {
       id="schedule"
       data-section="schedule"
       className={cn(
-        "relative w-full flex md:max-w-3/4 mx-auto items-center gap-6 flex-col min-h-screen h-auto bg-[#fff1ec] overflow-hidden select-none py-8 [touch-action:auto]"
+        "relative mx-auto flex min-h-screen h-auto w-full flex-col items-center gap-6 overflow-hidden bg-[#fff1ec] py-8 select-none [touch-action:auto]"
       )}
     >
       <div className="mx-auto text-center items-center w-full max-w-5xl gap-3 px-5">
@@ -39,7 +39,7 @@ export default function ScheduleSection(): JSX.Element {
           viewport={{ once: true, amount: 0.3 }}
           className="w-full space-y-3"
         >
-          <h2 className="text-3xl font-semibold tracking-[0.2em] text-foreground sm:text-4xl">
+          <h2 className="text-3xl font-semibold tracking-[0.2em] text-foreground">
             日程
           </h2>
           <p className="text-base text-muted-foreground">
@@ -61,7 +61,7 @@ export default function ScheduleSection(): JSX.Element {
         <CountdownTimer targetDate={EVENT_START_AT} />
       </motion.div>
 
-      <div className="rounded-3xl border border-border/20 bg-background/100 p-4 w-auto max-w-[45dvh] shadow-sm backdrop-blur">
+      <div className="w-[calc(100%_-_2.5rem)] max-w-[360px] rounded-3xl border border-border/20 bg-background/100 p-4 shadow-sm backdrop-blur">
         <Calendar
           mode="single"
           selected={EVENT_CALENDAR_DATE}
@@ -76,11 +76,11 @@ export default function ScheduleSection(): JSX.Element {
             before: EVENT_CALENDAR_DATE,
             after: EVENT_CALENDAR_DATE,
           }}
-          className="w-full h-full mx-auto"
+          className="mx-auto h-full w-full"
         />
       </div>
 
-      <div className="text-center flex-col flex items-center gap-3">
+      <div className="text-center flex-col flex items-center gap-3 px-5">
         <span className="inline-flex items-center gap-2">
           <MapPin className="size-4 text-bg/10" />
           <p className="text-base uppercase tracking-[0.4em] text-muted-foreground">
@@ -107,13 +107,13 @@ export default function ScheduleSection(): JSX.Element {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         viewport={{ once: true, amount: 0.3 }}
-        className="relative w-full max-w-[40dvh] aspect-[1/1] overflow-hidden rounded-3xl border border-border/40 shadow-sm pointer-events-none"
+        className="relative aspect-square w-[calc(100%_-_2.5rem)] max-w-[360px] overflow-hidden rounded-3xl border border-border/40 shadow-sm pointer-events-none"
       >
         <iframe
           key={iframeKey}
           title="青铜峡宾馆导航"
           src={AMAP_NAV_URL}
-          className="absolute inset-0 w-full h-full border-0 pointer-events-auto"
+          className="absolute inset-0 h-full w-full border-0 pointer-events-auto"
           allowFullScreen
           loading="lazy"
         />

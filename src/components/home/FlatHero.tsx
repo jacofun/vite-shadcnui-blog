@@ -38,7 +38,6 @@ const flatHeroCss = `
 }
 
 .flat-copy,
-.flat-meta,
 .flat-bottom-row {
   transform: translate3d(calc(var(--flat-touch-x) * 0.08), 0, 0);
   transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -133,12 +132,6 @@ const flatHeroCss = `
   color: rgb(51 65 85 / 0.9);
 }
 
-.flat-index-line {
-  width: 52px;
-  height: 1px;
-  background: linear-gradient(90deg, rgb(103 232 249 / 0.52), rgb(103 232 249 / 0));
-}
-
 @keyframes flat-title-flow {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -193,7 +186,6 @@ const flatHeroCss = `
   .flat-stage,
   .flat-grid,
   .flat-copy,
-  .flat-meta,
   .flat-bottom-row,
   .flat-ghost-word,
   .flat-signal {
@@ -294,17 +286,7 @@ export default function FlatHero(): JSX.Element {
       <div aria-hidden="true" className="flat-signal pointer-events-none absolute" />
 
       <div className="flat-stage relative mx-auto flex min-h-[62svh] w-full max-w-6xl flex-col justify-center px-6 pb-10 pt-14 sm:min-h-[620px] sm:px-8 sm:pb-14 lg:px-10">
-        <div className="flat-meta mb-12 flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.2em] text-slate-600 sm:mb-16 sm:text-[10px]">
-          <span>YANXIAO.ME</span>
-          <span>FIELD NOTES / 2018—</span>
-        </div>
-
         <div className="flat-copy relative z-10 max-w-3xl">
-          <div className="mb-5 flex items-center gap-3">
-            <span className="flat-index-line" />
-            <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-cyan-200/65 sm:text-[10px]">PERSONAL NOTES</span>
-          </div>
-
           <h1 className="flat-title whitespace-nowrap text-[clamp(2.65rem,12vw,4.4rem)] font-semibold leading-[0.94] tracking-[-0.06em] text-white sm:text-[clamp(4rem,7vw,6.2rem)]">
             彦骁的<span className="flat-title-accent bg-gradient-to-r from-cyan-200 via-sky-200 to-violet-300 bg-clip-text text-transparent">笔记</span>
           </h1>
