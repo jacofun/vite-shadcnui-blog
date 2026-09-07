@@ -96,6 +96,8 @@ export function usePrivatePlayback(
       updateResumeState(saved);
     };
 
+    const pause = () => save(true);
+    const rateChange = () => save(true);
     const ended = () => {
       clearPrivatePlaybackState(storageKey);
       dismissedRef.current = true;
@@ -104,16 +106,9 @@ export function usePrivatePlayback(
 
     media.addEventListener("loadedmetadata", loadedMetadata);
     media.addEventListener("timeupdate", save);
-    media.addEventListener("pause", () => save(true));
-    media.addEventListener("ratechange", () => save(true));
-    media.addEventListener("ended", ended);
-
-    const pause = () => save(true);
-    const rateChange = () => save(true);
-    media.removeEventListener("pause", pause);
-    media.removeEventListener("ratechange", rateChange);
     media.addEventListener("pause", pause);
     media.addEventListener("ratechange", rateChange);
+    media.addEventListener("ended", ended);
 
     if (media.readyState >= 1) loadedMetadata();
 
