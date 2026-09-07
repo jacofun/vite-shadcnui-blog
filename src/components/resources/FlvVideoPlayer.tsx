@@ -1,6 +1,8 @@
 import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type JSX } from "react";
 
+import PrivatePlaybackResumePrompt from "@/components/resources/PrivatePlaybackResumePrompt";
+import { usePrivatePlayback } from "@/hooks/usePrivatePlayback";
 import {
   isPrivateMediaSourceExpiring,
   type PrivateMediaSource,
@@ -13,6 +15,7 @@ interface Props {
 
 interface PendingRestore {
   position: number;
+  playbackRate: number;
   shouldResume: boolean;
 }
 
@@ -27,6 +30,13 @@ export default function FlvVideoPlayer({ source, refreshSource }: Props): JSX.El
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const {
+    dismissResume,
+    prepareRestart,
+    prepareResume,
+    resumeState,
+    suppressNextMetadataRestore,
+  } = usePrivatePlayback(videoRef);
 
   sourceRef.current = source;
 
@@ -35,6 +45,7 @@ export default function FlvVideoPlayer({ source, refreshSource }: Props): JSX.El
     if (!video || refreshingRef.current) return;
 
     const position = Number.isFinite(video.currentTime) ? video.currentTime : 0;
+    const playbackRate = video.playbackRate;
     const shouldResume = resumeAfterRefresh || !video.paused || playIntentRef.current;
     refreshingRef.current = true;
     setRefreshing(true);
@@ -44,14 +55,16 @@ export default function FlvVideoPlayer({ source, refreshSource }: Props): JSX.El
     try {
       const nextSource = await refreshSource(force);
       sourceRef.current = nextSource;
-      pendingRestoreRef.current = { position, shouldResume };
+      pendingRestoreRef.current = { position, playbackRate, shouldResume };
       if (activeSource.url === nextSource.url) {
         pendingRestoreRef.current = null;
         refreshingRef.current = false;
         setRefreshing(false);
+        video.playbackRate = playbackRate;
         if (shouldResume) await video.play();
         return;
       }
+      suppressNextMetadataRestore();
       setActiveSource(nextSource);
     } catch (refreshError) {
       pendingRestoreRef.current = null;
@@ -60,11 +73,14 @@ export default function FlvVideoPlayer({ source, refreshSource }: Props): JSX.El
       setRefreshing(false);
       setError(refreshError instanceof Error ? refreshError.message : "FLV 播放地址恢复失败");
     }
-  }, [activeSource.url, refreshSource]);
+  }, [activeSource.url, refreshSource, suppressNextMetadataRestore]);
 
   useEffect(() => {
-    if (source.url !== activeSource.url) setActiveSource(source);
-  }, [activeSource.url, source]);
+    if (!refreshingRef.current && source.url !== activeSource.url) {
+      suppressNextMetadataRestore();
+      setActiveSource(source);
+    }
+  }, [activeSource.url, source, suppressNextMetadataRestore]);
 
   useEffect(() => {
     let disposed = false;
@@ -79,6 +95,7 @@ export default function FlvVideoPlayer({ source, refreshSource }: Props): JSX.El
       const pending = pendingRestoreRef.current;
       if (!pending) return;
       pendingRestoreRef.current = null;
+      video.playbackRate = pending.playbackRate;
       if (pending.position > 0) video.currentTime = pending.position;
       if (pending.shouldResume) {
         void video.play().catch(() => {
@@ -103,11 +120,15 @@ export default function FlvVideoPlayer({ source, refreshSource }: Props): JSX.El
     const pause = () => {
       if (!refreshingRef.current) playIntentRef.current = false;
     };
+    const ended = () => {
+      playIntentRef.current = false;
+    };
 
     video.addEventListener("loadedmetadata", loadedMetadata);
     video.addEventListener("play", play);
     video.addEventListener("playing", playing);
     video.addEventListener("pause", pause);
+    video.addEventListener("ended", ended);
 
     void import("mpegts.js").then((module) => {
       if (disposed || !videoRef.current) return;
@@ -155,6 +176,7 @@ export default function FlvVideoPlayer({ source, refreshSource }: Props): JSX.El
       video.removeEventListener("play", play);
       video.removeEventListener("playing", playing);
       video.removeEventListener("pause", pause);
+      video.removeEventListener("ended", ended);
       player?.destroy();
     };
   }, [activeSource.url, refreshMedia]);
@@ -175,10 +197,50 @@ export default function FlvVideoPlayer({ source, refreshSource }: Props): JSX.El
     return () => document.removeEventListener("visibilitychange", visibility);
   }, [refreshMedia]);
 
+  const resume = async () => {
+    const video = videoRef.current;
+    if (!video || !prepareResume()) return;
+    if (isPrivateMediaSourceExpiring(sourceRef.current)) {
+      playIntentRef.current = true;
+      await refreshMedia(false, true);
+      return;
+    }
+    try {
+      await video.play();
+    } catch {
+      // Native controls remain available if programmatic playback is rejected.
+    }
+  };
+
+  const restart = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+    prepareRestart();
+    if (isPrivateMediaSourceExpiring(sourceRef.current)) {
+      playIntentRef.current = true;
+      await refreshMedia(false, true);
+      return;
+    }
+    try {
+      await video.play();
+    } catch {
+      // Native controls remain available if programmatic playback is rejected.
+    }
+  };
+
   return (
     <div className="space-y-3">
       {(loading || refreshing) && <p className="flex items-center gap-2 text-sm text-slate-500"><RefreshCw className="size-4 animate-spin" />{refreshing ? "正在恢复播放…" : "正在加载 FLV 播放器…"}</p>}
       {error && <p className="rounded-xl border border-rose-300/20 bg-rose-300/[0.06] p-4 text-sm text-rose-100">{error}</p>}
+      {resumeState && !refreshing && (
+        <PrivatePlaybackResumePrompt
+          className="justify-end"
+          onDismiss={dismissResume}
+          onRestart={() => void restart()}
+          onResume={() => void resume()}
+          position={resumeState.position}
+        />
+      )}
       <video className="aspect-video w-full rounded-2xl bg-black" controls controlsList="nodownload" onContextMenu={(event) => event.preventDefault()} playsInline ref={videoRef} />
     </div>
   );
