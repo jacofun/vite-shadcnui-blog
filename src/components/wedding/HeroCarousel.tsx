@@ -91,7 +91,7 @@ export default function HeroCarousel({
   return (
     <section
       className={cn(
-        "relative h-[90svh] w-full overflow-hidden select-none",
+        "relative h-[75svh] w-full overflow-hidden select-none",
         className
       )}
       aria-roledescription="carousel"
