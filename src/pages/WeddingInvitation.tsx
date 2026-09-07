@@ -26,8 +26,8 @@ export default function WeddingInvitation(): JSX.Element {
         <meta name="twitter:image" content={config.data.og_image} />
       </Helmet>
 
-      <div className="w-full bg-[#070a12] md:py-8">
-        <section className="mx-auto flex w-full flex-col overflow-hidden bg-[#fff1ec] md:max-w-[430px] md:shadow-[0_24px_80px_rgba(0,0,0,0.30)]">
+      <div className="w-full bg-[#fff1ec]">
+        <section className="mx-auto flex w-full flex-col overflow-hidden bg-[#fff1ec] md:max-w-[430px] md:shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
           <div id="carousel-hero-anchor">
             <HeroCarousel />
           </div>
