@@ -70,7 +70,13 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
   const consecutiveRecoveryAttemptsRef = useRef(0);
   const [refreshing, setRefreshing] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
-  const playback = usePrivatePlayback(audioRef);
+  const {
+    dismissResume,
+    prepareRestart,
+    prepareResume,
+    resumeState,
+    suppressNextMetadataRestore,
+  } = usePrivatePlayback(audioRef);
 
   sourceRef.current = source;
 
@@ -91,7 +97,7 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
       const nextSource = await refreshSource(force);
       sourceRef.current = nextSource;
       if (audio.currentSrc !== nextSource.url && audio.src !== nextSource.url) {
-        playback.suppressNextMetadataRestore();
+        suppressNextMetadataRestore();
         audio.src = nextSource.url;
         audio.load();
         await waitForMetadata(audio);
@@ -110,7 +116,7 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
       refreshingRef.current = false;
       setRefreshing(false);
     }
-  }, [playback, refreshSource]);
+  }, [refreshSource, suppressNextMetadataRestore]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -175,7 +181,7 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
     const rate = audio.playbackRate;
     const shouldResume = !audio.paused;
     refreshingRef.current = true;
-    playback.suppressNextMetadataRestore();
+    suppressNextMetadataRestore();
     audio.src = source.url;
     audio.load();
     void waitForMetadata(audio).then(async () => {
@@ -185,11 +191,11 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
     }).catch(() => undefined).finally(() => {
       refreshingRef.current = false;
     });
-  }, [playback, source.url]);
+  }, [source.url, suppressNextMetadataRestore]);
 
   const resume = async () => {
     const audio = audioRef.current;
-    if (!audio || !playback.prepareResume()) return;
+    if (!audio || !prepareResume()) return;
     if (isPrivateMediaSourceExpiring(sourceRef.current)) {
       playIntentRef.current = true;
       await refreshMedia(false, true);
@@ -205,7 +211,7 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
   const restart = async () => {
     const audio = audioRef.current;
     if (!audio) return;
-    playback.prepareRestart();
+    prepareRestart();
     if (isPrivateMediaSourceExpiring(sourceRef.current)) {
       playIntentRef.current = true;
       await refreshMedia(false, true);
@@ -229,12 +235,12 @@ export default function FixedAudioPlayer({ source, title, refreshSource }: Props
           <div className="flex shrink-0 items-center gap-2 text-[11px]">
             {refreshing && <span className="text-cyan-300">正在恢复播放…</span>}
             {!refreshing && playbackError && <span className="max-w-44 truncate text-rose-300 sm:max-w-none">{playbackError}</span>}
-            {playback.resumeState && !refreshing && (
+            {resumeState && !refreshing && (
               <PrivatePlaybackResumePrompt
-                onDismiss={playback.dismissResume}
+                onDismiss={dismissResume}
                 onRestart={() => void restart()}
                 onResume={() => void resume()}
-                position={playback.resumeState.position}
+                position={resumeState.position}
               />
             )}
           </div>
