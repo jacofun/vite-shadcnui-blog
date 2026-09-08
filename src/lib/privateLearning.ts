@@ -55,10 +55,19 @@ export type PrivateLearningObjectiveQuestion =
   | PrivateLearningChoiceQuestion
   | PrivateLearningFillQuestion;
 
+export interface PrivateLearningSubjectiveQuestion {
+  id: string;
+  type: "comprehension" | "paraphrase" | "application";
+  prompt: string;
+  targetExpression: string;
+  gradingCriteria: string;
+}
+
 export interface PrivateLearningAssessment {
   schemaVersion: 1;
   targetExpressions: PrivateLearningTargetExpression[];
   objectiveQuestions: PrivateLearningObjectiveQuestion[];
+  subjectiveQuestions?: PrivateLearningSubjectiveQuestion[];
   retellingPrompt: string;
   referencePoints: string[];
 }
@@ -106,6 +115,7 @@ function isAssessment(value: unknown): value is PrivateLearningAssessment {
   if (!isRecord(value) || value.schemaVersion !== 1 ||
       !Array.isArray(value.targetExpressions) || value.targetExpressions.length > 12 ||
       !Array.isArray(value.objectiveQuestions) || value.objectiveQuestions.length > 20 ||
+      (value.subjectiveQuestions !== undefined && (!Array.isArray(value.subjectiveQuestions) || value.subjectiveQuestions.length > 6)) ||
       typeof value.retellingPrompt !== "string" ||
       !Array.isArray(value.referencePoints) || !value.referencePoints.every((point) => typeof point === "string")) {
     return false;
@@ -123,7 +133,41 @@ function isAssessment(value: unknown): value is PrivateLearningAssessment {
     return question.type === "fill-blank" && Array.isArray(question.answers) &&
       question.answers.length > 0 && question.answers.every((answer) => typeof answer === "string");
   });
-  return targetsValid && questionsValid;
+  const subjectiveQuestionsValid = value.subjectiveQuestions === undefined || value.subjectiveQuestions.every((question) =>
+    isRecord(question) && typeof question.id === "string" &&
+    ["comprehension", "paraphrase", "application"].includes(String(question.type)) &&
+    typeof question.prompt === "string" && typeof question.targetExpression === "string" &&
+    typeof question.gradingCriteria === "string");
+  return targetsValid && questionsValid && subjectiveQuestionsValid;
+}
+
+export function getSubjectiveQuestions(assessment?: PrivateLearningAssessment | null): PrivateLearningSubjectiveQuestion[] {
+  if (!assessment) return [];
+  if (assessment.subjectiveQuestions?.length) return assessment.subjectiveQuestions;
+  const first = assessment.targetExpressions[0];
+  const second = assessment.targetExpressions[1] ?? first;
+  const questions: PrivateLearningSubjectiveQuestion[] = [{
+    id: "comprehension-1",
+    type: "comprehension",
+    prompt: "Explain the episode's main conclusion and one reason or example that supports it.",
+    targetExpression: "",
+    gradingCriteria: "Award most points for accurate understanding and relevant support from the episode; also assess clarity and grammar.",
+  }];
+  if (first) questions.push({
+    id: "paraphrase-1",
+    type: "paraphrase",
+    prompt: `Rewrite one important idea from the episode in your own words and use “${first.expression}” naturally.`,
+    targetExpression: first.expression,
+    gradingCriteria: "Assess preservation of the episode's meaning, accurate use of the target expression, naturalness and grammar.",
+  });
+  if (second) questions.push({
+    id: "application-1",
+    type: "application",
+    prompt: `Use “${second.expression}” in a complete sentence about your work, study or daily life.`,
+    targetExpression: second.expression,
+    gradingCriteria: "Assess whether the target expression fits the new context, collocation, completeness and grammar.",
+  });
+  return questions;
 }
 
 export async function fetchPrivateLearningIndex(

@@ -159,7 +159,7 @@ test("validates lesson assessments and scores objective answers consistently", (
     "choice-1": "a",
     "fill-1": " Rule of thumb. ",
   });
-  assert.equal(score.score, 60);
+  assert.equal(score.score, 30);
   assert.equal(score.correct, 2);
   assert.deepEqual(score.results, [
     { questionId: "choice-1", correct: true },
@@ -184,6 +184,30 @@ test("validates model grading ranges and computes the authoritative total", () =
   assert.throws(() => __test.validateModelGrading({ ...grading, contentScore: 17 }), /invalid score/);
 });
 
+test("validates subjective grading and derives compatible questions for older lessons", () => {
+  const assessment = __test.validateAssessmentDefinition({
+    schemaVersion: 1,
+    targetExpressions: [{ expression: "rule of thumb", meaning: "实用经验法则", usage: "Use it for a practical guideline." }],
+    objectiveQuestions: [],
+    retellingPrompt: "Retell the main ideas.",
+    referencePoints: ["Explain the main conclusion."],
+  });
+  assert.deepEqual(assessment.subjectiveQuestions.map(({ id, type }) => ({ id, type })), [
+    { id: "comprehension-1", type: "comprehension" },
+    { id: "paraphrase-1", type: "paraphrase" },
+    { id: "application-1", type: "application" },
+  ]);
+  const grading = __test.validateSubjectiveModelGrading({
+    score: 8,
+    summary: "Accurate and clear.",
+    strengths: ["The expression fits the context."],
+    improvements: ["Add one supporting detail."],
+    revisedAnswer: "As a rule of thumb, allow extra time for deployment checks.",
+  });
+  assert.equal(grading.maxScore, 10);
+  assert.throws(() => __test.validateSubjectiveModelGrading({ ...grading, score: 11 }), /invalid subjective feedback/);
+});
+
 test("completes challenge, passkey verification, session lookup and resource signing", async () => {
   const env = createEnv({
     DASHSCOPE_API_KEY: "test-api-key",
@@ -196,7 +220,20 @@ test("completes challenge, passkey verification, session lookup and resource sig
         schemaVersion: 1,
         episodeId: "260827-how-do-we-describe-smells",
         title: "How do we describe smells?",
-        assessment: null,
+        assessment: {
+          schemaVersion: 1,
+          targetExpressions: [{ expression: "shared vocabulary", meaning: "共同词汇", usage: "Use it when people rely on common terms." }],
+          objectiveQuestions: [],
+          subjectiveQuestions: [{
+            id: "comprehension-1",
+            type: "comprehension",
+            prompt: "Why is shared vocabulary useful?",
+            targetExpression: "shared vocabulary",
+            gradingCriteria: "Assess accurate understanding, support, clarity and grammar.",
+          }],
+          retellingPrompt: "Retell the main ideas.",
+          referencePoints: ["Shared words help people communicate smells."],
+        },
       };
       return assessmentObjects.has(path) ? structuredClone(assessmentObjects.get(path)) : structuredClone(missing);
     },
@@ -239,9 +276,18 @@ test("completes challenge, passkey verification, session lookup and resource sig
     fetchImpl: async (url, options) => {
       assert.equal(url, "https://dashscope.example/v1/chat/completions");
       assert.equal(options.headers.Authorization, "Bearer test-api-key");
+      const requestBody = JSON.parse(options.body);
+      const subjective = requestBody.response_format.json_schema.name === "english_subjective_assessment";
       return {
         ok: true,
         async json() {
+          if (subjective) return { choices: [{ message: { content: JSON.stringify({
+            score: 8,
+            summary: "Accurate and clear.",
+            strengths: ["The main reason is correct."],
+            improvements: ["Add a concrete example."],
+            revisedAnswer: "Shared vocabulary helps people describe smells consistently and understand one another.",
+          }) } }] };
           return { choices: [{ message: { content: JSON.stringify({
             contentScore: 13,
             organizationScore: 6,
@@ -327,6 +373,49 @@ test("completes challenge, passkey verification, session lookup and resource sig
   }));
   assert.equal(latestResponse.statusCode, 200);
   assert.equal(responseJson(latestResponse).result.attemptId, "attempt-123456789");
+
+  const subjectiveResponse = await handler(request({
+    method: "POST",
+    path: "/api/private-auth/assessment/grade",
+    cookie: sessionCookie,
+    csrf: verifyBody.csrfToken,
+    body: {
+      submissionType: "subjective",
+      episodeId: "260827-how-do-we-describe-smells",
+      questionId: "comprehension-1",
+      attemptId: "subjective-123456789",
+      answer: "Shared vocabulary gives people common terms for describing smells clearly.",
+    },
+  }));
+  assert.equal(subjectiveResponse.statusCode, 200);
+  assert.equal(responseJson(subjectiveResponse).grading.score, 8);
+  assert.equal(responseJson(subjectiveResponse).attemptNumber, 1);
+
+  const secondSubjectiveResponse = await handler(request({
+    method: "POST",
+    path: "/api/private-auth/assessment/grade",
+    cookie: sessionCookie,
+    csrf: verifyBody.csrfToken,
+    body: {
+      submissionType: "subjective",
+      episodeId: "260827-how-do-we-describe-smells",
+      questionId: "comprehension-1",
+      attemptId: "subjective-987654321",
+      answer: "A shared vocabulary supplies common labels, so different people can compare and communicate smells more clearly.",
+    },
+  }));
+  assert.equal(responseJson(secondSubjectiveResponse).attemptNumber, 2);
+  assert.equal(responseJson(secondSubjectiveResponse).highestScore, 8);
+  assert.equal(responseJson(secondSubjectiveResponse).scoreDelta, 0);
+
+  const latestSubjectiveResponse = await handler(request({
+    method: "POST",
+    path: "/api/private-auth/assessment/result",
+    cookie: sessionCookie,
+    csrf: verifyBody.csrfToken,
+    body: { episodeId: "260827-how-do-we-describe-smells", questionId: "comprehension-1" },
+  }));
+  assert.equal(responseJson(latestSubjectiveResponse).result.attemptId, "subjective-987654321");
 });
 
 test("rejects direct origin access, invalid CSRF and arbitrary episode paths", async () => {

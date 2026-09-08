@@ -56,6 +56,39 @@ export interface EnglishAssessmentResult {
   model: string;
   rubricVersion: string;
   grading: EnglishAssessmentGrading;
+  attemptNumber?: number;
+  highestScore?: number;
+  previousScore?: number | null;
+  scoreDelta?: number | null;
+}
+
+export interface EnglishSubjectiveAssessmentGrading {
+  score: number;
+  maxScore: 10;
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+  revisedAnswer: string;
+}
+
+export interface EnglishSubjectiveAssessmentResult {
+  schemaVersion: 1;
+  status: "completed";
+  submissionType: "subjective";
+  attemptId: string;
+  episodeId: string;
+  questionId: string;
+  questionType: "comprehension" | "paraphrase" | "application";
+  submittedAt: string;
+  completedAt: string;
+  answer: string;
+  model: string;
+  rubricVersion: string;
+  attemptNumber: number;
+  highestScore: number;
+  previousScore: number | null;
+  scoreDelta: number | null;
+  grading: EnglishSubjectiveAssessmentGrading;
 }
 
 export interface PrivateResourceUploadFile {
@@ -266,6 +299,23 @@ export function gradeEnglishRetelling(
   });
 }
 
+export function gradeEnglishSubjectiveAnswer(
+  session: PrivateAuthSession,
+  body: {
+    episodeId: string;
+    questionId: string;
+    attemptId: string;
+    answer: string;
+  },
+  signal?: AbortSignal,
+): Promise<EnglishSubjectiveAssessmentResult> {
+  return request<EnglishSubjectiveAssessmentResult>("assessment/grade", {
+    body: { ...body, submissionType: "subjective" },
+    csrfToken: session.csrfToken,
+    signal,
+  });
+}
+
 export function getLatestEnglishAssessment(
   session: PrivateAuthSession,
   episodeId: string,
@@ -273,6 +323,19 @@ export function getLatestEnglishAssessment(
 ): Promise<{ result: EnglishAssessmentResult | null }> {
   return request("assessment/result", {
     body: { episodeId },
+    csrfToken: session.csrfToken,
+    signal,
+  });
+}
+
+export function getLatestEnglishSubjectiveAssessment(
+  session: PrivateAuthSession,
+  episodeId: string,
+  questionId: string,
+  signal?: AbortSignal,
+): Promise<{ result: EnglishSubjectiveAssessmentResult | null }> {
+  return request("assessment/result", {
+    body: { episodeId, questionId },
     csrfToken: session.csrfToken,
     signal,
   });

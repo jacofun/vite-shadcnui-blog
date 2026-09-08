@@ -1112,11 +1112,42 @@ function normalizeObjectiveAnswer(value) {
     .replace(/\s+/gu, " ");
 }
 
+const SUBJECTIVE_QUESTION_TYPES = new Set(["comprehension", "paraphrase", "application"]);
+
+function fallbackSubjectiveQuestions(assessment) {
+  if (!assessment) return [];
+  const first = assessment.targetExpressions[0];
+  const second = assessment.targetExpressions[1] || first;
+  const questions = [{
+    id: "comprehension-1",
+    type: "comprehension",
+    prompt: "Explain the episode's main conclusion and one reason or example that supports it.",
+    targetExpression: "",
+    gradingCriteria: "Award most points for accurate understanding and relevant support from the episode; also assess clarity and grammar.",
+  }];
+  if (first) questions.push({
+    id: "paraphrase-1",
+    type: "paraphrase",
+    prompt: `Rewrite one important idea from the episode in your own words and use “${first.expression}” naturally.`,
+    targetExpression: first.expression,
+    gradingCriteria: "Assess preservation of the episode's meaning, accurate use of the target expression, naturalness and grammar.",
+  });
+  if (second) questions.push({
+    id: "application-1",
+    type: "application",
+    prompt: `Use “${second.expression}” in a complete sentence about your work, study or daily life.`,
+    targetExpression: second.expression,
+    gradingCriteria: "Assess whether the target expression fits the new context, collocation, completeness and grammar.",
+  });
+  return questions;
+}
+
 function validateAssessmentDefinition(value) {
   if (value === undefined || value === null) return null;
   if (!value || typeof value !== "object" || Array.isArray(value) || value.schemaVersion !== 1 ||
       !Array.isArray(value.targetExpressions) || value.targetExpressions.length > 12 ||
       !Array.isArray(value.objectiveQuestions) || value.objectiveQuestions.length > 20 ||
+      (value.subjectiveQuestions !== undefined && (!Array.isArray(value.subjectiveQuestions) || value.subjectiveQuestions.length > 6)) ||
       !Array.isArray(value.referencePoints) || value.referencePoints.length > 12 ||
       typeof value.retellingPrompt !== "string" || !value.retellingPrompt.trim() || value.retellingPrompt.length > 1000) {
     throw new HttpError(503, "INVALID_ASSESSMENT_DEFINITION", "Episode assessment is invalid");
@@ -1161,12 +1192,32 @@ function validateAssessmentDefinition(value) {
     }
     return { ...normalized, answers: question.answers.map((answer) => answer.trim()) };
   });
-  return {
+  const subjectiveQuestions = (value.subjectiveQuestions || []).map((question) => {
+    if (!question || typeof question !== "object" || Array.isArray(question) ||
+        typeof question.id !== "string" || !EPISODE_ID_PATTERN.test(question.id) || ids.has(question.id) ||
+        !SUBJECTIVE_QUESTION_TYPES.has(question.type)) {
+      throw new HttpError(503, "INVALID_ASSESSMENT_DEFINITION", "Episode assessment is invalid");
+    }
+    ids.add(question.id);
+    return {
+      id: question.id,
+      type: question.type,
+      prompt: assessmentText(question.prompt, "prompt", 1000),
+      targetExpression: assessmentText(question.targetExpression, "targetExpression", 160, { required: false }),
+      gradingCriteria: assessmentText(question.gradingCriteria, "gradingCriteria", 1000),
+    };
+  });
+  const normalizedAssessment = {
     schemaVersion: 1,
     targetExpressions,
     objectiveQuestions,
+    subjectiveQuestions,
     retellingPrompt: value.retellingPrompt.trim(),
     referencePoints: value.referencePoints.map((point) => assessmentText(point, "referencePoint", 500)),
+  };
+  return {
+    ...normalizedAssessment,
+    subjectiveQuestions: subjectiveQuestions.length ? subjectiveQuestions : fallbackSubjectiveQuestions(normalizedAssessment),
   };
 }
 
@@ -1184,8 +1235,8 @@ function gradeObjectiveAnswers(assessment, submittedAnswers) {
   });
   const correct = results.filter((item) => item.correct).length;
   return {
-    score: questions.length ? Math.round(correct / questions.length * 60) : 0,
-    maxScore: questions.length ? 60 : 0,
+    score: questions.length ? Math.round(correct / questions.length * 30) : 0,
+    maxScore: questions.length ? 30 : 0,
     correct,
     total: questions.length,
     results,
@@ -1251,6 +1302,19 @@ const assessmentResponseSchema = {
   },
 };
 
+const subjectiveAssessmentResponseSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["score", "summary", "strengths", "improvements", "revisedAnswer"],
+  properties: {
+    score: { type: "integer", minimum: 0, maximum: 10 },
+    summary: { type: "string" },
+    strengths: { type: "array", maxItems: 3, items: { type: "string" } },
+    improvements: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" } },
+    revisedAnswer: { type: "string" },
+  },
+};
+
 function validateModelGrading(value) {
   const scoreFields = { contentScore: 16, organizationScore: 8, grammarScore: 8, expressionScore: 8 };
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -1294,16 +1358,38 @@ function validateModelGrading(value) {
   };
 }
 
-async function requestAssessmentGrading({ modelConfig, episode, transcript, assessment, retelling, fetchImpl }) {
+function validateSubjectiveModelGrading(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value) ||
+      !Number.isInteger(value.score) || value.score < 0 || value.score > 10 ||
+      typeof value.summary !== "string" || !value.summary.trim() || value.summary.length > 2000 ||
+      typeof value.revisedAnswer !== "string") {
+    throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", "Assessment model returned invalid subjective feedback");
+  }
+  const stringArray = (field, max, min = 0) => {
+    const items = value[field];
+    if (!Array.isArray(items) || items.length < min || items.length > max ||
+        items.some((item) => typeof item !== "string" || !item.trim() || item.length > 1500)) {
+      throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", `Assessment model returned invalid ${field}`);
+    }
+    return items.map((item) => item.trim());
+  };
+  const revisedAnswer = value.revisedAnswer.trim();
+  if (!revisedAnswer || revisedAnswer.length > 4000) {
+    throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", "Assessment model returned invalid revisedAnswer");
+  }
+  return {
+    score: value.score,
+    maxScore: 10,
+    summary: value.summary.trim(),
+    strengths: stringArray("strengths", 3),
+    improvements: stringArray("improvements", 3, 1),
+    revisedAnswer,
+  };
+}
+
+async function requestAssessmentModel({ modelConfig, schemaName, schema, system, prompt, validate, fetchImpl }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), modelConfig.timeoutMs);
-  const prompt = [
-    `Episode title: ${episode.title}`,
-    `Reference transcript:\n${transcript.slice(0, 30_000)}`,
-    `Expected content points:\n${(assessment?.referencePoints || []).map((point) => `- ${point}`).join("\n") || "Infer the essential points from the transcript."}`,
-    `Target expressions:\n${(assessment?.targetExpressions || []).map((item) => `- ${item.expression}: ${item.meaning}`).join("\n") || "Evaluate natural, reusable English expressions."}`,
-    `Learner retelling:\n${retelling}`,
-  ].join("\n\n");
   let response;
   try {
     response = await fetchImpl(modelConfig.endpoint, {
@@ -1315,10 +1401,10 @@ async function requestAssessmentGrading({ modelConfig, episode, transcript, asse
         temperature: 0.2,
         response_format: {
           type: "json_schema",
-          json_schema: { name: "english_retelling_assessment", strict: true, schema: assessmentResponseSchema },
+          json_schema: { name: schemaName, strict: true, schema },
         },
         messages: [
-          { role: "system", content: "You are a strict but constructive English teacher. Grade an IELTS 6 learner aiming for 7. Focus on accurate comprehension, clear retelling, grammar, and natural reusable expressions. Do not reward copied wording mechanically. Return only the requested JSON. Feedback may be in concise Chinese; examples and corrections must be in English." },
+          { role: "system", content: system },
           { role: "user", content: prompt },
         ],
       }),
@@ -1331,24 +1417,94 @@ async function requestAssessmentGrading({ modelConfig, episode, transcript, asse
     clearTimeout(timeout);
   }
   if (!response.ok) throw new HttpError(502, "ASSESSMENT_MODEL_ERROR", "Assessment model request failed");
-  let payload;
   try {
-    payload = await response.json();
+    const payload = await response.json();
     const content = payload?.choices?.[0]?.message?.content;
-    return validateModelGrading(typeof content === "string" ? JSON.parse(content) : content);
+    return validate(typeof content === "string" ? JSON.parse(content) : content);
   } catch (error) {
     if (error instanceof HttpError) throw error;
     throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", "Assessment model returned invalid JSON");
   }
 }
 
-function assessmentPaths(storagePrefix, user, episodeId, attemptId, nowSeconds) {
+async function requestAssessmentGrading({ modelConfig, episode, transcript, assessment, retelling, fetchImpl }) {
+  const prompt = [
+    `Episode title: ${episode.title}`,
+    `Reference transcript:\n${transcript.slice(0, 30_000)}`,
+    `Expected content points:\n${(assessment?.referencePoints || []).map((point) => `- ${point}`).join("\n") || "Infer the essential points from the transcript."}`,
+    `Target expressions:\n${(assessment?.targetExpressions || []).map((item) => `- ${item.expression}: ${item.meaning}`).join("\n") || "Evaluate natural, reusable English expressions."}`,
+    `Learner retelling:\n${retelling}`,
+  ].join("\n\n");
+  return requestAssessmentModel({
+    modelConfig,
+    schemaName: "english_retelling_assessment",
+    schema: assessmentResponseSchema,
+    system: "You are a strict but constructive English teacher. Grade an IELTS 6 learner aiming for 7. Focus on accurate comprehension, clear retelling, grammar, and natural reusable expressions. Do not reward copied wording mechanically. Return only the requested JSON. Feedback may be in concise Chinese; examples and corrections must be in English.",
+    prompt,
+    validate: validateModelGrading,
+    fetchImpl,
+  });
+}
+
+async function requestSubjectiveAssessmentGrading({ modelConfig, episode, transcript, assessment, question, answer, fetchImpl }) {
+  const target = assessment.targetExpressions.find((item) => item.expression === question.targetExpression);
+  const prompt = [
+    `Episode title: ${episode.title}`,
+    `Question type: ${question.type}`,
+    `Question: ${question.prompt}`,
+    `Grading criteria: ${question.gradingCriteria}`,
+    question.targetExpression ? `Target expression: ${question.targetExpression}${target ? ` — ${target.meaning}. ${target.usage}` : ""}` : "",
+    `Reference transcript:\n${transcript.slice(0, 30_000)}`,
+    `Expected content points:\n${assessment.referencePoints.map((point) => `- ${point}`).join("\n") || "Use the transcript as the source of truth."}`,
+    `Learner answer:\n${answer}`,
+  ].filter(Boolean).join("\n\n");
+  return requestAssessmentModel({
+    modelConfig,
+    schemaName: "english_subjective_assessment",
+    schema: subjectiveAssessmentResponseSchema,
+    system: "You are a strict but constructive English teacher grading one short-answer exercise for an IELTS 6 learner aiming for 7. Follow the supplied question-specific criteria. For comprehension and paraphrase, treat the transcript as the source of truth. For application, judge whether the target expression is natural in the learner's new context. Return only the requested JSON. Feedback may be concise Chinese; the revised answer must be English.",
+    prompt,
+    validate: validateSubjectiveModelGrading,
+    fetchImpl,
+  });
+}
+
+function assessmentPaths(storagePrefix, user, episodeId, attemptId, nowSeconds, questionId = "") {
   const userKey = createHash("sha256").update(user.id).digest("hex").slice(0, 32);
   const prefix = `${storagePrefix}/${userKey}`;
+  const resultPrefix = questionId
+    ? `${prefix}/${episodeId}/questions/${questionId}`
+    : `${prefix}/${episodeId}`;
   return {
-    attempt: `${prefix}/${episodeId}/${attemptId}.json`,
-    latest: `${prefix}/${episodeId}/latest.json`,
+    attempt: `${resultPrefix}/${attemptId}.json`,
+    latest: `${resultPrefix}/latest.json`,
     quota: `${prefix}/quota/${new Date(nowSeconds * 1000).toISOString().slice(0, 10)}.json`,
+  };
+}
+
+async function consumeAssessmentQuota(contentStore, path, dailyLimit) {
+  await contentStore.updateJson(path, {
+    missing: { schemaVersion: 1, count: 0 },
+    validate: (value) => value?.schemaVersion === 1 && Number.isSafeInteger(value.count) && value.count >= 0,
+  }, (quota) => {
+    if (quota.count >= dailyLimit) {
+      throw new HttpError(429, "ASSESSMENT_DAILY_LIMIT", "Daily assessment limit reached");
+    }
+    quota.count += 1;
+    return quota;
+  });
+}
+
+function assessmentHistory(previous, score) {
+  const previousScore = Number.isInteger(previous?.grading?.totalScore)
+    ? previous.grading.totalScore
+    : Number.isInteger(previous?.grading?.score) ? previous.grading.score : null;
+  const previousHighest = Number.isInteger(previous?.highestScore) ? previous.highestScore : previousScore;
+  return {
+    attemptNumber: Number.isInteger(previous?.attemptNumber) ? previous.attemptNumber + 1 : previous ? 2 : 1,
+    highestScore: Math.max(score, previousHighest ?? score),
+    previousScore,
+    scoreDelta: previousScore === null ? null : score - previousScore,
   };
 }
 
@@ -1358,18 +1514,16 @@ async function handleEnglishAssessment({ route, body, user, config, contentStore
   const episodeId = assessmentText(body.episodeId, "episodeId", 100);
   if (!EPISODE_ID_PATTERN.test(episodeId)) throw new HttpError(400, "INVALID_EPISODE_ID", "episodeId is invalid");
   if (route === "assessment/result") {
-    const { latest } = assessmentPaths(loadAssessmentStoragePrefix(env), user, episodeId, "latest", nowSeconds);
+    const questionId = body.questionId === undefined ? "" : assessmentText(body.questionId, "questionId", 100);
+    if (questionId && !EPISODE_ID_PATTERN.test(questionId)) throw new HttpError(400, "INVALID_ASSESSMENT", "questionId is invalid");
+    const { latest } = assessmentPaths(loadAssessmentStoragePrefix(env), user, episodeId, "latest", nowSeconds, questionId);
     return { result: await contentStore.readJson(latest, { missing: null }) };
   }
   const modelConfig = loadAssessmentModelConfig(env);
   const attemptId = assessmentText(body.attemptId, "attemptId", 64);
   if (!ASSESSMENT_ATTEMPT_PATTERN.test(attemptId)) throw new HttpError(400, "INVALID_ASSESSMENT", "attemptId is invalid");
-  const retelling = assessmentText(body.retelling, "retelling", 6000);
-  const wordCount = retelling.match(/[A-Za-z]+(?:['’-][A-Za-z]+)*/gu)?.length || 0;
-  if (wordCount < 30 || wordCount > 800) throw new HttpError(400, "INVALID_RETELLING_LENGTH", "Retelling must contain 30 to 800 English words");
-  if (body.objectiveAnswers !== undefined && (!body.objectiveAnswers || typeof body.objectiveAnswers !== "object" || Array.isArray(body.objectiveAnswers) || Object.keys(body.objectiveAnswers).length > 20 || Object.values(body.objectiveAnswers).some((answer) => typeof answer !== "string" || answer.length > 500))) {
-    throw new HttpError(400, "INVALID_ASSESSMENT", "objectiveAnswers is invalid");
-  }
+  const submissionType = body.submissionType === undefined ? "retelling" : body.submissionType;
+  if (!["retelling", "subjective"].includes(submissionType)) throw new HttpError(400, "INVALID_ASSESSMENT", "submissionType is invalid");
   const episodePath = `${config.privatePrefix}/${episodeId}`;
   const [episode, transcript] = await Promise.all([
     contentStore.readJson(`${episodePath}/metadata.json`),
@@ -1379,6 +1533,53 @@ async function handleEnglishAssessment({ route, body, user, config, contentStore
     throw new HttpError(503, "INVALID_EPISODE", "Episode content is invalid");
   }
   const assessment = validateAssessmentDefinition(episode.assessment);
+  if (submissionType === "subjective") {
+    if (!assessment) throw new HttpError(404, "ASSESSMENT_QUESTION_NOT_FOUND", "Subjective question was not found");
+    const questionId = assessmentText(body.questionId, "questionId", 100);
+    if (!EPISODE_ID_PATTERN.test(questionId)) throw new HttpError(400, "INVALID_ASSESSMENT", "questionId is invalid");
+    const question = assessment.subjectiveQuestions.find((item) => item.id === questionId);
+    if (!question) throw new HttpError(404, "ASSESSMENT_QUESTION_NOT_FOUND", "Subjective question was not found");
+    const answer = assessmentText(body.answer, "answer", 4000);
+    const wordCount = answer.match(/[A-Za-z]+(?:['’-][A-Za-z]+)*/gu)?.length || 0;
+    if (wordCount < 3 || wordCount > 500) throw new HttpError(400, "INVALID_SUBJECTIVE_ANSWER_LENGTH", "Answer must contain 3 to 500 English words");
+    const paths = assessmentPaths(modelConfig.storagePrefix, user, episodeId, attemptId, nowSeconds, questionId);
+    const contentHash = createHash("sha256").update(answer).digest("hex");
+    const existing = await contentStore.readJson(paths.attempt, { missing: null });
+    if (existing) {
+      if (existing.contentHash !== contentHash) throw new HttpError(409, "ATTEMPT_ID_CONFLICT", "attemptId has already been used");
+      if (existing.status === "completed") return existing;
+      if (existing.status === "grading") throw new HttpError(409, "ASSESSMENT_IN_PROGRESS", "Assessment is already in progress");
+    }
+    await consumeAssessmentQuota(contentStore, paths.quota, modelConfig.dailyLimit);
+    const previous = await contentStore.readJson(paths.latest, { missing: null });
+    const submittedAt = existing?.submittedAt || new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
+    const pending = { schemaVersion: 1, status: "grading", submissionType, attemptId, episodeId, questionId, questionType: question.type, submittedAt, contentHash, answer };
+    await contentStore.putJson(paths.attempt, pending);
+    try {
+      const grading = await requestSubjectiveAssessmentGrading({ modelConfig, episode, transcript, assessment, question, answer, fetchImpl });
+      const completed = {
+        ...pending,
+        status: "completed",
+        completedAt: new Date().toISOString(),
+        model: modelConfig.model,
+        rubricVersion: "short-answer-v1",
+        grading,
+        ...assessmentHistory(previous, grading.score),
+      };
+      await contentStore.putJson(paths.attempt, completed);
+      await contentStore.putJson(paths.latest, completed);
+      return completed;
+    } catch (error) {
+      await contentStore.putJson(paths.attempt, { ...pending, status: "failed", failedAt: new Date().toISOString(), errorCode: error instanceof HttpError ? error.code : "INTERNAL_ERROR" });
+      throw error;
+    }
+  }
+  const retelling = assessmentText(body.retelling, "retelling", 6000);
+  const wordCount = retelling.match(/[A-Za-z]+(?:['’-][A-Za-z]+)*/gu)?.length || 0;
+  if (wordCount < 30 || wordCount > 800) throw new HttpError(400, "INVALID_RETELLING_LENGTH", "Retelling must contain 30 to 800 English words");
+  if (body.objectiveAnswers !== undefined && (!body.objectiveAnswers || typeof body.objectiveAnswers !== "object" || Array.isArray(body.objectiveAnswers) || Object.keys(body.objectiveAnswers).length > 20 || Object.values(body.objectiveAnswers).some((answer) => typeof answer !== "string" || answer.length > 500))) {
+    throw new HttpError(400, "INVALID_ASSESSMENT", "objectiveAnswers is invalid");
+  }
   const objective = gradeObjectiveAnswers(assessment, body.objectiveAnswers);
   const paths = assessmentPaths(modelConfig.storagePrefix, user, episodeId, attemptId, nowSeconds);
   const contentHash = createHash("sha256").update(retelling).digest("hex");
@@ -1388,18 +1589,10 @@ async function handleEnglishAssessment({ route, body, user, config, contentStore
     if (existing.status === "completed") return existing;
     if (existing.status === "grading") throw new HttpError(409, "ASSESSMENT_IN_PROGRESS", "Assessment is already in progress");
   }
-  await contentStore.updateJson(paths.quota, {
-    missing: { schemaVersion: 1, count: 0 },
-    validate: (value) => value?.schemaVersion === 1 && Number.isSafeInteger(value.count) && value.count >= 0,
-  }, (quota) => {
-    if (quota.count >= modelConfig.dailyLimit) {
-      throw new HttpError(429, "ASSESSMENT_DAILY_LIMIT", "Daily assessment limit reached");
-    }
-    quota.count += 1;
-    return quota;
-  });
+  await consumeAssessmentQuota(contentStore, paths.quota, modelConfig.dailyLimit);
+  const previous = await contentStore.readJson(paths.latest, { missing: null });
   const submittedAt = existing?.submittedAt || new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
-  const pending = { schemaVersion: 1, status: "grading", attemptId, episodeId, submittedAt, contentHash, retelling, objective };
+  const pending = { schemaVersion: 1, status: "grading", submissionType: "retelling", attemptId, episodeId, submittedAt, contentHash, retelling, objective };
   await contentStore.putJson(paths.attempt, pending);
   try {
     const grading = await requestAssessmentGrading({ modelConfig, episode, transcript, assessment, retelling, fetchImpl });
@@ -1410,6 +1603,7 @@ async function handleEnglishAssessment({ route, body, user, config, contentStore
       model: modelConfig.model,
       rubricVersion: modelConfig.rubricVersion,
       grading,
+      ...assessmentHistory(previous, grading.totalScore),
     };
     await contentStore.putJson(paths.attempt, completed);
     await contentStore.putJson(paths.latest, completed);
@@ -2523,6 +2717,7 @@ export const handler = createHandler();
 
 export const __test = {
   assessmentResponseSchema,
+  subjectiveAssessmentResponseSchema,
   decryptToken,
   encryptToken,
   gradeObjectiveAnswers,
@@ -2533,5 +2728,6 @@ export const __test = {
   signedResources,
   validateAssessmentDefinition,
   validateModelGrading,
+  validateSubjectiveModelGrading,
   validMediaHeader,
 };

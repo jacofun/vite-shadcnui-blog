@@ -37,6 +37,29 @@ offers AI retelling feedback without objective questions.
         "explanation": "The complete fixed phrase is 'as a rule of thumb'."
       }
     ],
+    "subjectiveQuestions": [
+      {
+        "id": "comprehension-1",
+        "type": "comprehension",
+        "prompt": "Explain the episode's main conclusion and one reason or example that supports it.",
+        "targetExpression": "",
+        "gradingCriteria": "Award most points for accurate understanding and relevant support from the episode; also assess clarity and grammar."
+      },
+      {
+        "id": "paraphrase-1",
+        "type": "paraphrase",
+        "prompt": "Rewrite one important idea from the episode and use ‘rule of thumb’ naturally.",
+        "targetExpression": "rule of thumb",
+        "gradingCriteria": "Assess preservation of meaning, accurate use of the target expression, naturalness and grammar."
+      },
+      {
+        "id": "application-1",
+        "type": "application",
+        "prompt": "Use ‘rule of thumb’ in a sentence about your work, study or daily life.",
+        "targetExpression": "rule of thumb",
+        "gradingCriteria": "Assess whether the expression fits the new context, collocation, completeness and grammar."
+      }
+    ],
     "retellingPrompt": "Retell the main argument in 80–150 words. Include the conclusion and use at least two target expressions naturally.",
     "referencePoints": [
       "The speakers introduce the main question.",
@@ -51,3 +74,8 @@ Prefer 4–8 objective questions and 3–6 target expressions. Questions should 
 collocation, context and paraphrase rather than easy factual recall. Include accepted spelling or
 contraction variants in `answers`; frontend and backend comparison ignores case, repeated spaces,
 curly apostrophe variants and terminal punctuation.
+
+Add one subjective question of each type: `comprehension`, `paraphrase` and `application`. Each is
+submitted and graded independently out of 10. Keep answers focused enough for roughly 20–80 words.
+Older assessment payloads may omit `subjectiveQuestions`; the application derives compatible
+questions from the episode reference points and first two target expressions.

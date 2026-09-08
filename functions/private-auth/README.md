@@ -246,8 +246,8 @@ All paths are relative to `/api/private-auth/`.
 | `POST files/delete` | Remove an indexed file and its metadata; owner or write grant only |
 | `POST clipboard/get` | Read the private OSS-backed text clipboard |
 | `POST clipboard/save` / `POST clipboard/delete` | Add or remove clipboard entries; owner or write grant only |
-| `POST assessment/grade` | Synchronously grade an authenticated 6 Minute English retelling and persist the result |
-| `POST assessment/result` | Return the caller's latest persisted result for an episode |
+| `POST assessment/grade` | Independently grade and persist a retelling or one AI short-answer question |
+| `POST assessment/result` | Return the latest retelling result, or a question result when `questionId` is supplied |
 | `POST uploads/init` | Validate metadata and return short-lived, path-bound OSS PUT URLs; owner or write grant only |
 | `POST uploads/complete` | Verify every uploaded object, write metadata and publish the collection index |
 | `POST logout` | Revoke the current persistent session |

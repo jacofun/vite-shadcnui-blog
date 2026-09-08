@@ -133,6 +133,13 @@ jobs:
                   (.answers | type == "array" and length >= 1 and length <= 8 and all(.[]; type == "string" and length > 0 and length <= 200))
                 end)
               )) and
+              ((.assessment.subjectiveQuestions // []) | type == "array" and length <= 6 and all(.[];
+                (.id | type == "string" and test("^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$")) and
+                (.type == "comprehension" or .type == "paraphrase" or .type == "application") and
+                (.prompt | type == "string" and length > 0 and length <= 1000) and
+                (.targetExpression | type == "string" and length <= 160) and
+                (.gradingCriteria | type == "string" and length > 0 and length <= 1000)
+              )) and
               (.assessment.retellingPrompt | type == "string" and length > 0 and length <= 1000) and
               (.assessment.referencePoints | type == "array" and length <= 12 and all(.[]; type == "string" and length > 0 and length <= 500))
             ))
