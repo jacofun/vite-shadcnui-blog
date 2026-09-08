@@ -1288,17 +1288,34 @@ const assessmentResponseSchema = {
     organizationScore: { type: "integer", minimum: 0, maximum: 8 },
     grammarScore: { type: "integer", minimum: 0, maximum: 8 },
     expressionScore: { type: "integer", minimum: 0, maximum: 8 },
-    summary: { type: "string" },
-    contentFeedback: { type: "array", maxItems: 8, items: { type: "string" } },
+    summary: { type: "string", description: "A concise overall assessment written in English only." },
+    contentFeedback: {
+      type: "array",
+      maxItems: 8,
+      items: { type: "string", description: "One content observation written in English only." },
+    },
     languageIssues: {
       type: "array", maxItems: 8, items: {
         type: "object", additionalProperties: false, required: ["original", "suggestion", "reason"],
-        properties: { original: { type: "string" }, suggestion: { type: "string" }, reason: { type: "string" } },
+        properties: {
+          original: { type: "string", description: "The relevant learner wording, using English only. Describe non-English wording without quoting it." },
+          suggestion: { type: "string", description: "A corrected English version." },
+          reason: { type: "string", description: "An explanation written in English only." },
+        },
       },
     },
-    targetExpressionFeedback: { type: "array", maxItems: 8, items: { type: "string" } },
-    priorityImprovements: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" } },
-    revisedRetelling: { type: "string" },
+    targetExpressionFeedback: {
+      type: "array",
+      maxItems: 8,
+      items: { type: "string", description: "Feedback written in English only." },
+    },
+    priorityImprovements: {
+      type: "array",
+      minItems: 1,
+      maxItems: 3,
+      items: { type: "string", description: "An actionable improvement written in English only." },
+    },
+    revisedRetelling: { type: "string", description: "An improved retelling written entirely in English." },
   },
 };
 
@@ -1308,12 +1325,43 @@ const subjectiveAssessmentResponseSchema = {
   required: ["score", "summary", "strengths", "improvements", "revisedAnswer"],
   properties: {
     score: { type: "integer", minimum: 0, maximum: 10 },
-    summary: { type: "string" },
-    strengths: { type: "array", maxItems: 3, items: { type: "string" } },
-    improvements: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" } },
-    revisedAnswer: { type: "string" },
+    summary: { type: "string", description: "A concise assessment written in English only." },
+    strengths: {
+      type: "array",
+      maxItems: 3,
+      items: { type: "string", description: "One strength written in English only." },
+    },
+    improvements: {
+      type: "array",
+      minItems: 1,
+      maxItems: 3,
+      items: { type: "string", description: "One actionable improvement written in English only." },
+    },
+    revisedAnswer: { type: "string", description: "An improved answer written entirely in English." },
   },
 };
+
+const ENGLISH_ONLY_ASSESSMENT_INSTRUCTION = [
+  "Write every string in the JSON response in English only.",
+  "This includes summaries, feedback, strengths, improvements, explanations, quoted wording, corrections, and revised answers.",
+  "Do not use Chinese or any other non-Latin writing system, even when the learner uses it.",
+  "If non-English learner wording must be mentioned, describe it in English without quoting the original characters.",
+].join(" ");
+
+const NON_ENGLISH_SCRIPT_PATTERN = /[^\p{Script=Latin}\p{Number}\p{Punctuation}\p{Separator}\p{Symbol}\p{Mark}\s]/u;
+
+function validateEnglishOnlyAssessmentResult(value) {
+  const containsNonEnglishScript = (item) => {
+    if (typeof item === "string") return NON_ENGLISH_SCRIPT_PATTERN.test(item);
+    if (Array.isArray(item)) return item.some(containsNonEnglishScript);
+    if (item && typeof item === "object") return Object.values(item).some(containsNonEnglishScript);
+    return false;
+  };
+  if (containsNonEnglishScript(value)) {
+    throw new HttpError(502, "NON_ENGLISH_ASSESSMENT_RESULT", "Assessment model returned non-English feedback");
+  }
+  return value;
+}
 
 function validateModelGrading(value) {
   const scoreFields = { contentScore: 16, organizationScore: 8, grammarScore: 8, expressionScore: 8 };
@@ -1390,40 +1438,57 @@ function validateSubjectiveModelGrading(value) {
 async function requestAssessmentModel({ modelConfig, schemaName, schema, system, prompt, validate, fetchImpl }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), modelConfig.timeoutMs);
-  let response;
   try {
-    response = await fetchImpl(modelConfig.endpoint, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${modelConfig.apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: modelConfig.model,
-        enable_thinking: false,
-        temperature: 0.2,
-        response_format: {
-          type: "json_schema",
-          json_schema: { name: schemaName, strict: true, schema },
-        },
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: prompt },
-        ],
-      }),
-      signal: controller.signal,
-    });
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const messages = [
+        { role: "system", content: `${system}\n\n${ENGLISH_ONLY_ASSESSMENT_INSTRUCTION}` },
+        { role: "user", content: prompt },
+      ];
+      if (attempt > 0) {
+        messages.push({
+          role: "user",
+          content: "Regenerate the complete JSON response. The previous result contained non-English characters. Keep all output strings strictly in English.",
+        });
+      }
+      const response = await fetchImpl(modelConfig.endpoint, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${modelConfig.apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: modelConfig.model,
+          enable_thinking: false,
+          temperature: attempt > 0 ? 0 : 0.2,
+          response_format: {
+            type: "json_schema",
+            json_schema: { name: schemaName, strict: true, schema },
+          },
+          messages,
+        }),
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new HttpError(502, "ASSESSMENT_MODEL_ERROR", "Assessment model request failed");
+      let value;
+      try {
+        const payload = await response.json();
+        const content = payload?.choices?.[0]?.message?.content;
+        value = validate(typeof content === "string" ? JSON.parse(content) : content);
+      } catch (error) {
+        if (error instanceof HttpError) throw error;
+        throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", "Assessment model returned invalid JSON");
+      }
+      try {
+        return validateEnglishOnlyAssessmentResult(value);
+      } catch (error) {
+        if (error instanceof HttpError && error.code === "NON_ENGLISH_ASSESSMENT_RESULT" && attempt === 0) continue;
+        throw error;
+      }
+    }
+    throw new HttpError(502, "NON_ENGLISH_ASSESSMENT_RESULT", "Assessment model returned non-English feedback");
   } catch (error) {
     if (error?.name === "AbortError") throw new HttpError(504, "ASSESSMENT_TIMEOUT", "Assessment model timed out");
+    if (error instanceof HttpError) throw error;
     throw new HttpError(502, "ASSESSMENT_MODEL_ERROR", "Assessment model request failed");
   } finally {
     clearTimeout(timeout);
-  }
-  if (!response.ok) throw new HttpError(502, "ASSESSMENT_MODEL_ERROR", "Assessment model request failed");
-  try {
-    const payload = await response.json();
-    const content = payload?.choices?.[0]?.message?.content;
-    return validate(typeof content === "string" ? JSON.parse(content) : content);
-  } catch (error) {
-    if (error instanceof HttpError) throw error;
-    throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", "Assessment model returned invalid JSON");
   }
 }
 
@@ -1439,7 +1504,7 @@ async function requestAssessmentGrading({ modelConfig, episode, transcript, asse
     modelConfig,
     schemaName: "english_retelling_assessment",
     schema: assessmentResponseSchema,
-    system: "You are a strict but constructive English teacher. Grade an IELTS 6 learner aiming for 7. Focus on accurate comprehension, clear retelling, grammar, and natural reusable expressions. Do not reward copied wording mechanically. Return only the requested JSON. Feedback may be in concise Chinese; examples and corrections must be in English.",
+    system: "You are a strict but constructive English teacher. Grade an IELTS 6 learner aiming for 7. Focus on accurate comprehension, clear retelling, grammar, and natural reusable expressions. Do not reward copied wording mechanically. Return only the requested JSON and write all feedback and corrections in English.",
     prompt,
     validate: validateModelGrading,
     fetchImpl,
@@ -1462,7 +1527,7 @@ async function requestSubjectiveAssessmentGrading({ modelConfig, episode, transc
     modelConfig,
     schemaName: "english_subjective_assessment",
     schema: subjectiveAssessmentResponseSchema,
-    system: "You are a strict but constructive English teacher grading one short-answer exercise for an IELTS 6 learner aiming for 7. Follow the supplied question-specific criteria. For comprehension and paraphrase, treat the transcript as the source of truth. For application, judge whether the target expression is natural in the learner's new context. Return only the requested JSON. Feedback may be concise Chinese; the revised answer must be English.",
+    system: "You are a strict but constructive English teacher grading one short-answer exercise for an IELTS 6 learner aiming for 7. Follow the supplied question-specific criteria. For comprehension and paraphrase, treat the transcript as the source of truth. For application, judge whether the target expression is natural in the learner's new context. Return only the requested JSON and write every field in English.",
     prompt,
     validate: validateSubjectiveModelGrading,
     fetchImpl,
@@ -2727,6 +2792,7 @@ export const __test = {
   signCdnPath,
   signedResources,
   validateAssessmentDefinition,
+  validateEnglishOnlyAssessmentResult,
   validateModelGrading,
   validateSubjectiveModelGrading,
   validMediaHeader,

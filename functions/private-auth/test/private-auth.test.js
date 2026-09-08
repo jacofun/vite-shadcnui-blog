@@ -206,6 +206,11 @@ test("validates subjective grading and derives compatible questions for older le
   });
   assert.equal(grading.maxScore, 10);
   assert.throws(() => __test.validateSubjectiveModelGrading({ ...grading, score: 11 }), /invalid subjective feedback/);
+  assert.equal(__test.validateEnglishOnlyAssessmentResult(grading), grading);
+  assert.throws(() => __test.validateEnglishOnlyAssessmentResult({
+    ...grading,
+    improvements: ["请补充一个具体例子。"],
+  }), /non-English feedback/);
 });
 
 test("completes challenge, passkey verification, session lookup and resource signing", async () => {
@@ -214,6 +219,7 @@ test("completes challenge, passkey verification, session lookup and resource sig
     DASHSCOPE_BASE_URL: "https://dashscope.example/v1",
   });
   const assessmentObjects = new Map();
+  let subjectiveModelCalls = 0;
   const contentStore = {
     async readJson(path, { missing } = {}) {
       if (path.endsWith("/metadata.json")) return {
@@ -277,17 +283,34 @@ test("completes challenge, passkey verification, session lookup and resource sig
       assert.equal(url, "https://dashscope.example/v1/chat/completions");
       assert.equal(options.headers.Authorization, "Bearer test-api-key");
       const requestBody = JSON.parse(options.body);
+      assert.match(requestBody.messages[0].content, /every string in the JSON response in English only/);
       const subjective = requestBody.response_format.json_schema.name === "english_subjective_assessment";
       return {
         ok: true,
         async json() {
-          if (subjective) return { choices: [{ message: { content: JSON.stringify({
-            score: 8,
-            summary: "Accurate and clear.",
-            strengths: ["The main reason is correct."],
-            improvements: ["Add a concrete example."],
-            revisedAnswer: "Shared vocabulary helps people describe smells consistently and understand one another.",
-          }) } }] };
+          if (subjective) {
+            subjectiveModelCalls += 1;
+            if (subjectiveModelCalls === 1) {
+              return { choices: [{ message: { content: JSON.stringify({
+                score: 8,
+                summary: "回答准确清楚。",
+                strengths: ["The main reason is correct."],
+                improvements: ["Add a concrete example."],
+                revisedAnswer: "Shared vocabulary helps people describe smells consistently and understand one another.",
+              }) } }] };
+            }
+            if (subjectiveModelCalls === 2) {
+              assert.match(requestBody.messages.at(-1).content, /previous result contained non-English characters/);
+              assert.equal(requestBody.temperature, 0);
+            }
+            return { choices: [{ message: { content: JSON.stringify({
+              score: 8,
+              summary: "Accurate and clear.",
+              strengths: ["The main reason is correct."],
+              improvements: ["Add a concrete example."],
+              revisedAnswer: "Shared vocabulary helps people describe smells consistently and understand one another.",
+            }) } }] };
+          }
           return { choices: [{ message: { content: JSON.stringify({
             contentScore: 13,
             organizationScore: 6,
@@ -390,6 +413,7 @@ test("completes challenge, passkey verification, session lookup and resource sig
   assert.equal(subjectiveResponse.statusCode, 200);
   assert.equal(responseJson(subjectiveResponse).grading.score, 8);
   assert.equal(responseJson(subjectiveResponse).attemptNumber, 1);
+  assert.equal(subjectiveModelCalls, 2);
 
   const secondSubjectiveResponse = await handler(request({
     method: "POST",
@@ -407,6 +431,7 @@ test("completes challenge, passkey verification, session lookup and resource sig
   assert.equal(responseJson(secondSubjectiveResponse).attemptNumber, 2);
   assert.equal(responseJson(secondSubjectiveResponse).highestScore, 8);
   assert.equal(responseJson(secondSubjectiveResponse).scoreDelta, 0);
+  assert.equal(subjectiveModelCalls, 3);
 
   const latestSubjectiveResponse = await handler(request({
     method: "POST",
