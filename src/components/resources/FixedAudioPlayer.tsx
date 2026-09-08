@@ -170,7 +170,6 @@ export default function FixedAudioPlayer({
   const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [dragging, setDragging] = useState(false);
   const [settling, setSettling] = useState(false);
   const [dragOffset, setDragOffset] = useState<number | null>(null);
   const [viewport, setViewport] = useState<ViewportSize>(() => getViewportSize());
@@ -471,7 +470,6 @@ export default function FixedAudioPlayer({
 
     ignoreGestureClickRef.current = false;
     setViewport(nextViewport);
-    setDragging(true);
     setDragOffset(expanded ? 0 : travel);
     event.currentTarget.setPointerCapture(event.pointerId);
   };
@@ -508,7 +506,6 @@ export default function FixedAudioPlayer({
       beginSettle(shouldExpand);
     }
 
-    setDragging(false);
     dragRef.current = null;
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
