@@ -66,6 +66,7 @@ export default function PrivateResourceItem(): JSX.Element {
   const [episode, setEpisode] = useState<PrivateLearningEpisode | null>(null);
   const [file, setFile] = useState<PrivateFileItem | null>(null);
   const [transcript, setTranscript] = useState("");
+  const [showTranscript, setShowTranscript] = useState(false);
   const [mediaSource, setMediaSource] = useState<PrivateMediaSource | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -123,6 +124,7 @@ export default function PrivateResourceItem(): JSX.Element {
     setEpisode(null);
     setFile(null);
     setTranscript("");
+    setShowTranscript(false);
     updateMediaSource(null);
     mediaTargetRef.current = null;
     mediaRefreshPromiseRef.current = null;
@@ -216,7 +218,7 @@ export default function PrivateResourceItem(): JSX.Element {
         <title>{title ? `${title} · ${collection?.title ?? "私人资源"}` : "私人资源 · 彦骁的笔记"}</title>
         <meta content="noindex,nofollow" name="robots" />
       </Helmet>
-      <main className={`min-h-[calc(100svh-4rem)] bg-[#070a12] px-6 pt-10 text-slate-100 sm:px-8 sm:pt-14 lg:px-10 ${episode || file?.format === "mp3" ? "pb-48" : "pb-20"}`}>
+      <main className={`min-h-[calc(100svh-4rem)] bg-[#070a12] px-6 pt-10 text-slate-100 sm:px-8 sm:pt-14 lg:px-10 ${episode || file?.format === "mp3" ? "pb-36" : "pb-20"}`}>
         <article className="mx-auto max-w-3xl">
           <Link className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-cyan-300" to={collectionPath}>
             <ArrowLeft className="size-4" />返回{collection?.title ?? "私人资源"}
@@ -288,21 +290,24 @@ export default function PrivateResourceItem(): JSX.Element {
                   session={access.session}
                 />
               )}
-              <details className="group pt-10">
-                <summary className="cursor-pointer list-none rounded-2xl border border-white/10 bg-white/[0.025] p-5 transition hover:border-cyan-300/20">
-                  <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">TRANSCRIPT</p>
-                  <div className="mt-2 flex items-center justify-between gap-4">
-                    <h2 className="text-2xl font-semibold text-white">节目文本</h2>
-                    <span className="text-xs text-slate-500 group-open:hidden">完成练习后展开</span>
-                    <span className="hidden text-xs text-slate-500 group-open:inline">收起文本</span>
-                  </div>
-                </summary>
-                <div className="mt-8 space-y-6 text-[15px] leading-8 text-slate-300">
+              <section className="pt-12">
+                <div className="flex items-center gap-4 border-b border-white/10 pb-4">
+                  <h2 className="text-2xl font-semibold text-white">节目文本</h2>
+                  <button
+                    aria-expanded={showTranscript}
+                    className="text-sm text-cyan-300 transition hover:text-cyan-200"
+                    onClick={() => setShowTranscript((current) => !current)}
+                    type="button"
+                  >
+                    {showTranscript ? "隐藏文本" : "显示文本"}
+                  </button>
+                </div>
+                {showTranscript && <div className="mt-8 space-y-6 text-[15px] leading-8 text-slate-300">
                   {transcriptSections.map((section, index) => (
                     <p className="whitespace-pre-wrap" key={`${index}-${section.slice(0, 24)}`}>{section}</p>
                   ))}
-                </div>
-              </details>
+                </div>}
+              </section>
             </>
           )}
         </article>

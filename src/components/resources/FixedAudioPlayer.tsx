@@ -70,11 +70,11 @@ const DEFAULT_VIEWPORT: ViewportSize = {
 };
 
 const DEFAULT_COMPACT_METRICS: CompactLayoutMetrics = {
-  height: 190,
-  progressTop: 92,
-  progressHeight: 38,
-  controlsTop: 128,
-  controlsHeight: 56,
+  height: 132,
+  progressTop: 44,
+  progressHeight: 32,
+  controlsTop: 76,
+  controlsHeight: 48,
   safeBottom: 8,
 };
 
@@ -330,7 +330,7 @@ export default function FixedAudioPlayer({
 
       const computed = window.getComputedStyle(container);
       const next: CompactLayoutMetrics = {
-        height: Math.max(150, Math.ceil(container.getBoundingClientRect().height)),
+        height: Math.max(112, Math.ceil(container.getBoundingClientRect().height)),
         progressTop: progress.offsetTop,
         progressHeight: Math.ceil(progress.getBoundingClientRect().height),
         controlsTop: controls.offsetTop,
@@ -524,7 +524,7 @@ export default function FixedAudioPlayer({
   const renderGestureZone = () => (
     <button
       aria-label={expanded ? "收起播放器" : "展开播放器"}
-      className="flex h-16 w-full touch-none select-none items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300/40"
+      className="flex h-6 w-full touch-none select-none items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300/40"
       onClick={handleGestureClick}
       onPointerCancel={(event) => finishDrag(event, true)}
       onPointerDown={handlePointerDown}
@@ -594,8 +594,8 @@ export default function FixedAudioPlayer({
   const progress = clamp(1 - activeOffset / travel, 0, 1);
 
   const expandedPlaySize = Math.min(viewport.width * 0.5, 220);
-  const playSize = 48 + (expandedPlaySize - 48) * progress;
-  const seekSize = 44 + 20 * progress;
+  const playSize = 44 + (expandedPlaySize - 44) * progress;
+  const seekSize = 40 + 24 * progress;
 
   const progressTargetTop = Math.max(
     compactMetrics.progressTop,
@@ -648,10 +648,10 @@ export default function FixedAudioPlayer({
       >
         {renderGestureZone()}
 
-        <div className="px-2 pb-1 text-center">
+        <div className="px-2 text-center">
           <p
             className={`truncate font-medium text-slate-300 ${movingClassName}`}
-            style={{ fontSize: `${titleSize}px`, lineHeight: `${18 + 10 * progress}px` }}
+            style={{ fontSize: `${titleSize}px`, lineHeight: `${16 + 12 * progress}px` }}
           >
             {title}
           </p>
@@ -679,7 +679,7 @@ export default function FixedAudioPlayer({
         </div>
 
         <div
-          className={`relative min-h-14 px-1 ${movingClassName}`}
+          className={`relative min-h-12 px-1 ${movingClassName}`}
           ref={controlsRef}
           style={{ transform: `translate3d(0, ${controlsShift}px, 0)` }}
         >

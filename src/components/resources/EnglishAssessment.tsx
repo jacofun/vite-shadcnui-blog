@@ -64,7 +64,7 @@ function Feedback({ result }: { result: EnglishAssessmentResult }): JSX.Element 
     ["表达", grading.expressionScore, 8],
   ] as const;
   return (
-    <div className="mt-8 rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.05] p-5 sm:p-6">
+    <div className="mt-10 border-t border-emerald-300/20 pt-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="font-mono text-xs tracking-[0.18em] text-emerald-300">AI FEEDBACK</p>
@@ -74,9 +74,9 @@ function Feedback({ result }: { result: EnglishAssessmentResult }): JSX.Element 
           <p className="text-sm text-slate-400">综合 {grading.totalScore + result.objective.score} / 100</p>
         )}
       </div>
-      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-y-5 sm:grid-cols-4">
         {scores.map(([label, score, max]) => (
-          <div className="rounded-xl border border-white/10 bg-black/15 px-3 py-3" key={label}>
+          <div className="border-l border-white/10 pl-3 first:border-l-0 first:pl-0 sm:first:border-l" key={label}>
             <p className="text-xs text-slate-500">{label}</p>
             <p className="mt-1 text-lg font-semibold text-white">{score}<span className="text-xs font-normal text-slate-500"> / {max}</span></p>
           </div>
@@ -100,9 +100,9 @@ function Feedback({ result }: { result: EnglishAssessmentResult }): JSX.Element 
       {grading.languageIssues.length > 0 && (
         <div className="mt-6">
           <h4 className="text-sm font-medium text-white">语言修正</h4>
-          <div className="mt-3 space-y-3">
+          <div className="mt-3 divide-y divide-white/10">
             {grading.languageIssues.map((issue, index) => (
-              <div className="rounded-xl border border-white/10 bg-black/15 p-4 text-sm leading-6" key={`${index}-${issue.original}`}>
+              <div className="py-4 text-sm leading-6 first:pt-0" key={`${index}-${issue.original}`}>
                 <p className="text-rose-200 line-through decoration-rose-300/40">{issue.original}</p>
                 <p className="mt-1 text-emerald-200">{issue.suggestion}</p>
                 <p className="mt-1 text-slate-500">{issue.reason}</p>
@@ -111,7 +111,7 @@ function Feedback({ result }: { result: EnglishAssessmentResult }): JSX.Element 
           </div>
         </div>
       )}
-      <details className="mt-6 rounded-xl border border-white/10 bg-black/15 p-4">
+      <details className="mt-6 border-t border-white/10 pt-5">
         <summary className="cursor-pointer text-sm font-medium text-cyan-200">查看参考改写</summary>
         <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-300">{grading.revisedRetelling}</p>
       </details>
@@ -197,22 +197,22 @@ export default function EnglishAssessment({ assessment, episodeId, session }: En
 
   return (
     <section className="pt-10">
-      <div className="rounded-3xl border border-cyan-300/15 bg-gradient-to-br from-cyan-300/[0.07] to-violet-300/[0.04] p-5 sm:p-8">
-        <div className="flex items-start gap-3">
-          <Sparkles className="mt-1 size-5 shrink-0 text-cyan-300" />
-          <div>
+      <div>
+        <div className="border-b border-white/10 pb-7">
+          <div className="flex items-center gap-2">
+            <Sparkles className="size-4 shrink-0 text-cyan-300" />
             <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">STANDARD PRACTICE</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">理解与表达训练</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">客观题立即校验；复述提交后由 AI 同步批改并保存。先完成练习，再按需展开下方节目文本。</p>
           </div>
+          <h2 className="mt-3 text-2xl font-semibold text-white">理解与表达训练</h2>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">客观题立即校验；复述提交后由 AI 同步批改并保存。先完成练习，再按需显示下方节目文本。</p>
         </div>
 
         {assessment?.targetExpressions.length ? (
           <div className="mt-7">
             <h3 className="text-sm font-medium text-white">本期重点表达</h3>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid gap-x-8 gap-y-5 sm:grid-cols-2">
               {assessment.targetExpressions.map((item) => (
-                <div className="rounded-xl border border-white/10 bg-black/15 p-4" key={item.expression}>
+                <div className="border-l border-cyan-300/20 pl-4" key={item.expression}>
                   <p className="font-medium text-cyan-100">{item.expression}</p>
                   <p className="mt-1 text-sm leading-6 text-slate-400">{item.meaning}</p>
                   {item.usage && <p className="mt-2 text-xs leading-5 text-slate-500">{item.usage}</p>}
@@ -221,7 +221,7 @@ export default function EnglishAssessment({ assessment, episodeId, session }: En
             </div>
           </div>
         ) : (
-          <p className="mt-6 rounded-xl border border-amber-300/15 bg-amber-300/[0.04] p-4 text-sm text-amber-100/80">本期尚未发布专项客观题，但仍可完成复述并获得 AI 批改。</p>
+          <p className="mt-6 text-sm text-amber-100/80">本期尚未发布专项客观题，但仍可完成复述并获得 AI 批改。</p>
         )}
 
         {questions.length > 0 && (
@@ -230,23 +230,23 @@ export default function EnglishAssessment({ assessment, episodeId, session }: En
               <h3 className="text-sm font-medium text-white">客观题</h3>
               {checked && <p className="text-sm text-cyan-200">{correctCount} / {questions.length} 正确</p>}
             </div>
-            <div className="mt-3 space-y-4">
+            <div className="mt-3 divide-y divide-white/10">
               {questions.map((question, index) => {
                 const correct = isCorrect(question, answers[question.id]);
                 return (
-                  <fieldset className="rounded-2xl border border-white/10 bg-black/15 p-4 sm:p-5" key={question.id}>
-                    <legend className="px-1 text-sm font-medium leading-6 text-slate-200">{index + 1}. {question.prompt}</legend>
+                  <fieldset className="py-5 first:pt-2" key={question.id}>
+                    <legend className="text-sm font-medium leading-6 text-slate-200">{index + 1}. {question.prompt}</legend>
                     {question.type === "single-choice" ? (
                       <div className="mt-3 space-y-2">
                         {question.options.map((option) => (
-                          <label className="flex cursor-pointer gap-3 rounded-xl border border-white/10 px-3 py-2.5 text-sm text-slate-300 hover:border-cyan-300/30" key={option.id}>
+                          <label className="flex cursor-pointer gap-3 py-1.5 text-sm text-slate-300 transition hover:text-cyan-100" key={option.id}>
                             <input checked={answers[question.id] === option.id} className="mt-0.5 accent-cyan-400" name={question.id} onChange={() => setAnswer(question.id, option.id)} type="radio" />
                             <span>{option.text}</span>
                           </label>
                         ))}
                       </div>
                     ) : (
-                      <input className="mt-3 w-full rounded-xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-300/40" onChange={(event) => setAnswer(question.id, event.target.value)} placeholder="Type the missing expression" value={answers[question.id] ?? ""} />
+                      <input className="mt-3 w-full border-b border-white/15 bg-transparent px-0 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-300/50" onChange={(event) => setAnswer(question.id, event.target.value)} placeholder="Type the missing expression" value={answers[question.id] ?? ""} />
                     )}
                     {checked && (
                       <div className={`mt-3 flex gap-2 text-sm leading-6 ${correct ? "text-emerald-200" : "text-rose-200"}`}>
