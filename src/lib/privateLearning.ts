@@ -26,6 +26,43 @@ interface ResourceMetadata {
   etag?: string;
 }
 
+export interface PrivateLearningTargetExpression {
+  expression: string;
+  meaning: string;
+  usage: string;
+}
+
+export interface PrivateLearningChoiceQuestion {
+  id: string;
+  type: "single-choice";
+  prompt: string;
+  targetExpression: string;
+  options: Array<{ id: string; text: string }>;
+  answer: string;
+  explanation: string;
+}
+
+export interface PrivateLearningFillQuestion {
+  id: string;
+  type: "fill-blank";
+  prompt: string;
+  targetExpression: string;
+  answers: string[];
+  explanation: string;
+}
+
+export type PrivateLearningObjectiveQuestion =
+  | PrivateLearningChoiceQuestion
+  | PrivateLearningFillQuestion;
+
+export interface PrivateLearningAssessment {
+  schemaVersion: 1;
+  targetExpressions: PrivateLearningTargetExpression[];
+  objectiveQuestions: PrivateLearningObjectiveQuestion[];
+  retellingPrompt: string;
+  referencePoints: string[];
+}
+
 export interface PrivateLearningEpisode extends PrivateLearningEpisodeCore {
   schemaVersion: 1;
   sourcePage: string;
@@ -38,6 +75,7 @@ export interface PrivateLearningEpisode extends PrivateLearningEpisodeCore {
     transcriptPdf?: ResourceMetadata;
     transcriptText: ResourceMetadata;
   };
+  assessment?: PrivateLearningAssessment | null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -62,6 +100,30 @@ function isEpisodeSummary(value: unknown): value is PrivateLearningEpisodeSummar
   return isEpisodeCore(value) &&
     isRecord(value) &&
     typeof value.metadataPath === "string";
+}
+
+function isAssessment(value: unknown): value is PrivateLearningAssessment {
+  if (!isRecord(value) || value.schemaVersion !== 1 ||
+      !Array.isArray(value.targetExpressions) || value.targetExpressions.length > 12 ||
+      !Array.isArray(value.objectiveQuestions) || value.objectiveQuestions.length > 20 ||
+      typeof value.retellingPrompt !== "string" ||
+      !Array.isArray(value.referencePoints) || !value.referencePoints.every((point) => typeof point === "string")) {
+    return false;
+  }
+  const targetsValid = value.targetExpressions.every((item) =>
+    isRecord(item) && ["expression", "meaning", "usage"].every((key) => typeof item[key] === "string"));
+  const questionsValid = value.objectiveQuestions.every((question) => {
+    if (!isRecord(question) || typeof question.id !== "string" || typeof question.prompt !== "string" ||
+        typeof question.targetExpression !== "string" || typeof question.explanation !== "string") return false;
+    if (question.type === "single-choice") {
+      return typeof question.answer === "string" && Array.isArray(question.options) &&
+        question.options.length >= 2 && question.options.every((option) =>
+          isRecord(option) && typeof option.id === "string" && typeof option.text === "string");
+    }
+    return question.type === "fill-blank" && Array.isArray(question.answers) &&
+      question.answers.length > 0 && question.answers.every((answer) => typeof answer === "string");
+  });
+  return targetsValid && questionsValid;
 }
 
 export async function fetchPrivateLearningIndex(
@@ -89,7 +151,8 @@ export async function fetchPrivateLearningEpisode(
   const response = await fetch(url, { cache: "no-store", signal });
   if (!response.ok) throw new Error(`课程信息读取失败（${response.status}）`);
   const payload: unknown = await response.json();
-  if (!isRecord(payload) || payload.schemaVersion !== 1 || !isEpisodeCore(payload)) {
+  if (!isRecord(payload) || payload.schemaVersion !== 1 || !isEpisodeCore(payload) ||
+      (payload.assessment !== undefined && payload.assessment !== null && !isAssessment(payload.assessment))) {
     throw new Error("课程信息格式不正确");
   }
   return payload as unknown as PrivateLearningEpisode;

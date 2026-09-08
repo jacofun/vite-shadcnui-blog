@@ -58,6 +58,21 @@ test("private content metadata publication is idempotent and rejects conflicting
   );
 });
 
+test("private content store can overwrite server-owned assessment results", async () => {
+  const client = fakeOssClient();
+  const store = await createPrivateResourceContentStore({
+    env: contentEnv(),
+    context: { credentials: { accessKeyId: "test-id", accessKeySecret: "test-secret" } },
+    client,
+    publicClient: client,
+  });
+
+  const path = "fc/english-assessment/user/episode/latest.json";
+  await store.putJson(path, { status: "grading" });
+  await store.putJson(path, { status: "completed", score: 32 });
+  assert.deepEqual(await store.readJson(path), { status: "completed", score: 32 });
+});
+
 test("private index updates serialize concurrent publishers without losing changes", async () => {
   const client = fakeOssClient();
   const store = await createPrivateResourceContentStore({

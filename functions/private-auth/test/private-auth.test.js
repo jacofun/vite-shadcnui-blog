@@ -129,10 +129,94 @@ test("classifies playable files and verifies MP3, MP4 and FLV signatures", () =>
   assert.equal(__test.validMediaHeader("flv", Buffer.from("plain text renamed to flv")), false);
 });
 
+test("validates lesson assessments and scores objective answers consistently", () => {
+  const assessment = __test.validateAssessmentDefinition({
+    schemaVersion: 1,
+    targetExpressions: [{ expression: "rule of thumb", meaning: "实用经验法则", usage: "Use it for an approximate guide." }],
+    objectiveQuestions: [
+      {
+        id: "choice-1",
+        type: "single-choice",
+        prompt: "Choose the natural expression.",
+        targetExpression: "rule of thumb",
+        options: [{ id: "a", text: "rule of thumb" }, { id: "b", text: "law of finger" }],
+        answer: "a",
+        explanation: "Rule of thumb is the idiomatic choice.",
+      },
+      {
+        id: "fill-1",
+        type: "fill-blank",
+        prompt: "Complete: as a ___",
+        targetExpression: "rule of thumb",
+        answers: ["rule of thumb"],
+        explanation: "The whole noun phrase is required.",
+      },
+    ],
+    retellingPrompt: "Retell the main ideas in your own words.",
+    referencePoints: ["Explain the speakers' main conclusion."],
+  });
+  const score = __test.gradeObjectiveAnswers(assessment, {
+    "choice-1": "a",
+    "fill-1": " Rule of thumb. ",
+  });
+  assert.equal(score.score, 60);
+  assert.equal(score.correct, 2);
+  assert.deepEqual(score.results, [
+    { questionId: "choice-1", correct: true },
+    { questionId: "fill-1", correct: true },
+  ]);
+});
+
+test("validates model grading ranges and computes the authoritative total", () => {
+  const grading = __test.validateModelGrading({
+    contentScore: 13,
+    organizationScore: 6,
+    grammarScore: 7,
+    expressionScore: 6,
+    summary: "Clear and mostly accurate.",
+    contentFeedback: ["The main point is covered."],
+    languageIssues: [{ original: "people is", suggestion: "people are", reason: "People takes a plural verb." }],
+    targetExpressionFeedback: ["The target phrase was used naturally."],
+    priorityImprovements: ["Add the final conclusion."],
+    revisedRetelling: "A concise revised retelling.",
+  });
+  assert.equal(grading.totalScore, 32);
+  assert.throws(() => __test.validateModelGrading({ ...grading, contentScore: 17 }), /invalid score/);
+});
+
 test("completes challenge, passkey verification, session lookup and resource signing", async () => {
-  const env = createEnv();
+  const env = createEnv({
+    DASHSCOPE_API_KEY: "test-api-key",
+    DASHSCOPE_BASE_URL: "https://dashscope.example/v1",
+  });
+  const assessmentObjects = new Map();
+  const contentStore = {
+    async readJson(path, { missing } = {}) {
+      if (path.endsWith("/metadata.json")) return {
+        schemaVersion: 1,
+        episodeId: "260827-how-do-we-describe-smells",
+        title: "How do we describe smells?",
+        assessment: null,
+      };
+      return assessmentObjects.has(path) ? structuredClone(assessmentObjects.get(path)) : structuredClone(missing);
+    },
+    async readText() {
+      return "A sufficiently long transcript about how people describe smells and why shared vocabulary matters. ".repeat(4);
+    },
+    async putJson(path, value) {
+      assessmentObjects.set(path, structuredClone(value));
+    },
+    async updateJson(path, { missing, validate }, change) {
+      const current = assessmentObjects.has(path) ? structuredClone(assessmentObjects.get(path)) : structuredClone(missing);
+      assert.equal(validate(current), true);
+      const next = change(current);
+      assessmentObjects.set(path, structuredClone(next));
+      return next;
+    },
+  };
   const handler = createHandler({
     env,
+    contentStore,
     now: () => NOW,
     randomBytesImpl: (size) => Buffer.alloc(size, 5),
     generateAuthenticationOptionsImpl: async () => ({
@@ -150,6 +234,27 @@ test("completes challenge, passkey verification, session lookup and resource sig
       return {
         verified: true,
         authenticationInfo: { userVerified: true, newCounter: 0 },
+      };
+    },
+    fetchImpl: async (url, options) => {
+      assert.equal(url, "https://dashscope.example/v1/chat/completions");
+      assert.equal(options.headers.Authorization, "Bearer test-api-key");
+      return {
+        ok: true,
+        async json() {
+          return { choices: [{ message: { content: JSON.stringify({
+            contentScore: 13,
+            organizationScore: 6,
+            grammarScore: 7,
+            expressionScore: 6,
+            summary: "Clear and mostly accurate.",
+            contentFeedback: ["The main point is covered."],
+            languageIssues: [],
+            targetExpressionFeedback: ["Use one more natural expression."],
+            priorityImprovements: ["Add the conclusion."],
+            revisedRetelling: "A concise revised retelling.",
+          }) } }] };
+        },
       };
     },
   });
@@ -197,6 +302,31 @@ test("completes challenge, passkey verification, session lookup and resource sig
   assert.match(signBody.resources.audio, /audio\.mp3\?auth_key=/);
   assert.match(signBody.resources.transcriptText, /transcript\.txt\?auth_key=/);
   assert.equal(Object.keys(signBody.resources).length, 4);
+
+  const gradeResponse = await handler(request({
+    method: "POST",
+    path: "/api/private-auth/assessment/grade",
+    cookie: sessionCookie,
+    csrf: verifyBody.csrfToken,
+    body: {
+      episodeId: "260827-how-do-we-describe-smells",
+      attemptId: "attempt-123456789",
+      retelling: "People often struggle to describe smells because shared words are limited. The speakers explain how comparisons and memories help us communicate an odour. They conclude that language and personal experience shape the way we understand it.",
+      objectiveAnswers: {},
+    },
+  }));
+  assert.equal(gradeResponse.statusCode, 200);
+  assert.equal(responseJson(gradeResponse).grading.totalScore, 32);
+
+  const latestResponse = await handler(request({
+    method: "POST",
+    path: "/api/private-auth/assessment/result",
+    cookie: sessionCookie,
+    csrf: verifyBody.csrfToken,
+    body: { episodeId: "260827-how-do-we-describe-smells" },
+  }));
+  assert.equal(latestResponse.statusCode, 200);
+  assert.equal(responseJson(latestResponse).result.attemptId, "attempt-123456789");
 });
 
 test("rejects direct origin access, invalid CSRF and arbitrary episode paths", async () => {

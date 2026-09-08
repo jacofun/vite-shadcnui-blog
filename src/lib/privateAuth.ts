@@ -22,6 +22,42 @@ export interface SignedPrivateResources {
   resources: Record<string, string>;
 }
 
+export interface EnglishAssessmentObjectiveResult {
+  score: number;
+  maxScore: number;
+  correct: number;
+  total: number;
+  results: Array<{ questionId: string; correct: boolean }>;
+}
+
+export interface EnglishAssessmentGrading {
+  contentScore: number;
+  organizationScore: number;
+  grammarScore: number;
+  expressionScore: number;
+  totalScore: number;
+  summary: string;
+  contentFeedback: string[];
+  languageIssues: Array<{ original: string; suggestion: string; reason: string }>;
+  targetExpressionFeedback: string[];
+  priorityImprovements: string[];
+  revisedRetelling: string;
+}
+
+export interface EnglishAssessmentResult {
+  schemaVersion: 1;
+  status: "completed";
+  attemptId: string;
+  episodeId: string;
+  submittedAt: string;
+  completedAt: string;
+  retelling: string;
+  objective: EnglishAssessmentObjectiveResult;
+  model: string;
+  rubricVersion: string;
+  grading: EnglishAssessmentGrading;
+}
+
 export interface PrivateResourceUploadFile {
   contentType: "audio/mpeg" | "text/plain" | "application/pdf";
   bytes: number;
@@ -207,6 +243,35 @@ export function signLegacyPrivateLearningEpisode(
   signal?: AbortSignal,
 ): Promise<SignedPrivateResources> {
   return request<SignedPrivateResources>("sign", {
+    body: { episodeId },
+    csrfToken: session.csrfToken,
+    signal,
+  });
+}
+
+export function gradeEnglishRetelling(
+  session: PrivateAuthSession,
+  body: {
+    episodeId: string;
+    attemptId: string;
+    retelling: string;
+    objectiveAnswers: Record<string, string>;
+  },
+  signal?: AbortSignal,
+): Promise<EnglishAssessmentResult> {
+  return request<EnglishAssessmentResult>("assessment/grade", {
+    body,
+    csrfToken: session.csrfToken,
+    signal,
+  });
+}
+
+export function getLatestEnglishAssessment(
+  session: PrivateAuthSession,
+  episodeId: string,
+  signal?: AbortSignal,
+): Promise<{ result: EnglishAssessmentResult | null }> {
+  return request("assessment/result", {
     body: { episodeId },
     csrfToken: session.csrfToken,
     signal,

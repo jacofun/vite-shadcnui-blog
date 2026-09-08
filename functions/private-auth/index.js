@@ -31,6 +31,9 @@ const UPLOAD_TOKEN_TTL_SECONDS = 900;
 const UPLOAD_MAX_AUDIO_BYTES = 100 * 1024 * 1024;
 const UPLOAD_MAX_TRANSCRIPT_BYTES = 20 * 1024 * 1024;
 const UPLOAD_MAX_FILE_BYTES = 1024 * 1024 * 1024;
+const ASSESSMENT_ATTEMPT_PATTERN = /^[A-Za-z0-9_-]{16,64}$/;
+const DEFAULT_ASSESSMENT_MODEL = "qwen3.7-plus-2026-05-26";
+const DEFAULT_ASSESSMENT_STORAGE_PREFIX = "fc/english-assessment";
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const ALLOWED_TRANSPORTS = new Set([
   "ble",
@@ -401,6 +404,7 @@ function routeName(path, cookiePath, persistent = false) {
     "challenge", "verify", "session", "sign", "logout", "uploads/init", "uploads/complete",
     "collections/create", "collections/delete", "files/delete",
     "clipboard/get", "clipboard/save", "clipboard/delete",
+    "assessment/grade", "assessment/result",
   ];
   if (persistent) knownRoutes.push(
     "register/options", "register/verify", "reauth/challenge", "reauth/verify",
@@ -411,7 +415,7 @@ function routeName(path, cookiePath, persistent = false) {
 }
 
 function usesPrivateContentStore(route) {
-  return ["uploads/", "collections/", "files/", "clipboard/"].some((prefix) => route.startsWith(prefix));
+  return ["uploads/", "collections/", "files/", "clipboard/", "assessment/"].some((prefix) => route.startsWith(prefix));
 }
 
 function jsonResponse(config, statusCode, body, extraHeaders = {}) {
@@ -836,6 +840,12 @@ export async function createPrivateResourceContentStore({ env = process.env, con
         }
       }
     },
+    async putJson(path, value) {
+      await oss.put(objectName(path), Buffer.from(`${JSON.stringify(value, null, 2)}\n`), {
+        mime: "application/json; charset=utf-8",
+        headers: { "Cache-Control": "no-store" },
+      });
+    },
     async deletePaths(paths) {
       const names = [...new Set(paths.map(objectName))];
       for (let offset = 0; offset < names.length; offset += 1000) {
@@ -1080,6 +1090,336 @@ async function handlePrivateClipboard({ route, body, user, config, contentStore,
   return route === "clipboard/save" ? { saved: true, entry } : { deleted: true };
 }
 
+function assessmentText(value, name, maxLength, { required = true } = {}) {
+  if (value === undefined && !required) return "";
+  if (typeof value !== "string") {
+    throw new HttpError(400, "INVALID_ASSESSMENT", `${name} must be a string`);
+  }
+  const normalized = value.trim();
+  if ((required && !normalized) || normalized.length > maxLength) {
+    throw new HttpError(400, "INVALID_ASSESSMENT", `${name} is invalid`);
+  }
+  return normalized;
+}
+
+function normalizeObjectiveAnswer(value) {
+  return String(value ?? "")
+    .normalize("NFKC")
+    .trim()
+    .toLocaleLowerCase("en-US")
+    .replace(/[.!?]+$/u, "")
+    .replace(/[’‘]/gu, "'")
+    .replace(/\s+/gu, " ");
+}
+
+function validateAssessmentDefinition(value) {
+  if (value === undefined || value === null) return null;
+  if (!value || typeof value !== "object" || Array.isArray(value) || value.schemaVersion !== 1 ||
+      !Array.isArray(value.targetExpressions) || value.targetExpressions.length > 12 ||
+      !Array.isArray(value.objectiveQuestions) || value.objectiveQuestions.length > 20 ||
+      !Array.isArray(value.referencePoints) || value.referencePoints.length > 12 ||
+      typeof value.retellingPrompt !== "string" || !value.retellingPrompt.trim() || value.retellingPrompt.length > 1000) {
+    throw new HttpError(503, "INVALID_ASSESSMENT_DEFINITION", "Episode assessment is invalid");
+  }
+  const targetExpressions = value.targetExpressions.map((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) throw new HttpError(503, "INVALID_ASSESSMENT_DEFINITION", "Episode assessment is invalid");
+    return {
+      expression: assessmentText(item.expression, "expression", 160),
+      meaning: assessmentText(item.meaning, "meaning", 400),
+      usage: assessmentText(item.usage, "usage", 500, { required: false }),
+    };
+  });
+  const ids = new Set();
+  const objectiveQuestions = value.objectiveQuestions.map((question) => {
+    if (!question || typeof question !== "object" || Array.isArray(question) ||
+        typeof question.id !== "string" || !EPISODE_ID_PATTERN.test(question.id) || ids.has(question.id) ||
+        !["single-choice", "fill-blank"].includes(question.type)) {
+      throw new HttpError(503, "INVALID_ASSESSMENT_DEFINITION", "Episode assessment is invalid");
+    }
+    ids.add(question.id);
+    const normalized = {
+      id: question.id,
+      type: question.type,
+      prompt: assessmentText(question.prompt, "prompt", 1000),
+      targetExpression: assessmentText(question.targetExpression, "targetExpression", 160, { required: false }),
+      explanation: assessmentText(question.explanation, "explanation", 1000),
+    };
+    if (question.type === "single-choice") {
+      if (!Array.isArray(question.options) || question.options.length < 2 || question.options.length > 6 ||
+          question.options.some((option) => !option || typeof option !== "object" ||
+            typeof option.id !== "string" || !EPISODE_ID_PATTERN.test(option.id) ||
+            typeof option.text !== "string" || !option.text.trim() || option.text.length > 500) ||
+          new Set(question.options.map((option) => option.id)).size !== question.options.length ||
+          typeof question.answer !== "string" || !question.options.some((option) => option.id === question.answer)) {
+        throw new HttpError(503, "INVALID_ASSESSMENT_DEFINITION", "Episode assessment is invalid");
+      }
+      return { ...normalized, options: question.options.map(({ id, text }) => ({ id, text: text.trim() })), answer: question.answer };
+    }
+    if (!Array.isArray(question.answers) || !question.answers.length || question.answers.length > 8 ||
+        question.answers.some((answer) => typeof answer !== "string" || !answer.trim() || answer.length > 200)) {
+      throw new HttpError(503, "INVALID_ASSESSMENT_DEFINITION", "Episode assessment is invalid");
+    }
+    return { ...normalized, answers: question.answers.map((answer) => answer.trim()) };
+  });
+  return {
+    schemaVersion: 1,
+    targetExpressions,
+    objectiveQuestions,
+    retellingPrompt: value.retellingPrompt.trim(),
+    referencePoints: value.referencePoints.map((point) => assessmentText(point, "referencePoint", 500)),
+  };
+}
+
+function gradeObjectiveAnswers(assessment, submittedAnswers) {
+  const questions = assessment?.objectiveQuestions || [];
+  const answers = submittedAnswers && typeof submittedAnswers === "object" && !Array.isArray(submittedAnswers)
+    ? submittedAnswers
+    : {};
+  const results = questions.map((question) => {
+    const submitted = typeof answers[question.id] === "string" ? answers[question.id] : "";
+    const correct = question.type === "single-choice"
+      ? submitted === question.answer
+      : question.answers.some((answer) => normalizeObjectiveAnswer(answer) === normalizeObjectiveAnswer(submitted));
+    return { questionId: question.id, correct };
+  });
+  const correct = results.filter((item) => item.correct).length;
+  return {
+    score: questions.length ? Math.round(correct / questions.length * 60) : 0,
+    maxScore: questions.length ? 60 : 0,
+    correct,
+    total: questions.length,
+    results,
+  };
+}
+
+function loadAssessmentModelConfig(env) {
+  const apiKey = env.DASHSCOPE_API_KEY?.trim();
+  const baseUrl = env.DASHSCOPE_BASE_URL?.trim();
+  if (!apiKey || !baseUrl) {
+    throw new HttpError(503, "ASSESSMENT_NOT_CONFIGURED", "Assessment model is not configured");
+  }
+  let url;
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    throw new HttpError(500, "CONFIGURATION_ERROR", "DASHSCOPE_BASE_URL is invalid");
+  }
+  if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) {
+    throw new HttpError(500, "CONFIGURATION_ERROR", "DASHSCOPE_BASE_URL must be an HTTPS URL");
+  }
+  const storagePrefix = loadAssessmentStoragePrefix(env);
+  return {
+    apiKey,
+    endpoint: `${url.toString().replace(/\/+$/, "")}/chat/completions`,
+    model: env.ASSESSMENT_MODEL?.trim() || DEFAULT_ASSESSMENT_MODEL,
+    timeoutMs: integerSetting(env, "ASSESSMENT_TIMEOUT_MS", 40_000, { min: 5_000, max: 55_000 }),
+    rubricVersion: env.ASSESSMENT_RUBRIC_VERSION?.trim() || "retelling-v1",
+    storagePrefix,
+    dailyLimit: integerSetting(env, "ASSESSMENT_DAILY_LIMIT", 20, { min: 1, max: 200 }),
+  };
+}
+
+function loadAssessmentStoragePrefix(env) {
+  const storagePrefix = (env.ASSESSMENT_STORAGE_PREFIX?.trim() || DEFAULT_ASSESSMENT_STORAGE_PREFIX)
+    .replace(/^\/+|\/+$/g, "");
+  if (!storagePrefix || storagePrefix.includes("..")) {
+    throw new HttpError(500, "CONFIGURATION_ERROR", "ASSESSMENT_STORAGE_PREFIX is invalid");
+  }
+  return storagePrefix;
+}
+
+const assessmentResponseSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["contentScore", "organizationScore", "grammarScore", "expressionScore", "summary", "contentFeedback", "languageIssues", "targetExpressionFeedback", "priorityImprovements", "revisedRetelling"],
+  properties: {
+    contentScore: { type: "integer", minimum: 0, maximum: 16 },
+    organizationScore: { type: "integer", minimum: 0, maximum: 8 },
+    grammarScore: { type: "integer", minimum: 0, maximum: 8 },
+    expressionScore: { type: "integer", minimum: 0, maximum: 8 },
+    summary: { type: "string" },
+    contentFeedback: { type: "array", maxItems: 8, items: { type: "string" } },
+    languageIssues: {
+      type: "array", maxItems: 8, items: {
+        type: "object", additionalProperties: false, required: ["original", "suggestion", "reason"],
+        properties: { original: { type: "string" }, suggestion: { type: "string" }, reason: { type: "string" } },
+      },
+    },
+    targetExpressionFeedback: { type: "array", maxItems: 8, items: { type: "string" } },
+    priorityImprovements: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" } },
+    revisedRetelling: { type: "string" },
+  },
+};
+
+function validateModelGrading(value) {
+  const scoreFields = { contentScore: 16, organizationScore: 8, grammarScore: 8, expressionScore: 8 };
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", "Assessment model returned invalid JSON");
+  }
+  for (const [field, max] of Object.entries(scoreFields)) {
+    if (!Number.isInteger(value[field]) || value[field] < 0 || value[field] > max) {
+      throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", "Assessment model returned an invalid score");
+    }
+  }
+  const stringArray = (field, max, min = 0) => {
+    const items = value[field];
+    if (!Array.isArray(items) || items.length < min || items.length > max ||
+        items.some((item) => typeof item !== "string" || !item.trim() || item.length > 1500)) {
+      throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", `Assessment model returned invalid ${field}`);
+    }
+    return items.map((item) => item.trim());
+  };
+  if (typeof value.summary !== "string" || !value.summary.trim() || value.summary.length > 2000 ||
+      typeof value.revisedRetelling !== "string" || !value.revisedRetelling.trim() || value.revisedRetelling.length > 6000 ||
+      !Array.isArray(value.languageIssues) || value.languageIssues.length > 8) {
+    throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", "Assessment model returned invalid feedback");
+  }
+  const languageIssues = value.languageIssues.map((issue) => {
+    if (!issue || typeof issue !== "object" || ["original", "suggestion", "reason"].some((field) =>
+      typeof issue[field] !== "string" || !issue[field].trim() || issue[field].length > 1000)) {
+      throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", "Assessment model returned invalid language feedback");
+    }
+    return { original: issue.original.trim(), suggestion: issue.suggestion.trim(), reason: issue.reason.trim() };
+  });
+  const scores = Object.fromEntries(Object.keys(scoreFields).map((field) => [field, value[field]]));
+  return {
+    ...scores,
+    totalScore: Object.values(scores).reduce((sum, score) => sum + score, 0),
+    summary: value.summary.trim(),
+    contentFeedback: stringArray("contentFeedback", 8),
+    languageIssues,
+    targetExpressionFeedback: stringArray("targetExpressionFeedback", 8),
+    priorityImprovements: stringArray("priorityImprovements", 3, 1),
+    revisedRetelling: value.revisedRetelling.trim(),
+  };
+}
+
+async function requestAssessmentGrading({ modelConfig, episode, transcript, assessment, retelling, fetchImpl }) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), modelConfig.timeoutMs);
+  const prompt = [
+    `Episode title: ${episode.title}`,
+    `Reference transcript:\n${transcript.slice(0, 30_000)}`,
+    `Expected content points:\n${(assessment?.referencePoints || []).map((point) => `- ${point}`).join("\n") || "Infer the essential points from the transcript."}`,
+    `Target expressions:\n${(assessment?.targetExpressions || []).map((item) => `- ${item.expression}: ${item.meaning}`).join("\n") || "Evaluate natural, reusable English expressions."}`,
+    `Learner retelling:\n${retelling}`,
+  ].join("\n\n");
+  let response;
+  try {
+    response = await fetchImpl(modelConfig.endpoint, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${modelConfig.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: modelConfig.model,
+        enable_thinking: false,
+        temperature: 0.2,
+        response_format: {
+          type: "json_schema",
+          json_schema: { name: "english_retelling_assessment", strict: true, schema: assessmentResponseSchema },
+        },
+        messages: [
+          { role: "system", content: "You are a strict but constructive English teacher. Grade an IELTS 6 learner aiming for 7. Focus on accurate comprehension, clear retelling, grammar, and natural reusable expressions. Do not reward copied wording mechanically. Return only the requested JSON. Feedback may be in concise Chinese; examples and corrections must be in English." },
+          { role: "user", content: prompt },
+        ],
+      }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") throw new HttpError(504, "ASSESSMENT_TIMEOUT", "Assessment model timed out");
+    throw new HttpError(502, "ASSESSMENT_MODEL_ERROR", "Assessment model request failed");
+  } finally {
+    clearTimeout(timeout);
+  }
+  if (!response.ok) throw new HttpError(502, "ASSESSMENT_MODEL_ERROR", "Assessment model request failed");
+  let payload;
+  try {
+    payload = await response.json();
+    const content = payload?.choices?.[0]?.message?.content;
+    return validateModelGrading(typeof content === "string" ? JSON.parse(content) : content);
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
+    throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", "Assessment model returned invalid JSON");
+  }
+}
+
+function assessmentPaths(storagePrefix, user, episodeId, attemptId, nowSeconds) {
+  const userKey = createHash("sha256").update(user.id).digest("hex").slice(0, 32);
+  const prefix = `${storagePrefix}/${userKey}`;
+  return {
+    attempt: `${prefix}/${episodeId}/${attemptId}.json`,
+    latest: `${prefix}/${episodeId}/latest.json`,
+    quota: `${prefix}/quota/${new Date(nowSeconds * 1000).toISOString().slice(0, 10)}.json`,
+  };
+}
+
+async function handleEnglishAssessment({ route, body, user, config, contentStore, nowSeconds, env, fetchImpl }) {
+  if (!hasPrivateResourceAccess(user)) throw new HttpError(403, "MISSING_PERMISSION", "Private resource access has not been granted");
+  if (!contentStore) throw new HttpError(503, "CONTENT_STORE_UNAVAILABLE", "Private resource storage is unavailable");
+  const episodeId = assessmentText(body.episodeId, "episodeId", 100);
+  if (!EPISODE_ID_PATTERN.test(episodeId)) throw new HttpError(400, "INVALID_EPISODE_ID", "episodeId is invalid");
+  if (route === "assessment/result") {
+    const { latest } = assessmentPaths(loadAssessmentStoragePrefix(env), user, episodeId, "latest", nowSeconds);
+    return { result: await contentStore.readJson(latest, { missing: null }) };
+  }
+  const modelConfig = loadAssessmentModelConfig(env);
+  const attemptId = assessmentText(body.attemptId, "attemptId", 64);
+  if (!ASSESSMENT_ATTEMPT_PATTERN.test(attemptId)) throw new HttpError(400, "INVALID_ASSESSMENT", "attemptId is invalid");
+  const retelling = assessmentText(body.retelling, "retelling", 6000);
+  const wordCount = retelling.match(/[A-Za-z]+(?:['’-][A-Za-z]+)*/gu)?.length || 0;
+  if (wordCount < 30 || wordCount > 800) throw new HttpError(400, "INVALID_RETELLING_LENGTH", "Retelling must contain 30 to 800 English words");
+  if (body.objectiveAnswers !== undefined && (!body.objectiveAnswers || typeof body.objectiveAnswers !== "object" || Array.isArray(body.objectiveAnswers) || Object.keys(body.objectiveAnswers).length > 20 || Object.values(body.objectiveAnswers).some((answer) => typeof answer !== "string" || answer.length > 500))) {
+    throw new HttpError(400, "INVALID_ASSESSMENT", "objectiveAnswers is invalid");
+  }
+  const episodePath = `${config.privatePrefix}/${episodeId}`;
+  const [episode, transcript] = await Promise.all([
+    contentStore.readJson(`${episodePath}/metadata.json`),
+    contentStore.readText(`${episodePath}/transcript.txt`),
+  ]);
+  if (episode?.schemaVersion !== 1 || episode.episodeId !== episodeId || typeof episode.title !== "string" || transcript.length < 100 || transcript.length > 100_000) {
+    throw new HttpError(503, "INVALID_EPISODE", "Episode content is invalid");
+  }
+  const assessment = validateAssessmentDefinition(episode.assessment);
+  const objective = gradeObjectiveAnswers(assessment, body.objectiveAnswers);
+  const paths = assessmentPaths(modelConfig.storagePrefix, user, episodeId, attemptId, nowSeconds);
+  const contentHash = createHash("sha256").update(retelling).digest("hex");
+  const existing = await contentStore.readJson(paths.attempt, { missing: null });
+  if (existing) {
+    if (existing.contentHash !== contentHash) throw new HttpError(409, "ATTEMPT_ID_CONFLICT", "attemptId has already been used");
+    if (existing.status === "completed") return existing;
+    if (existing.status === "grading") throw new HttpError(409, "ASSESSMENT_IN_PROGRESS", "Assessment is already in progress");
+  }
+  await contentStore.updateJson(paths.quota, {
+    missing: { schemaVersion: 1, count: 0 },
+    validate: (value) => value?.schemaVersion === 1 && Number.isSafeInteger(value.count) && value.count >= 0,
+  }, (quota) => {
+    if (quota.count >= modelConfig.dailyLimit) {
+      throw new HttpError(429, "ASSESSMENT_DAILY_LIMIT", "Daily assessment limit reached");
+    }
+    quota.count += 1;
+    return quota;
+  });
+  const submittedAt = existing?.submittedAt || new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
+  const pending = { schemaVersion: 1, status: "grading", attemptId, episodeId, submittedAt, contentHash, retelling, objective };
+  await contentStore.putJson(paths.attempt, pending);
+  try {
+    const grading = await requestAssessmentGrading({ modelConfig, episode, transcript, assessment, retelling, fetchImpl });
+    const completed = {
+      ...pending,
+      status: "completed",
+      completedAt: new Date().toISOString(),
+      model: modelConfig.model,
+      rubricVersion: modelConfig.rubricVersion,
+      grading,
+    };
+    await contentStore.putJson(paths.attempt, completed);
+    await contentStore.putJson(paths.latest, completed);
+    return completed;
+  } catch (error) {
+    await contentStore.putJson(paths.attempt, { ...pending, status: "failed", failedAt: new Date().toISOString(), errorCode: error instanceof HttpError ? error.code : "INTERNAL_ERROR" });
+    throw error;
+  }
+}
+
 async function handlePrivateResourceUpload({
   route, body, user, auth, config, contentStore, nowSeconds, randomBytesImpl,
 }) {
@@ -1251,6 +1591,7 @@ export function createHandler({
   verifyRegistrationResponseImpl = verifyRegistrationResponse,
   store,
   contentStore,
+  fetchImpl = globalThis.fetch,
 } = {}) {
   return async function privateAuthHandler(event, context = {}) {
     let config;
@@ -1286,7 +1627,7 @@ export function createHandler({
           : contentStore;
         return await persistentRequest({
           request, route, config, store: persistentStore, contentStore: privateContentStore,
-          nowSeconds, randomBytesImpl,
+          nowSeconds, randomBytesImpl, env, fetchImpl,
           generateAuthenticationOptionsImpl, verifyAuthenticationResponseImpl,
           generateRegistrationOptionsImpl, verifyRegistrationResponseImpl,
         });
@@ -1373,7 +1714,11 @@ export function createHandler({
         const privateContentStore = contentStore || await createPrivateResourceContentStore({ env, context });
         const body = parseJsonBody(request.body);
         const user = { id: "owner", role: "owner", permissions: [] };
-        const result = route.startsWith("collections/")
+        const result = route.startsWith("assessment/")
+          ? await handleEnglishAssessment({
+            route, body, user, config, contentStore: privateContentStore, nowSeconds, env, fetchImpl,
+          })
+          : route.startsWith("collections/")
           ? await handlePrivateResourceCollection({
             route, body, user, config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
           })
@@ -1804,6 +2149,7 @@ function revokeUser(state, user) {
 async function persistentRequest(options) {
   const {
     request, route, config, store, contentStore, nowSeconds, randomBytesImpl,
+    env, fetchImpl,
     generateAuthenticationOptionsImpl, verifyAuthenticationResponseImpl,
     generateRegistrationOptionsImpl, verifyRegistrationResponseImpl,
   } = options;
@@ -2051,6 +2397,12 @@ async function persistentRequest(options) {
     });
     return jsonResponse(config, 200, result);
   }
+  if (route.startsWith("assessment/")) {
+    const result = await handleEnglishAssessment({
+      route, body, user, config, contentStore, nowSeconds, env, fetchImpl,
+    });
+    return jsonResponse(config, 200, result);
+  }
   if (route === "passkeys") {
     return jsonResponse(config, 200, { credentials: userCredentials(state, user.id)
       .map(({ id, name, createdAt, lastUsedAt, deviceType, backedUp }) => ({ id, name, createdAt, lastUsedAt, deviceType, backedUp })) });
@@ -2170,12 +2522,16 @@ export async function administer({ store, command, userId, displayName = "Owner"
 export const handler = createHandler();
 
 export const __test = {
+  assessmentResponseSchema,
   decryptToken,
   encryptToken,
+  gradeObjectiveAnswers,
   genericUploadFile,
   loadConfig,
   parseEvent,
   signCdnPath,
   signedResources,
+  validateAssessmentDefinition,
+  validateModelGrading,
   validMediaHeader,
 };

@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import FixedAudioPlayer from "@/components/resources/FixedAudioPlayer";
+import EnglishAssessment from "@/components/resources/EnglishAssessment";
 import FlvVideoPlayer from "@/components/resources/FlvVideoPlayer";
 import PrivateLoadingProgress from "@/components/resources/PrivateLoadingProgress";
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
@@ -280,15 +281,28 @@ export default function PrivateResourceItem(): JSX.Element {
                   </a>
                 )}
               </header>
-              <section className="pt-10">
-                <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">TRANSCRIPT</p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">节目文本</h2>
+              {access.session && (
+                <EnglishAssessment
+                  assessment={episode.assessment}
+                  episodeId={episode.episodeId}
+                  session={access.session}
+                />
+              )}
+              <details className="group pt-10">
+                <summary className="cursor-pointer list-none rounded-2xl border border-white/10 bg-white/[0.025] p-5 transition hover:border-cyan-300/20">
+                  <p className="font-mono text-xs tracking-[0.18em] text-cyan-300">TRANSCRIPT</p>
+                  <div className="mt-2 flex items-center justify-between gap-4">
+                    <h2 className="text-2xl font-semibold text-white">节目文本</h2>
+                    <span className="text-xs text-slate-500 group-open:hidden">完成练习后展开</span>
+                    <span className="hidden text-xs text-slate-500 group-open:inline">收起文本</span>
+                  </div>
+                </summary>
                 <div className="mt-8 space-y-6 text-[15px] leading-8 text-slate-300">
                   {transcriptSections.map((section, index) => (
                     <p className="whitespace-pre-wrap" key={`${index}-${section.slice(0, 24)}`}>{section}</p>
                   ))}
                 </div>
-              </section>
+              </details>
             </>
           )}
         </article>

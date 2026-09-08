@@ -246,6 +246,8 @@ All paths are relative to `/api/private-auth/`.
 | `POST files/delete` | Remove an indexed file and its metadata; owner or write grant only |
 | `POST clipboard/get` | Read the private OSS-backed text clipboard |
 | `POST clipboard/save` / `POST clipboard/delete` | Add or remove clipboard entries; owner or write grant only |
+| `POST assessment/grade` | Synchronously grade an authenticated 6 Minute English retelling and persist the result |
+| `POST assessment/result` | Return the caller's latest persisted result for an episode |
 | `POST uploads/init` | Validate metadata and return short-lived, path-bound OSS PUT URLs; owner or write grant only |
 | `POST uploads/complete` | Verify every uploaded object, write metadata and publish the collection index |
 | `POST logout` | Revoke the current persistent session |
@@ -262,6 +264,26 @@ and episode request formats remain supported while clients migrate. Owners, acco
 `private-resources` grant and accounts with the legacy `english-learning` grant may sign resources.
 Revocation stops new signed URLs but cannot invalidate a URL already issued before its CDN type-A
 expiry.
+
+### Retelling assessment
+
+The assessment routes use Alibaba Model Studio's OpenAI-compatible Chat Completions API. Configure
+these variables on the existing function; login and lesson access continue to work before they are
+present:
+
+| Variable | Value |
+| --- | --- |
+| `DASHSCOPE_API_KEY` | Model Studio API key |
+| `DASHSCOPE_BASE_URL` | `https://dashscope.aliyuncs.com/compatible-mode/v1` for Beijing |
+| `ASSESSMENT_MODEL` | Optional; defaults to `qwen3.7-plus-2026-05-26` |
+| `ASSESSMENT_TIMEOUT_MS` | Optional; defaults to `40000` |
+| `ASSESSMENT_RUBRIC_VERSION` | Optional; defaults to `retelling-v1` |
+| `ASSESSMENT_DAILY_LIMIT` | Optional per-user model-call limit; defaults to `20` |
+| `ASSESSMENT_STORAGE_PREFIX` | Optional FC-only OSS prefix; defaults to `fc/english-assessment` |
+
+Results are kept outside `PRIVATE_RESOURCE_ROOT`, so they cannot be exposed through the CDN signing
+endpoint. Calls are synchronous JSON responses rather than streams. Completed attempt IDs are
+idempotent, and the server recomputes objective scores from episode metadata before saving them.
 
 Upload URLs bind the object path, method, content type and `x-oss-forbid-overwrite=true`, and expire
 after 15 minutes. The browser never receives OSS credentials. Audio and plain-text transcript are
