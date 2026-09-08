@@ -40,15 +40,15 @@ interface PlayerDragState {
   lastY: number;
   lastTime: number;
   velocityY: number;
-  startOffset: number;
-  maxOffset: number;
+  travel: number;
   wasExpanded: boolean;
 }
 
 const MEDIA_READY_TIMEOUT_MS = 8_000;
-const PLAYER_DRAG_THRESHOLD_PX = 80;
-const PLAYER_DRAG_VELOCITY_THRESHOLD = 0.55;
+const PLAYER_DRAG_THRESHOLD_PX = 56;
+const PLAYER_DRAG_VELOCITY_THRESHOLD = 0.5;
 const PLAYER_TAP_SLOP_PX = 6;
+const DEFAULT_GESTURE_TRAVEL_PX = 640;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -124,6 +124,11 @@ function waitForMetadata(audio: HTMLAudioElement): Promise<void> {
   });
 }
 
+function getGestureTravel(): number {
+  const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+  return Math.max(320, Math.round(viewportHeight * 0.78));
+}
+
 export default function FixedAudioPlayer({
   source,
   title,
@@ -135,18 +140,15 @@ export default function FixedAudioPlayer({
   const refreshingRef = useRef(false);
   const playIntentRef = useRef(false);
   const consecutiveRecoveryAttemptsRef = useRef(0);
-  const sheetRef = useRef<HTMLElement | null>(null);
-  const collapsedPanelRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<PlayerDragState | null>(null);
-  const ignoreHandleClickRef = useRef(false);
+  const ignoreGestureClickRef = useRef(false);
   const [refreshing, setRefreshing] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<number | null>(null);
-  const [dragProgress, setDragProgress] = useState(0);
-  const [collapsedHeight, setCollapsedHeight] = useState(156);
+  const [gestureTravel, setGestureTravel] = useState(DEFAULT_GESTURE_TRAVEL_PX);
   const {
     dismissResume,
     prepareRestart,
@@ -274,42 +276,45 @@ export default function FixedAudioPlayer({
   }, [source.url, suppressNextMetadataRestore]);
 
   useEffect(() => {
-    if (!expandable) return;
-    const panel = collapsedPanelRef.current;
-    if (!panel) return;
-
-    const updateHeight = () => {
-      const nextHeight = Math.ceil(panel.getBoundingClientRect().height);
-      if (nextHeight > 0) setCollapsedHeight(nextHeight);
-    };
-
-    updateHeight();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(updateHeight);
-    observer.observe(panel);
-    return () => observer.disconnect();
-  }, [expandable]);
-
-  useEffect(() => {
     if (!expandable || !expanded) return;
+
     const root = document.documentElement;
     const body = document.body;
-    const rootOverflow = root.style.overflow;
-    const bodyOverflow = body.style.overflow;
+    const scrollY = window.scrollY;
+    const previous = {
+      rootOverflow: root.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyLeft: body.style.left,
+      bodyRight: body.style.right,
+      bodyWidth: body.style.width,
+    };
+
     root.style.overflow = "hidden";
     body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+
     return () => {
-      root.style.overflow = rootOverflow;
-      body.style.overflow = bodyOverflow;
+      root.style.overflow = previous.rootOverflow;
+      body.style.overflow = previous.bodyOverflow;
+      body.style.position = previous.bodyPosition;
+      body.style.top = previous.bodyTop;
+      body.style.left = previous.bodyLeft;
+      body.style.right = previous.bodyRight;
+      body.style.width = previous.bodyWidth;
+      window.scrollTo({ top: scrollY, left: 0, behavior: "auto" });
     };
   }, [expandable, expanded]);
 
   useEffect(() => {
     if (!expandable || !expanded) return;
     const keydown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setExpanded(false);
-      setDragProgress(0);
+      if (event.key === "Escape") setExpanded(false);
     };
     window.addEventListener("keydown", keydown);
     return () => window.removeEventListener("keydown", keydown);
@@ -346,75 +351,72 @@ export default function FixedAudioPlayer({
     }
   };
 
-  const renderPlaybackStatus = () => (
-    <div className="flex shrink-0 items-center gap-2 text-[11px]">
-      {refreshing && <span className="text-cyan-300">正在恢复播放…</span>}
-      {!refreshing && playbackError && (
-        <span className="max-w-44 truncate text-rose-300 sm:max-w-none">{playbackError}</span>
-      )}
-      {resumeState && !refreshing && (
-        <PrivatePlaybackResumePrompt
-          onDismiss={dismissResume}
-          onRestart={() => void restart()}
-          onResume={() => void resume()}
-          position={resumeState.position}
-        />
-      )}
-    </div>
-  );
+  const renderPlaybackNotice = () => {
+    if (refreshing) return <span className="text-cyan-300">正在恢复播放…</span>;
+    if (playbackError) return <span className="text-rose-300">{playbackError}</span>;
+    return null;
+  };
+
+  const renderResumePrompt = (className = "") => {
+    if (!resumeState || refreshing) return null;
+    return (
+      <PrivatePlaybackResumePrompt
+        className={className}
+        onDismiss={dismissResume}
+        onRestart={() => void restart()}
+        onResume={() => void resume()}
+        position={resumeState.position}
+      />
+    );
+  };
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
     if (!expandable || (event.pointerType === "mouse" && event.button !== 0)) return;
-    const sheet = sheetRef.current;
-    if (!sheet) return;
-    const sheetHeight = sheet.getBoundingClientRect().height;
-    const maxOffset = Math.max(0, sheetHeight - collapsedHeight);
-    const startOffset = dragOffset ?? (expanded ? 0 : maxOffset);
+
+    const travel = getGestureTravel();
     dragRef.current = {
       pointerId: event.pointerId,
       startY: event.clientY,
       lastY: event.clientY,
       lastTime: event.timeStamp,
       velocityY: 0,
-      startOffset,
-      maxOffset,
+      travel,
       wasExpanded: expanded,
     };
-    ignoreHandleClickRef.current = false;
+    ignoreGestureClickRef.current = false;
+    setGestureTravel(travel);
     setDragging(true);
-    setDragOffset(startOffset);
-    setDragProgress(maxOffset > 0 ? clamp(1 - startOffset / maxOffset, 0, 1) : 1);
+    setDragOffset(expanded ? 0 : travel);
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
+
     const deltaY = event.clientY - drag.startY;
-    const nextOffset = clamp(drag.startOffset + deltaY, 0, drag.maxOffset);
+    const startOffset = drag.wasExpanded ? 0 : drag.travel;
+    const nextOffset = clamp(startOffset + deltaY, 0, drag.travel);
     const elapsed = Math.max(1, event.timeStamp - drag.lastTime);
     drag.velocityY = (event.clientY - drag.lastY) / elapsed;
     drag.lastY = event.clientY;
     drag.lastTime = event.timeStamp;
     setDragOffset(nextOffset);
-    setDragProgress(drag.maxOffset > 0 ? clamp(1 - nextOffset / drag.maxOffset, 0, 1) : 1);
   };
 
   const finishDrag = (event: ReactPointerEvent<HTMLButtonElement>, cancelled = false) => {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
+
     const deltaY = event.clientY - drag.startY;
     const moved = Math.abs(deltaY) > PLAYER_TAP_SLOP_PX;
-    ignoreHandleClickRef.current = moved;
+    ignoreGestureClickRef.current = moved;
 
     if (!cancelled && moved) {
       const shouldExpand = drag.wasExpanded
         ? !(deltaY > PLAYER_DRAG_THRESHOLD_PX || drag.velocityY > PLAYER_DRAG_VELOCITY_THRESHOLD)
         : deltaY < -PLAYER_DRAG_THRESHOLD_PX || drag.velocityY < -PLAYER_DRAG_VELOCITY_THRESHOLD;
       setExpanded(shouldExpand);
-      setDragProgress(shouldExpand ? 1 : 0);
-    } else {
-      setDragProgress(drag.wasExpanded ? 1 : 0);
     }
 
     setDragging(false);
@@ -425,23 +427,19 @@ export default function FixedAudioPlayer({
     }
   };
 
-  const handleClick = () => {
-    if (ignoreHandleClickRef.current) {
-      ignoreHandleClickRef.current = false;
+  const handleGestureClick = () => {
+    if (ignoreGestureClickRef.current) {
+      ignoreGestureClickRef.current = false;
       return;
     }
-    setExpanded((current) => {
-      const next = !current;
-      setDragProgress(next ? 1 : 0);
-      return next;
-    });
+    setExpanded((current) => !current);
   };
 
-  const renderDragHandle = () => (
+  const renderGestureZone = (mode: "expand" | "collapse") => (
     <button
-      aria-label={expanded ? "收起播放器" : "展开播放器"}
-      className="mx-auto flex h-7 w-20 touch-none items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50"
-      onClick={handleClick}
+      aria-label={mode === "collapse" ? "收起播放器" : "展开播放器"}
+      className={`${mode === "collapse" ? "h-[72px]" : "h-14"} flex w-full touch-none select-none items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300/40`}
+      onClick={handleGestureClick}
       onPointerCancel={(event) => finishDrag(event, true)}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -449,7 +447,7 @@ export default function FixedAudioPlayer({
       style={{ touchAction: "none" }}
       type="button"
     >
-      <span className="h-1 w-10 rounded-full bg-slate-500/70 transition-colors hover:bg-slate-400" />
+      <span className="h-1 w-11 rounded-full bg-slate-500/70 transition-colors hover:bg-slate-400" />
     </button>
   );
 
@@ -462,7 +460,10 @@ export default function FixedAudioPlayer({
         <div className="mx-auto max-w-6xl px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-8 lg:px-10">
           <div className="flex min-w-0 items-center justify-between gap-3 px-2 pb-1">
             <p className="truncate text-xs font-medium text-slate-400">{title}</p>
-            {renderPlaybackStatus()}
+            <div className="flex shrink-0 items-center gap-2 text-[11px]">
+              {renderPlaybackNotice()}
+              {renderResumePrompt()}
+            </div>
           </div>
           <MediaController audio className="block w-full overflow-hidden rounded-xl bg-white/[0.035]" style={mediaStyles}>
             <audio preload="metadata" ref={audioRef} slot="media" src={source.url} />
@@ -502,117 +503,133 @@ export default function FixedAudioPlayer({
     );
   }
 
-  const sheetTransform = dragOffset !== null
-    ? `translate3d(0, ${dragOffset}px, 0)`
-    : expanded
-      ? "translate3d(0, 0, 0)"
-      : `translate3d(0, calc(100dvh - ${collapsedHeight}px), 0)`;
-  const collapsedOpacity = clamp(1 - dragProgress * 1.35, 0, 1);
-  const expandedOpacity = clamp((dragProgress - 0.18) / 0.82, 0, 1);
+  const activeOffset = dragOffset ?? (expanded ? 0 : gestureTravel);
+  const dragProgress = gestureTravel > 0 ? clamp(1 - activeOffset / gestureTravel, 0, 1) : 0;
+  const compactOpacity = clamp(1 - dragProgress * 1.35, 0, 1);
+  const expandedOpacity = clamp((dragProgress - 0.04) / 0.96, 0, 1);
+  const expandedTransform = `translate3d(0, ${activeOffset}px, 0)`;
 
   return (
-    <aside
+    <MediaController
+      audio
       aria-label="6 Minute English 音频播放器"
-      className={`fixed inset-x-0 top-0 z-[120] h-[100dvh] overflow-hidden border-t border-white/10 bg-[#080c15] shadow-[0_-24px_70px_rgba(0,0,0,0.48)] ${dragging ? "" : "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"}`}
-      ref={sheetRef}
-      style={{ transform: sheetTransform }}
+      className="fixed inset-0 z-[120] block"
+      style={{ ...mediaStyles, background: "transparent", pointerEvents: "none" }}
     >
       <style>{expandablePlayerCss}</style>
-      <MediaController audio className="relative block h-full w-full bg-[#080c15]" style={mediaStyles}>
-        <audio preload="metadata" ref={audioRef} slot="media" src={source.url} />
+      <audio preload="metadata" ref={audioRef} slot="media" src={source.url} />
 
-        <div
-          aria-hidden={expanded}
-          className={`absolute inset-x-0 top-0 bg-[#080c15]/98 backdrop-blur-xl transition-opacity duration-200 ${expanded ? "pointer-events-none" : "pointer-events-auto"}`}
-          ref={collapsedPanelRef}
-          style={{ opacity: collapsedOpacity }}
-        >
-          <div className="mx-auto max-w-6xl px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 sm:px-8 lg:px-10">
-            {renderDragHandle()}
-            <div className="flex min-w-0 items-center justify-between gap-3 px-2 pb-1">
-              <p className="truncate text-xs font-medium text-slate-400">{title}</p>
-              {renderPlaybackStatus()}
-            </div>
-            <MediaControlBar className="flex w-full items-center px-1">
-              <MediaTimeDisplay showDuration />
-              <MediaTimeRange />
-            </MediaControlBar>
-            <div className="relative min-h-14 px-1 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-              <div className="absolute left-0 top-1/2 flex min-w-0 -translate-y-1/2 justify-start sm:static sm:translate-y-0">
-                <MediaPlaybackRateButton aria-label="调整播放速度" />
-              </div>
-              <div className="contents sm:flex sm:items-center sm:justify-center sm:gap-2">
-                <MediaSeekBackwardButton
-                  aria-label="后退 10 秒"
-                  className="absolute left-1/4 top-1/2 -translate-x-1/2 -translate-y-1/2 sm:static sm:translate-x-0 sm:translate-y-0"
-                  seekOffset={10}
-                />
-                <MediaPlayButton
-                  aria-label="播放或暂停"
-                  className="absolute left-1/2 top-1/2 size-12 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300/10 text-cyan-100 transition hover:bg-cyan-300/20 sm:static sm:translate-x-0 sm:translate-y-0"
-                  style={playButtonStyles}
-                />
-                <MediaSeekForwardButton
-                  aria-label="前进 10 秒"
-                  className="absolute left-3/4 top-1/2 -translate-x-1/2 -translate-y-1/2 sm:static sm:translate-x-0 sm:translate-y-0"
-                  seekOffset={10}
-                />
-              </div>
-              <div className="absolute right-0 top-1/2 flex min-w-0 -translate-y-1/2 items-center justify-end sm:static sm:translate-y-0">
-                <MediaMuteButton aria-label="静音" />
-                <MediaVolumeRange className="hidden sm:inline-flex" />
-              </div>
-            </div>
+      <div
+        aria-hidden={expanded && !dragging}
+        className={`fixed inset-x-0 bottom-0 border-t border-white/10 bg-[#080c15]/98 shadow-[0_-18px_50px_rgba(0,0,0,0.38)] backdrop-blur-xl ${dragging ? "" : "transition-opacity duration-200"} ${expanded && !dragging ? "pointer-events-none" : "pointer-events-auto"}`}
+        style={{ opacity: compactOpacity }}
+      >
+        <div className="mx-auto max-w-6xl px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-8 lg:px-10">
+          {renderGestureZone("expand")}
+          <div className="px-2 pb-1">
+            <p className="truncate text-xs font-medium text-slate-400">{title}</p>
           </div>
-        </div>
-
-        <div
-          aria-hidden={!expanded}
-          className={`absolute inset-0 flex flex-col px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(0.5rem,env(safe-area-inset-top))] transition-opacity duration-200 sm:px-8 ${expanded ? "pointer-events-auto" : "pointer-events-none"}`}
-          style={{ opacity: expandedOpacity }}
-        >
-          {renderDragHandle()}
-          <div className="mx-auto mt-3 w-full max-w-3xl text-center">
-            <p className="font-mono text-[10px] tracking-[0.2em] text-cyan-300/80">6 MINUTE ENGLISH</p>
-            <h2 className="mx-auto mt-3 max-w-2xl text-xl font-semibold leading-7 text-white sm:text-2xl">{title}</h2>
-            <div className="mt-3 flex justify-center">{renderPlaybackStatus()}</div>
-          </div>
-
-          <div className="flex min-h-0 flex-1 items-center justify-center py-5">
-            <div className="grid w-full max-w-3xl grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-8">
+          {renderPlaybackNotice() && (
+            <div className="px-2 pb-2 text-[11px]">{renderPlaybackNotice()}</div>
+          )}
+          {resumeState && !refreshing && (
+            <div className="px-2 pb-2">
+              {renderResumePrompt("w-full justify-center sm:justify-end")}
+            </div>
+          )}
+          <MediaControlBar className="flex w-full items-center px-1">
+            <MediaTimeDisplay showDuration />
+            <MediaTimeRange />
+          </MediaControlBar>
+          <div className="relative min-h-14 px-1 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+            <div className="absolute left-0 top-1/2 flex min-w-0 -translate-y-1/2 justify-start sm:static sm:translate-y-0">
+              <MediaPlaybackRateButton aria-label="调整播放速度" noTooltip />
+            </div>
+            <div className="contents sm:flex sm:items-center sm:justify-center sm:gap-2">
               <MediaSeekBackwardButton
                 aria-label="后退 10 秒"
-                className="size-16 justify-self-center rounded-full bg-white/[0.04] text-slate-200 transition hover:bg-white/[0.08]"
+                className="absolute left-1/4 top-1/2 -translate-x-1/2 -translate-y-1/2 sm:static sm:translate-x-0 sm:translate-y-0"
+                noTooltip
                 seekOffset={10}
-                style={expandedSeekButtonStyles}
               />
               <MediaPlayButton
                 aria-label="播放或暂停"
-                className={`private-audio-expanded-play justify-self-center rounded-full border border-cyan-200/10 bg-cyan-300/10 text-cyan-100 transition-colors hover:bg-cyan-300/16 ${isPlaying ? "is-playing" : ""}`}
-                style={expandedPlayButtonStyles}
+                className="absolute left-1/2 top-1/2 size-12 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300/10 text-cyan-100 transition hover:bg-cyan-300/20 sm:static sm:translate-x-0 sm:translate-y-0"
+                noTooltip
+                style={playButtonStyles}
               />
               <MediaSeekForwardButton
                 aria-label="前进 10 秒"
-                className="size-16 justify-self-center rounded-full bg-white/[0.04] text-slate-200 transition hover:bg-white/[0.08]"
+                className="absolute left-3/4 top-1/2 -translate-x-1/2 -translate-y-1/2 sm:static sm:translate-x-0 sm:translate-y-0"
+                noTooltip
                 seekOffset={10}
-                style={expandedSeekButtonStyles}
               />
             </div>
-          </div>
-
-          <div className="mx-auto w-full max-w-3xl pb-1">
-            <MediaTimeRange className="w-full" />
-            <div className="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500">
-              <MediaTimeDisplay showDuration />
-              <div className="flex items-center gap-1">
-                <MediaPlaybackRateButton aria-label="调整播放速度" />
-                <MediaMuteButton aria-label="静音" />
-                <MediaVolumeRange className="hidden w-24 sm:inline-flex" />
-              </div>
+            <div className="absolute right-0 top-1/2 flex min-w-0 -translate-y-1/2 items-center justify-end sm:static sm:translate-y-0">
+              <MediaMuteButton aria-label="静音" noTooltip />
+              <MediaVolumeRange className="hidden sm:inline-flex" />
             </div>
           </div>
         </div>
-      </MediaController>
-    </aside>
+      </div>
+
+      <div
+        aria-hidden={!expanded && !dragging}
+        className={`fixed inset-0 flex flex-col bg-[#080c15] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] shadow-[0_-24px_70px_rgba(0,0,0,0.48)] sm:px-8 ${expanded || dragging ? "pointer-events-auto" : "pointer-events-none"} ${dragging ? "" : "transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"}`}
+        style={{ opacity: expandedOpacity, transform: expandedTransform }}
+      >
+        {renderGestureZone("collapse")}
+
+        <div className="mx-auto w-full max-w-3xl text-center">
+          <p className="font-mono text-[10px] tracking-[0.2em] text-cyan-300/80">6 MINUTE ENGLISH</p>
+          <h2 className="mx-auto mt-3 max-w-2xl text-xl font-semibold leading-7 text-white sm:text-2xl">{title}</h2>
+          {renderPlaybackNotice() && (
+            <div className="mt-3 text-[11px]">{renderPlaybackNotice()}</div>
+          )}
+          {resumeState && !refreshing && (
+            <div className="mt-4 flex justify-center">
+              {renderResumePrompt("justify-center")}
+            </div>
+          )}
+        </div>
+
+        <div className="flex min-h-0 flex-1 items-center justify-center py-5">
+          <div className="grid w-full max-w-3xl grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-8">
+            <MediaSeekBackwardButton
+              aria-label="后退 10 秒"
+              className="size-16 justify-self-center rounded-full bg-white/[0.04] text-slate-200 transition hover:bg-white/[0.08]"
+              noTooltip
+              seekOffset={10}
+              style={expandedSeekButtonStyles}
+            />
+            <MediaPlayButton
+              aria-label="播放或暂停"
+              className={`private-audio-expanded-play justify-self-center rounded-full border border-cyan-200/10 bg-cyan-300/10 text-cyan-100 transition-colors hover:bg-cyan-300/16 ${isPlaying ? "is-playing" : ""}`}
+              noTooltip
+              style={expandedPlayButtonStyles}
+            />
+            <MediaSeekForwardButton
+              aria-label="前进 10 秒"
+              className="size-16 justify-self-center rounded-full bg-white/[0.04] text-slate-200 transition hover:bg-white/[0.08]"
+              noTooltip
+              seekOffset={10}
+              style={expandedSeekButtonStyles}
+            />
+          </div>
+        </div>
+
+        <div className="mx-auto w-full max-w-3xl pb-1">
+          <MediaTimeRange className="w-full" />
+          <div className="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500">
+            <MediaTimeDisplay showDuration />
+            <div className="flex items-center gap-1">
+              <MediaPlaybackRateButton aria-label="调整播放速度" noTooltip />
+              <MediaMuteButton aria-label="静音" noTooltip />
+              <MediaVolumeRange className="hidden w-24 sm:inline-flex" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </MediaController>
   );
 }
