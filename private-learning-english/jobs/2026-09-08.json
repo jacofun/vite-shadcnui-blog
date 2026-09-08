@@ -17,5 +17,218 @@
     "工程决策",
     "精听",
     "复述"
-  ]
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "obsolete",
+        "meaning": "no longer in use because something newer, better or more fashionable has replaced it",
+        "usage": "Often used for technology, systems, skills or working methods: This dependency is obsolete and should be replaced."
+      },
+      {
+        "expression": "if it ain't broke, don't fix it",
+        "meaning": "do not change something that already works satisfactorily",
+        "usage": "An informal proverb for resisting unnecessary change; it can also be challenged when hidden risks or future costs justify an upgrade."
+      },
+      {
+        "expression": "stick with something",
+        "meaning": "continue using or doing something instead of changing",
+        "usage": "Use stick with + noun or -ing form: We will stick with the current platform until the migration risk is lower."
+      },
+      {
+        "expression": "in terms of",
+        "meaning": "when considering a particular aspect of something",
+        "usage": "Use it to define the dimension of a comparison: The new design is better in terms of maintainability."
+      },
+      {
+        "expression": "verbatim",
+        "meaning": "using exactly the same words as the original",
+        "usage": "It commonly follows a verb or stands after a noun: quote someone verbatim; a verbatim transcript."
+      },
+      {
+        "expression": "make a comeback",
+        "meaning": "become popular or successful again after a period of decline",
+        "usage": "Use make a comeback for products, styles, people or ideas returning to popularity."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "qwerty-inference",
+        "type": "single-choice",
+        "prompt": "Why does the programme suggest QWERTY continues to be used even though other keyboard layouts can be faster?",
+        "targetExpression": "stick with something",
+        "options": [
+          {
+            "id": "a",
+            "text": "Its technical efficiency has been proven to be the highest."
+          },
+          {
+            "id": "b",
+            "text": "People already know it, so changing would require effort and relearning."
+          },
+          {
+            "id": "c",
+            "text": "Court reporters are legally required to use it."
+          },
+          {
+            "id": "d",
+            "text": "It is the only layout supported by modern computers."
+          }
+        ],
+        "answer": "b",
+        "explanation": "The speakers contrast QWERTY's lower typing efficiency with people's familiarity. Tacye does not want to learn a complicated alternative, so she chooses to stick with QWERTY."
+      },
+      {
+        "id": "idiom-completion",
+        "type": "fill-blank",
+        "prompt": "Complete the proverb used to argue against unnecessary change: “If it ain't broke, ______.”",
+        "targetExpression": "if it ain't broke, don't fix it",
+        "answers": [
+          "don't fix it",
+          "do not fix it"
+        ],
+        "explanation": "If it ain't broke, don't fix it means that something working satisfactorily does not need to be changed."
+      },
+      {
+        "id": "stick-with-collocation",
+        "type": "fill-blank",
+        "prompt": "Complete the sentence with the programme's phrasal verb: “The migration risk is still high, so we'll ______ the current platform for now.”",
+        "targetExpression": "stick with something",
+        "answers": [
+          "stick with"
+        ],
+        "explanation": "Stick with means to continue using or doing something rather than change to an alternative."
+      },
+      {
+        "id": "in-terms-of-meaning",
+        "type": "single-choice",
+        "prompt": "In “QWERTY is not the most efficient layout in terms of typing speed”, what does “in terms of” do?",
+        "targetExpression": "in terms of",
+        "options": [
+          {
+            "id": "a",
+            "text": "It identifies the specific aspect being compared."
+          },
+          {
+            "id": "b",
+            "text": "It shows that the conclusion is only temporary."
+          },
+          {
+            "id": "c",
+            "text": "It introduces the person responsible for the design."
+          },
+          {
+            "id": "d",
+            "text": "It means the two keyboard layouts are identical."
+          }
+        ],
+        "answer": "a",
+        "explanation": "In terms of narrows a statement to one dimension. Here, the dimension is typing speed rather than familiarity, cost or availability."
+      },
+      {
+        "id": "verbatim-listening",
+        "type": "fill-blank",
+        "prompt": "Court reporters need to record cases using exactly the words originally spoken. Complete the sentence: “They take down speech ______.”",
+        "targetExpression": "verbatim",
+        "answers": [
+          "verbatim"
+        ],
+        "explanation": "Verbatim means using exactly the same words as the original speaker."
+      },
+      {
+        "id": "obsolete-usage",
+        "type": "single-choice",
+        "prompt": "Which sentence uses “obsolete” most naturally?",
+        "targetExpression": "obsolete",
+        "options": [
+          {
+            "id": "a",
+            "text": "The server became obsolete after a supported replacement made it unnecessary."
+          },
+          {
+            "id": "b",
+            "text": "The server was obsolete for ten minutes during maintenance."
+          },
+          {
+            "id": "c",
+            "text": "We obsolete the report word for word."
+          },
+          {
+            "id": "d",
+            "text": "The team worked obsolete to finish early."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Obsolete is an adjective for something no longer used because it has been replaced. A brief outage does not make a system obsolete."
+      },
+      {
+        "id": "venus-cause",
+        "type": "single-choice",
+        "prompt": "What reasoning connects Venus's conditions to the HAR-V rover's old-style technology?",
+        "targetExpression": "",
+        "options": [
+          {
+            "id": "a",
+            "text": "A clockwork rover can use wind power and avoid ordinary electronics that would fail in extreme heat and long darkness."
+          },
+          {
+            "id": "b",
+            "text": "Clockwork is faster than every electronic control system."
+          },
+          {
+            "id": "c",
+            "text": "NASA selected clockwork mainly because it is fashionable again."
+          },
+          {
+            "id": "d",
+            "text": "Venus has no wind, so a wound key is the rover's only possible energy source."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme says ordinary electronics cannot survive the conditions. HAR-V applies a very old mechanical idea because it fits the environment and can be powered by Venus's winds."
+      },
+      {
+        "id": "comeback-completion",
+        "type": "fill-blank",
+        "prompt": "Complete the expression describing cassettes and Walkmans becoming popular again: “They are making ______.”",
+        "targetExpression": "make a comeback",
+        "answers": [
+          "a comeback"
+        ],
+        "explanation": "To make a comeback is to return to popularity or success after a period of decline."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "comprehension-1",
+        "type": "comprehension",
+        "prompt": "In 40–70 words, compare why clockwork is used for HAR-V with why people continue using QWERTY. Explain the different logic behind the two decisions.",
+        "targetExpression": "in terms of",
+        "gradingCriteria": "Award points for identifying environmental suitability and electronic failure on Venus, familiarity and switching effort for QWERTY, a clear contrast between necessity and habit or path dependence, accurate use of in terms of, and clear English."
+      },
+      {
+        "id": "paraphrase-1",
+        "type": "paraphrase",
+        "prompt": "Paraphrase this idea in one or two sentences without copying it: “Because everyone is used to QWERTY keyboards, the tech lives on.” Use “stick with” naturally and make the cause-and-effect relationship explicit.",
+        "targetExpression": "stick with something",
+        "gradingCriteria": "Award points for preserving the original meaning, using stick with with a correct object, making familiarity or relearning cost the cause, avoiding close copying, and producing natural, grammatically accurate English."
+      },
+      {
+        "id": "application-1",
+        "type": "application",
+        "prompt": "In 50–90 words, apply “if it ain't broke, don't fix it” to a legacy system at work. State when you would follow the principle and one risk or condition that would still justify an upgrade.",
+        "targetExpression": "if it ain't broke, don't fix it",
+        "gradingCriteria": "Award points for a realistic new context, natural and accurate use of the proverb, a balanced decision rather than blind resistance to change, a concrete upgrade trigger such as security, support, cost or scalability, and clear English."
+      }
+    ],
+    "retellingPrompt": "Without looking at the transcript, retell the episode's central argument in 100–150 words. Contrast at least two reasons old technology survives, support them with the HAR-V and QWERTY examples, and use at least three target expressions naturally. Do not list vocabulary definitions.",
+    "referencePoints": [
+      "Technology can become obsolete quickly, yet some old designs continue because continued use can still be rational.",
+      "HAR-V uses clockwork because ordinary electronics cannot survive Venus's extreme heat and long periods of darkness, while wind can power the mechanical design.",
+      "QWERTY survives despite lower typing efficiency because it is familiar and switching to a different layout requires learning and coordination.",
+      "Other examples include Japan's former use of floppy disks, CERN's magnetic tape and the comeback of cassettes and Walkmans.",
+      "The episode distinguishes technical suitability, cultural preference and the practical cost of changing an established standard."
+    ]
+  }
 }

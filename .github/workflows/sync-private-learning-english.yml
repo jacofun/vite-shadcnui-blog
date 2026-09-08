@@ -3,6 +3,7 @@ name: Sync Private 6 Minute English Lesson
 on:
   push:
     branches:
+      - main
       - feature/private_learning_english
     paths:
       - "private-learning-english/jobs/*.json"
@@ -105,7 +106,43 @@ jobs:
             (.reason | type == "string" and length > 0 and length <= 1000) and
             (.difficulty | type == "string" and length > 0 and length <= 20) and
             (.tags | type == "array" and length <= 20 and
-              all(.[]; type == "string" and length > 0 and length <= 50))
+              all(.[]; type == "string" and length > 0 and length <= 50)) and
+            (.assessment == null or (
+              .assessment.schemaVersion == 1 and
+              (.assessment.targetExpressions | type == "array" and length <= 12 and all(.[];
+                (.expression | type == "string" and length > 0 and length <= 160) and
+                (.meaning | type == "string" and length > 0 and length <= 400) and
+                (.usage | type == "string" and length <= 500)
+              )) and
+              (.assessment.objectiveQuestions | type == "array" and length <= 20 and all(.[];
+                (.id | type == "string" and test("^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$")) and
+                (.type == "single-choice" or .type == "fill-blank") and
+                (.prompt | type == "string" and length > 0 and length <= 1000) and
+                (.targetExpression | type == "string" and length <= 160) and
+                (.explanation | type == "string" and length > 0 and length <= 1000) and
+                (if .type == "single-choice" then
+                  (. as $question |
+                    ($question.options | type == "array" and length >= 2 and length <= 6 and all(.[];
+                      (.id | type == "string" and test("^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$")) and
+                      (.text | type == "string" and length > 0 and length <= 500)
+                    )) and
+                    ($question.answer | type == "string") and
+                    any($question.options[]; .id == $question.answer)
+                  )
+                else
+                  (.answers | type == "array" and length >= 1 and length <= 8 and all(.[]; type == "string" and length > 0 and length <= 200))
+                end)
+              )) and
+              ((.assessment.subjectiveQuestions // []) | type == "array" and length <= 6 and all(.[];
+                (.id | type == "string" and test("^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$")) and
+                (.type == "comprehension" or .type == "paraphrase" or .type == "application") and
+                (.prompt | type == "string" and length > 0 and length <= 1000) and
+                (.targetExpression | type == "string" and length <= 160) and
+                (.gradingCriteria | type == "string" and length > 0 and length <= 1000)
+              )) and
+              (.assessment.retellingPrompt | type == "string" and length > 0 and length <= 1000) and
+              (.assessment.referencePoints | type == "array" and length <= 12 and all(.[]; type == "string" and length > 0 and length <= 500))
+            ))
           ' "${JOB_FILE}" >/dev/null || {
             echo "::error::Lesson job does not match schema version 1."
             exit 1
@@ -292,6 +329,7 @@ jobs:
               reason: $job[0].reason,
               difficulty: $job[0].difficulty,
               tags: $job[0].tags,
+              assessment: $job[0].assessment,
               syncedAt: $syncedAt,
               objectPrefix: $objectPrefix,
               resources: {
