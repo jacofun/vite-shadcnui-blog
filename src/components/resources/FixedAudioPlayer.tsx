@@ -63,6 +63,7 @@ const PLAYER_DRAG_THRESHOLD_PX = 56;
 const PLAYER_DRAG_VELOCITY_THRESHOLD = 0.5;
 const PLAYER_TAP_SLOP_PX = 6;
 const PLAYER_SETTLE_MS = 300;
+const TOUCH_CLICK_SUPPRESS_MS = 700;
 
 const DEFAULT_VIEWPORT: ViewportSize = {
   height: 720,
@@ -147,6 +148,14 @@ function getViewportSize(): ViewportSize {
   };
 }
 
+function findTouch(touches: TouchList, identifier: number): Touch | null {
+  for (let index = 0; index < touches.length; index += 1) {
+    const touch = touches.item(index);
+    if (touch?.identifier === identifier) return touch;
+  }
+  return null;
+}
+
 export default function FixedAudioPlayer({
   source,
   title,
@@ -160,8 +169,10 @@ export default function FixedAudioPlayer({
   const consecutiveRecoveryAttemptsRef = useRef(0);
   const dragRef = useRef<PlayerDragState | null>(null);
   const ignoreGestureClickRef = useRef(false);
+  const lastTouchEndRef = useRef(0);
   const settleTimerRef = useRef<number | null>(null);
   const settlingRef = useRef(false);
+  const gestureZoneRef = useRef<HTMLButtonElement | null>(null);
   const compactMeasureRef = useRef<HTMLDivElement | null>(null);
   const progressRef = useRef<HTMLDivElement | null>(null);
   const controlsRef = useRef<HTMLDivElement | null>(null);
@@ -170,6 +181,7 @@ export default function FixedAudioPlayer({
   const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [settling, setSettling] = useState(false);
   const [dragOffset, setDragOffset] = useState<number | null>(null);
   const [viewport, setViewport] = useState<ViewportSize>(() => getViewportSize());
@@ -389,6 +401,49 @@ export default function FixedAudioPlayer({
     return () => window.removeEventListener("keydown", keydown);
   }, [beginSettle, expandable, expanded]);
 
+  useEffect(() => {
+    if (!expandable || !expanded || settling || dragging) return;
+
+    const root = document.documentElement;
+    const body = document.body;
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    const previous = {
+      rootOverflow: root.style.overflow,
+      rootOverscrollBehavior: root.style.overscrollBehavior,
+      bodyOverflow: body.style.overflow,
+      bodyOverscrollBehavior: body.style.overscrollBehavior,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyLeft: body.style.left,
+      bodyRight: body.style.right,
+      bodyWidth: body.style.width,
+    };
+
+    root.style.overflow = "hidden";
+    root.style.overscrollBehavior = "none";
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = `-${scrollX}px`;
+    body.style.right = "0";
+    body.style.width = "100%";
+
+    return () => {
+      root.style.overflow = previous.rootOverflow;
+      root.style.overscrollBehavior = previous.rootOverscrollBehavior;
+      body.style.overflow = previous.bodyOverflow;
+      body.style.overscrollBehavior = previous.bodyOverscrollBehavior;
+      body.style.position = previous.bodyPosition;
+      body.style.top = previous.bodyTop;
+      body.style.left = previous.bodyLeft;
+      body.style.right = previous.bodyRight;
+      body.style.width = previous.bodyWidth;
+      window.scrollTo({ top: scrollY, left: scrollX, behavior: "auto" });
+    };
+  }, [dragging, expandable, expanded, settling]);
+
   useEffect(() => () => {
     if (settleTimerRef.current !== null) {
       window.clearTimeout(settleTimerRef.current);
@@ -445,8 +500,8 @@ export default function FixedAudioPlayer({
     );
   };
 
-  const handlePointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (!expandable || (event.pointerType === "mouse" && event.button !== 0)) return;
+  const startDrag = useCallback((clientY: number, timeStamp: number, pointerId: number): void => {
+    if (!expandable || dragRef.current) return;
 
     if (settleTimerRef.current !== null) {
       window.clearTimeout(settleTimerRef.current);
@@ -459,54 +514,141 @@ export default function FixedAudioPlayer({
     const travel = Math.max(1, nextViewport.height - compactMetrics.height);
 
     dragRef.current = {
-      pointerId: event.pointerId,
-      startY: event.clientY,
-      lastY: event.clientY,
-      lastTime: event.timeStamp,
+      pointerId,
+      startY: clientY,
+      lastY: clientY,
+      lastTime: timeStamp,
       velocityY: 0,
       travel,
       wasExpanded: expanded,
     };
 
     ignoreGestureClickRef.current = false;
+    setDragging(true);
     setViewport(nextViewport);
     setDragOffset(expanded ? 0 : travel);
+  }, [compactMetrics.height, expandable, expanded]);
+
+  const moveDrag = useCallback((clientY: number, timeStamp: number, pointerId: number): void => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== pointerId) return;
+
+    const deltaY = clientY - drag.startY;
+    const startOffset = drag.wasExpanded ? 0 : drag.travel;
+    const nextOffset = clamp(startOffset + deltaY, 0, drag.travel);
+    const elapsed = Math.max(1, timeStamp - drag.lastTime);
+
+    drag.velocityY = (clientY - drag.lastY) / elapsed;
+    drag.lastY = clientY;
+    drag.lastTime = timeStamp;
+    setDragOffset(nextOffset);
+  }, []);
+
+  const finishDragAt = useCallback((
+    clientY: number,
+    cancelled: boolean,
+    toggleOnTap: boolean,
+  ): void => {
+    const drag = dragRef.current;
+    if (!drag) return;
+
+    const deltaY = clientY - drag.startY;
+    const moved = Math.abs(deltaY) > PLAYER_TAP_SLOP_PX;
+    dragRef.current = null;
+    setDragging(false);
+
+    if (cancelled) {
+      beginSettle(drag.wasExpanded);
+      return;
+    }
+
+    if (!moved) {
+      if (toggleOnTap) beginSettle(!drag.wasExpanded);
+      else setDragOffset(null);
+      return;
+    }
+
+    const shouldExpand = drag.wasExpanded
+      ? !(deltaY > PLAYER_DRAG_THRESHOLD_PX || drag.velocityY > PLAYER_DRAG_VELOCITY_THRESHOLD)
+      : deltaY < -PLAYER_DRAG_THRESHOLD_PX || drag.velocityY < -PLAYER_DRAG_VELOCITY_THRESHOLD;
+    beginSettle(shouldExpand);
+  }, [beginSettle]);
+
+  useEffect(() => {
+    if (!expandable) return;
+    const zone = gestureZoneRef.current;
+    if (!zone) return;
+
+    let activeTouchId: number | null = null;
+
+    const touchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1 || dragRef.current) return;
+      const touch = event.touches.item(0);
+      if (!touch) return;
+      activeTouchId = touch.identifier;
+      startDrag(touch.clientY, event.timeStamp, touch.identifier);
+    };
+
+    const touchMove = (event: TouchEvent) => {
+      if (activeTouchId === null) return;
+      const touch = findTouch(event.touches, activeTouchId);
+      if (!touch) return;
+      if (event.cancelable) event.preventDefault();
+      moveDrag(touch.clientY, event.timeStamp, activeTouchId);
+    };
+
+    const touchEnd = (event: TouchEvent) => {
+      if (activeTouchId === null) return;
+      const touch = findTouch(event.changedTouches, activeTouchId);
+      if (!touch) return;
+      if (event.cancelable) event.preventDefault();
+      lastTouchEndRef.current = performance.now();
+      finishDragAt(touch.clientY, false, true);
+      activeTouchId = null;
+    };
+
+    const touchCancel = (event: TouchEvent) => {
+      if (activeTouchId === null) return;
+      const touch = findTouch(event.changedTouches, activeTouchId);
+      const clientY = touch?.clientY ?? dragRef.current?.lastY ?? 0;
+      lastTouchEndRef.current = performance.now();
+      finishDragAt(clientY, true, false);
+      activeTouchId = null;
+    };
+
+    zone.addEventListener("touchstart", touchStart, { passive: false });
+    zone.addEventListener("touchmove", touchMove, { passive: false });
+    zone.addEventListener("touchend", touchEnd, { passive: false });
+    zone.addEventListener("touchcancel", touchCancel, { passive: false });
+
+    return () => {
+      zone.removeEventListener("touchstart", touchStart);
+      zone.removeEventListener("touchmove", touchMove);
+      zone.removeEventListener("touchend", touchEnd);
+      zone.removeEventListener("touchcancel", touchCancel);
+    };
+  }, [expandable, finishDragAt, moveDrag, startDrag]);
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === "touch") return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    startDrag(event.clientY, event.timeStamp, event.pointerId);
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-
-    const deltaY = event.clientY - drag.startY;
-    const startOffset = drag.wasExpanded ? 0 : drag.travel;
-    const nextOffset = clamp(startOffset + deltaY, 0, drag.travel);
-    const elapsed = Math.max(1, event.timeStamp - drag.lastTime);
-
-    drag.velocityY = (event.clientY - drag.lastY) / elapsed;
-    drag.lastY = event.clientY;
-    drag.lastTime = event.timeStamp;
-    setDragOffset(nextOffset);
+    if (event.pointerType === "touch") return;
+    moveDrag(event.clientY, event.timeStamp, event.pointerId);
   };
 
-  const finishDrag = (event: ReactPointerEvent<HTMLButtonElement>, cancelled = false) => {
+  const finishPointerDrag = (event: ReactPointerEvent<HTMLButtonElement>, cancelled = false) => {
+    if (event.pointerType === "touch") return;
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
 
-    const deltaY = event.clientY - drag.startY;
-    const moved = Math.abs(deltaY) > PLAYER_TAP_SLOP_PX;
+    const moved = Math.abs(event.clientY - drag.startY) > PLAYER_TAP_SLOP_PX;
     ignoreGestureClickRef.current = moved;
-
-    if (cancelled || !moved) {
-      beginSettle(drag.wasExpanded);
-    } else {
-      const shouldExpand = drag.wasExpanded
-        ? !(deltaY > PLAYER_DRAG_THRESHOLD_PX || drag.velocityY > PLAYER_DRAG_VELOCITY_THRESHOLD)
-        : deltaY < -PLAYER_DRAG_THRESHOLD_PX || drag.velocityY < -PLAYER_DRAG_VELOCITY_THRESHOLD;
-      beginSettle(shouldExpand);
-    }
-
-    dragRef.current = null;
+    finishDragAt(event.clientY, cancelled, false);
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -514,6 +656,7 @@ export default function FixedAudioPlayer({
   };
 
   const handleGestureClick = () => {
+    if (performance.now() - lastTouchEndRef.current < TOUCH_CLICK_SUPPRESS_MS) return;
     if (ignoreGestureClickRef.current) {
       ignoreGestureClickRef.current = false;
       return;
@@ -526,10 +669,11 @@ export default function FixedAudioPlayer({
       aria-label={expanded ? "收起播放器" : "展开播放器"}
       className="flex h-16 w-full touch-none select-none items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300/40"
       onClick={handleGestureClick}
-      onPointerCancel={(event) => finishDrag(event, true)}
+      onPointerCancel={(event) => finishPointerDrag(event, true)}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
-      onPointerUp={finishDrag}
+      onPointerUp={finishPointerDrag}
+      ref={gestureZoneRef}
       style={{ touchAction: "none" }}
       type="button"
     >
@@ -593,9 +737,10 @@ export default function FixedAudioPlayer({
   const activeOffset = dragOffset ?? (expanded ? 0 : travel);
   const progress = clamp(1 - activeOffset / travel, 0, 1);
 
-  const expandedPlaySize = Math.min(viewport.width * 0.5, 220);
+  const expandedPlaySize = clamp(viewport.width * 0.38, 124, 168);
+  const expandedSeekSize = 56;
   const playSize = 48 + (expandedPlaySize - 48) * progress;
-  const seekSize = 44 + 20 * progress;
+  const seekSize = 44 + (expandedSeekSize - 44) * progress;
 
   const progressTargetTop = Math.max(
     compactMetrics.progressTop,
@@ -611,8 +756,13 @@ export default function FixedAudioPlayer({
 
   const progressShift = (progressTargetTop - compactMetrics.progressTop) * progress;
   const controlsShift = (controlsTargetTop - compactMetrics.controlsTop) * progress;
-  const backPosition = 25 - 5 * progress;
-  const forwardPosition = 75 + 5 * progress;
+  const expandedControlDistance = expandedPlaySize / 2 + expandedSeekSize / 2 + 16;
+  const expandedBackCenter = Math.max(64, viewport.width / 2 - expandedControlDistance);
+  const expandedForwardCenter = Math.min(viewport.width - 64, viewport.width / 2 + expandedControlDistance);
+  const compactBackCenter = viewport.width * 0.25;
+  const compactForwardCenter = viewport.width * 0.75;
+  const backPosition = compactBackCenter + (expandedBackCenter - compactBackCenter) * progress;
+  const forwardPosition = compactForwardCenter + (expandedForwardCenter - compactForwardCenter) * progress;
   const titleSize = 12 + 8 * progress;
 
   const sheetClassName = [
@@ -636,6 +786,7 @@ export default function FixedAudioPlayer({
       style={{
         ...mediaStyles,
         height: `${viewport.height}px`,
+        overscrollBehavior: "none",
         transform: `translate3d(0, ${activeOffset}px, 0)`,
       }}
     >
@@ -693,12 +844,12 @@ export default function FixedAudioPlayer({
             noTooltip
             seekOffset={10}
             style={{
-              left: `${backPosition}%`,
+              left: `${backPosition}px`,
               width: `${seekSize}px`,
               height: `${seekSize}px`,
               "--media-control-height": `${seekSize}px`,
-              "--media-button-icon-width": `${Math.round(24 + 10 * progress)}px`,
-              "--media-button-icon-height": `${Math.round(24 + 10 * progress)}px`,
+              "--media-button-icon-width": `${Math.round(24 + 8 * progress)}px`,
+              "--media-button-icon-height": `${Math.round(24 + 8 * progress)}px`,
             } as CSSProperties}
           />
 
@@ -723,12 +874,12 @@ export default function FixedAudioPlayer({
             noTooltip
             seekOffset={10}
             style={{
-              left: `${forwardPosition}%`,
+              left: `${forwardPosition}px`,
               width: `${seekSize}px`,
               height: `${seekSize}px`,
               "--media-control-height": `${seekSize}px`,
-              "--media-button-icon-width": `${Math.round(24 + 10 * progress)}px`,
-              "--media-button-icon-height": `${Math.round(24 + 10 * progress)}px`,
+              "--media-button-icon-width": `${Math.round(24 + 8 * progress)}px`,
+              "--media-button-icon-height": `${Math.round(24 + 8 * progress)}px`,
             } as CSSProperties}
           />
 
