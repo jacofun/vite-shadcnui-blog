@@ -294,7 +294,12 @@ export default function PrivateResourceItem(): JSX.Element {
         </article>
       </main>
       {episode && mediaSource && (
-        <FixedAudioPlayer refreshSource={refreshMediaSource} source={mediaSource} title={episode.title} />
+        <FixedAudioPlayer
+          expandable={collectionId === "6minuteenglish"}
+          refreshSource={refreshMediaSource}
+          source={mediaSource}
+          title={episode.title}
+        />
       )}
     </>
   );
