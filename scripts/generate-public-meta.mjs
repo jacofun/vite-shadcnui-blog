@@ -53,6 +53,7 @@ function parseFrontMatter(source, fallbackSlug) {
     date: data.date ?? "",
     updated: data.updated ?? data.date ?? "",
     tags: Array.isArray(data.tags) ? data.tags : [],
+    content: lines.slice(end + 1).join("\n").trim(),
   };
 }
 
@@ -104,6 +105,27 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://w
 
 const robots = `User-agent: *\nAllow: /\nDisallow: /auth\nDisallow: /resources\nDisallow: /private/\nSitemap: ${siteUrl}/sitemap.xml\n`;
 
+const assistantContext = {
+  schemaVersion: 1,
+  home: {
+    path: "/",
+    title: "彦骁的笔记",
+    summary: "技术、AI、金融市场，以及一些值得长期留下来的记录。",
+    content: [
+      "这是 yanxiao.me 的首页，记录彦骁在技术、AI、金融市场和日常生活中的思考。",
+      "首页最近更新的文章如下：",
+      ...notes.slice(0, 8).map((note) =>
+        `- ${note.title}（${note.updated || note.date}，${note.tags.join("、") || "未分类"}）：${note.summary}`),
+    ].join("\n"),
+  },
+  notes: notes.map((note) => ({
+    path: `/notes/${note.slug}`,
+    title: note.title,
+    summary: note.summary,
+    content: note.content,
+  })),
+};
+
 const routeShells = [
   "/notes",
   "/fragments",
@@ -123,8 +145,9 @@ const routeShells = [
 await writeFile(path.join(publicDir, "feed.xml"), rss, "utf8");
 await writeFile(path.join(publicDir, "sitemap.xml"), sitemap, "utf8");
 await writeFile(path.join(publicDir, "robots.txt"), robots, "utf8");
+await writeFile(path.join(publicDir, "ai-assistant-context.json"), `${JSON.stringify(assistantContext)}\n`, "utf8");
 await writeFile(path.join(generatedDir, "route-shells.txt"), `${routeShells.join("\n")}\n`, "utf8");
 
 console.log(
-  `Generated feed.xml (${notes.length} notes), sitemap.xml, robots.txt and ${routeShells.length} route shells`,
+  `Generated feed.xml (${notes.length} notes), sitemap.xml, robots.txt, AI assistant context and ${routeShells.length} route shells`,
 );

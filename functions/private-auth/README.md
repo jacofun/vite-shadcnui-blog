@@ -249,6 +249,7 @@ All paths are relative to `/api/private-auth/`.
 | `POST assessment/grade` | Independently grade and persist a retelling or one AI short-answer question |
 | `POST assessment/result` | Return the latest retelling result, or a question result when `questionId` is supplied |
 | `POST assessment/ask` | Answer a question about the current episode through the shared assessment model |
+| `POST public/assistant/ask` | Stateless current-page Q&A for visitors; no login required |
 | `POST uploads/init` | Validate metadata and return short-lived, path-bound OSS PUT URLs; owner or write grant only |
 | `POST uploads/complete` | Verify every uploaded object, write metadata and publish the collection index |
 | `POST logout` | Revoke the current persistent session |
@@ -277,6 +278,7 @@ present:
 | `DASHSCOPE_API_KEY` | Model Studio API key |
 | `DASHSCOPE_BASE_URL` | `https://dashscope.aliyuncs.com/compatible-mode/v1` for Beijing |
 | `ASSESSMENT_MODEL` | Optional; defaults to `qwen3.7-plus-2026-05-26` |
+| `PUBLIC_ASSISTANT_MODEL` | Required only by the public page assistant; must differ from `ASSESSMENT_MODEL` and has no fallback |
 | `ASSESSMENT_TIMEOUT_MS` | Optional; defaults to `40000` |
 | `ASSESSMENT_RUBRIC_VERSION` | Optional; defaults to `retelling-v1` |
 | `ASSESSMENT_DAILY_LIMIT` | Optional per-user model-call limit; defaults to `20` |
@@ -292,6 +294,15 @@ messages. The server supplies the episode transcript and instructs the model to 
 episode. Transcript and user text are treated as untrusted input so embedded instructions cannot
 change the assistant's scope or request secrets. Assistant questions do not consume
 `ASSESSMENT_DAILY_LIMIT` and their conversation history is stored only in the browser.
+
+`POST /public/assistant/ask` is available to site visitors without a login cookie or CSRF token.
+It accepts only `pagePath` and one question of at most 140 characters; conversation history is
+rejected and nothing is persisted. The function loads the trusted current-page material from
+`/ai-assistant-context.json`, asks `PUBLIC_ASSISTANT_MODEL` for a concise Simplified Chinese answer,
+and returns one JSON response. The browser then reveals that completed response progressively.
+The system prompt confines answers to the current homepage or note, treats page and visitor text as
+untrusted, and caps each model response at 500 tokens. The route still requires the CDN-injected
+origin verification header and the site's expected browser Origin.
 
 Upload URLs bind the object path, method, content type and `x-oss-forbid-overwrite=true`, and expire
 after 15 minutes. The browser never receives OSS credentials. Audio and plain-text transcript are

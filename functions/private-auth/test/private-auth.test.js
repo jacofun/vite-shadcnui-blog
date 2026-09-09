@@ -84,6 +84,81 @@ test("returns a scoped episode assistant answer with the assessment model", asyn
   assert.match(modelRequest.messages.at(-1).content, /previous answer contained non-English characters/u);
 });
 
+test("answers public page questions without authentication using the dedicated model", async () => {
+  const calls = [];
+  let modelCalls = 0;
+  const handler = createHandler({
+    env: createEnv({
+      DASHSCOPE_API_KEY: "test-api-key",
+      DASHSCOPE_BASE_URL: "https://dashscope.example/v1",
+      PUBLIC_ASSISTANT_MODEL: "qwen-public-test",
+    }),
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      if (url === "https://yanxiao.me/ai-assistant-context.json") {
+        return { ok: true, async text() {
+          return JSON.stringify({
+            schemaVersion: 1,
+            home: { path: "/", title: "彦骁的笔记", summary: "首页", content: "首页最近发布了几篇文章。" },
+            notes: [{
+              path: "/notes/how-ai-helps-me-learn-english",
+              title: "AI 如何协助我学习英语",
+              summary: "把重复劳动交给 AI。",
+              content: "文章介绍了如何用 AI 生成练习并批改英语复述。",
+            }],
+          });
+        } };
+      }
+      modelCalls += 1;
+      const requestBody = JSON.parse(options.body);
+      assert.equal(requestBody.model, "qwen-public-test");
+      assert.equal(requestBody.max_tokens, 500);
+      assert.equal(requestBody.messages.length, modelCalls === 1 ? 3 : 4);
+      assert.match(requestBody.messages[0].content, /所有回答必须使用简体中文/u);
+      assert.match(requestBody.messages[1].content, /AI 生成练习并批改英语复述/u);
+      assert.equal(requestBody.messages[2].content, "这篇文章里 AI 主要做了什么？");
+      return { ok: true, async json() {
+        return { choices: [{ message: { content: modelCalls === 1
+          ? "AI creates exercises and grades retellings."
+          : "AI 主要负责生成针对性练习，并即时批改英语复述。" } }] };
+      } };
+    },
+  });
+
+  const response = await handler(request({
+    method: "POST",
+    path: "/api/private-auth/public/assistant/ask",
+    body: {
+      pagePath: "/notes/how-ai-helps-me-learn-english",
+      question: "这篇文章里 AI 主要做了什么？",
+    },
+  }));
+
+  assert.equal(response.statusCode, 200, response.body);
+  assert.equal(responseJson(response).answer, "AI 主要负责生成针对性练习，并即时批改英语复述。");
+  assert.equal(responseJson(response).model, "qwen-public-test");
+  assert.equal(modelCalls, 2);
+  assert.equal(calls.filter(({ url }) => url.endsWith("ai-assistant-context.json")).length, 1);
+
+  const invalidResponse = await handler(request({
+    method: "POST",
+    path: "/api/private-auth/public/assistant/ask",
+    body: { pagePath: "/", question: "问".repeat(141) },
+  }));
+  assert.equal(invalidResponse.statusCode, 400);
+  assert.equal(responseJson(invalidResponse).code, "INVALID_PUBLIC_ASSISTANT_REQUEST");
+  assert.equal(calls.length, 3);
+
+  const historyResponse = await handler(request({
+    method: "POST",
+    path: "/api/private-auth/public/assistant/ask",
+    body: { pagePath: "/", question: "首页有什么？", history: [] },
+  }));
+  assert.equal(historyResponse.statusCode, 400);
+  assert.equal(responseJson(historyResponse).code, "INVALID_PUBLIC_ASSISTANT_REQUEST");
+  assert.equal(calls.length, 3);
+});
+
 test("encrypts tokens and accepts the previous rotation key", () => {
   const currentKey = Buffer.alloc(32, 1);
   const previousKey = Buffer.alloc(32, 2);

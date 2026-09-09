@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 
+import PublicAiAssistant from "@/components/common/PublicAiAssistant";
 import FlatHero from "@/components/home/FlatHero";
 import { formatNoteDate, notes } from "@/lib/notes";
 
@@ -125,6 +126,7 @@ export default function Home(): JSX.Element {
           </section>
         </div>
       </main>
+      <PublicAiAssistant pagePath="/" />
     </>
   );
 }

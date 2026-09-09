@@ -9,6 +9,7 @@ import {
 import { Helmet } from "react-helmet-async";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
+import PublicAiAssistant from "@/components/common/PublicAiAssistant";
 import MarkdownRenderer from "@/components/notes/MarkdownRenderer";
 import { extractMarkdownHeadings } from "@/lib/markdown";
 import {
@@ -273,11 +274,12 @@ export default function NoteDetail(): JSX.Element {
         </div>
 
         {progress > 25 && (
-          <button aria-label="返回顶部" className="fixed bottom-6 right-6 flex size-10 items-center justify-center rounded-xl border border-white/10 bg-[#0d1220]/90 text-slate-500 shadow-xl backdrop-blur transition hover:border-white/20 hover:text-white" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} type="button">
+          <button aria-label="返回顶部" className="fixed bottom-20 right-6 z-[110] flex size-10 items-center justify-center rounded-xl border border-white/10 bg-[#0d1220]/90 text-slate-500 shadow-xl backdrop-blur transition hover:border-white/20 hover:text-white" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} type="button">
             <ChevronUp className="size-4" />
           </button>
         )}
       </main>
+      <PublicAiAssistant pagePath={`/notes/${note.slug}`} />
     </>
   );
 }
