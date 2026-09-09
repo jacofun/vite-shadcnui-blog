@@ -48,6 +48,7 @@ function cookiePair(setCookie) {
 
 test("returns a scoped episode assistant answer with the assessment model", async () => {
   let modelRequest;
+  let modelCalls = 0;
   const answer = await __test.requestAssistantAnswer({
     modelConfig: {
       apiKey: "test-api-key",
@@ -61,19 +62,26 @@ test("returns a scoped episode assistant answer with the assessment model", asyn
     history: [{ role: "user", content: "Where is it used?" }, { role: "assistant", content: "Near the conclusion." }],
     fetchImpl: async (_url, options) => {
       modelRequest = JSON.parse(options.body);
+      modelCalls += 1;
       return { ok: true, async json() {
-        return { choices: [{ message: { content: "It means a common set of words." } }] };
+        return { choices: [{ message: { content: modelCalls === 1
+          ? "这里指一组共同使用的词汇。"
+          : "It means a common set of words." } }] };
       } };
     },
   });
 
   assert.equal(answer, "It means a common set of words.");
+  assert.equal(modelCalls, 2);
   assert.equal(modelRequest.model, "qwen-test-model");
   assert.equal(modelRequest.stream, undefined);
   assert.equal(modelRequest.enable_thinking, false);
+  assert.equal(modelRequest.temperature, 0);
   assert.match(modelRequest.messages[0].content, /supplied transcript as the sole source/u);
+  assert.match(modelRequest.messages[0].content, /entire answer in clear, concise English/u);
   assert.match(modelRequest.messages[1].content, /shared vocabulary helps people describe smells/u);
-  assert.equal(modelRequest.messages.at(-1).content, "What does shared vocabulary mean here?");
+  assert.equal(modelRequest.messages.at(-2).content, "What does shared vocabulary mean here?");
+  assert.match(modelRequest.messages.at(-1).content, /previous answer contained non-English characters/u);
 });
 
 test("encrypts tokens and accepts the previous rotation key", () => {
@@ -317,7 +325,7 @@ test("completes challenge, passkey verification, session lookup and resource sig
         assert.equal(requestBody.model, "qwen3.7-plus-2026-05-26");
         assert.match(requestBody.messages[1].content, /shared vocabulary matters/u);
         return { ok: true, async json() {
-          return { choices: [{ message: { content: "这里指共同使用的词汇。" } }] };
+          return { choices: [{ message: { content: "It means vocabulary shared by a group of people." } }] };
         } };
       }
       assert.match(requestBody.messages[0].content, /every string in the JSON response in English only/);
@@ -421,7 +429,7 @@ test("completes challenge, passkey verification, session lookup and resource sig
     },
   }));
   assert.equal(assistantResponse.statusCode, 200, assistantResponse.body);
-  assert.equal(responseJson(assistantResponse).answer, "这里指共同使用的词汇。");
+  assert.equal(responseJson(assistantResponse).answer, "It means vocabulary shared by a group of people.");
 
   const gradeResponse = await handler(request({
     method: "POST",
