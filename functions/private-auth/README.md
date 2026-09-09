@@ -12,12 +12,12 @@ separate private OSS bucket used only by Function Compute; that bucket must not 
 
 ## Runtime
 
-- Node.js 20 or newer built-in runtime
-- Handler: `index.handler`
+- Web function on the `custom.debian10` runtime
+- Startup command: `/var/fc/lang/nodejs20/bin/node server.js` on port `9000`
 - HTTP trigger path exposed through CDN: `/api/private-auth/*`
 - Minimum instances: `0`
 - Recommended maximum instances: `1` for this private deployment
-- Timeout: `3` seconds for environment mode; `10` seconds for OSS mode
+- Timeout: at least `45` seconds when AI grading or question answering is enabled
 
 The CDN origin must overwrite `X-Origin-Verify` for `/api/private-auth/*`. Do not log this header,
 cookies, WebAuthn assertions, invitation tokens, registry data or signed resource URLs.
@@ -248,6 +248,7 @@ All paths are relative to `/api/private-auth/`.
 | `POST clipboard/save` / `POST clipboard/delete` | Add or remove clipboard entries; owner or write grant only |
 | `POST assessment/grade` | Independently grade and persist a retelling or one AI short-answer question |
 | `POST assessment/result` | Return the latest retelling result, or a question result when `questionId` is supplied |
+| `POST assessment/ask` | Stream a question about the current episode through the shared assessment model |
 | `POST uploads/init` | Validate metadata and return short-lived, path-bound OSS PUT URLs; owner or write grant only |
 | `POST uploads/complete` | Verify every uploaded object, write metadata and publish the collection index |
 | `POST logout` | Revoke the current persistent session |
@@ -265,7 +266,7 @@ and episode request formats remain supported while clients migrate. Owners, acco
 Revocation stops new signed URLs but cannot invalidate a URL already issued before its CDN type-A
 expiry.
 
-### Retelling assessment
+### English assessment and episode assistant
 
 The assessment routes use Alibaba Model Studio's OpenAI-compatible Chat Completions API. Configure
 these variables on the existing function; login and lesson access continue to work before they are
@@ -282,8 +283,15 @@ present:
 | `ASSESSMENT_STORAGE_PREFIX` | Optional FC-only OSS prefix; defaults to `fc/english-assessment` |
 
 Results are kept outside `PRIVATE_RESOURCE_ROOT`, so they cannot be exposed through the CDN signing
-endpoint. Calls are synchronous JSON responses rather than streams. Completed attempt IDs are
-idempotent, and the server recomputes objective scores from episode metadata before saving them.
+endpoint. Grading calls return JSON and completed attempt IDs are idempotent. The server recomputes
+objective scores from episode metadata before saving them.
+
+`POST /assessment/ask` uses the same `ASSESSMENT_MODEL` and streams answer fragments to the browser
+as server-sent events. It receives the current episode ID, one question and up to six recent chat
+messages. The server supplies the episode transcript and instructs the model to stay within that
+episode. Transcript and user text are treated as untrusted input so embedded instructions cannot
+change the assistant's scope or request secrets. Assistant questions do not consume
+`ASSESSMENT_DAILY_LIMIT` and their conversation history is stored only in the browser.
 
 Upload URLs bind the object path, method, content type and `x-oss-forbid-overwrite=true`, and expire
 after 15 minutes. The browser never receives OSS credentials. Audio and plain-text transcript are

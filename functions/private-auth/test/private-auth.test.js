@@ -46,6 +46,47 @@ function cookiePair(setCookie) {
   return setCookie.split(";", 1)[0];
 }
 
+test("streams a scoped episode assistant answer with the assessment model", async () => {
+  const chunks = [
+    'data: {"choices":[{"delta":{"content":"It means "}}]}\r\n\r\n',
+    'data: {"choices":[{"delta":{"content":"a common set of words."}}]}\n\n',
+    "data: [DONE]\n\n",
+  ];
+  const deltas = [];
+  let modelRequest;
+  const answer = await __test.requestAssistantAnswer({
+    modelConfig: {
+      apiKey: "test-api-key",
+      endpoint: "https://dashscope.example/v1/chat/completions",
+      model: "qwen-test-model",
+      timeoutMs: 5_000,
+    },
+    episode: { title: "Describing smells" },
+    transcript: "The speakers explain that a shared vocabulary helps people describe smells. ".repeat(3),
+    question: "What does shared vocabulary mean here?",
+    history: [{ role: "user", content: "Where is it used?" }, { role: "assistant", content: "Near the conclusion." }],
+    onDelta: (delta) => deltas.push(delta),
+    fetchImpl: async (_url, options) => {
+      modelRequest = JSON.parse(options.body);
+      return new Response(new ReadableStream({
+        start(controller) {
+          for (const chunk of chunks) controller.enqueue(new TextEncoder().encode(chunk));
+          controller.close();
+        },
+      }), { status: 200, headers: { "content-type": "text/event-stream" } });
+    },
+  });
+
+  assert.equal(answer, "It means a common set of words.");
+  assert.deepEqual(deltas, ["It means ", "a common set of words."]);
+  assert.equal(modelRequest.model, "qwen-test-model");
+  assert.equal(modelRequest.stream, true);
+  assert.equal(modelRequest.enable_thinking, false);
+  assert.match(modelRequest.messages[0].content, /supplied transcript as the sole source/u);
+  assert.match(modelRequest.messages[1].content, /shared vocabulary helps people describe smells/u);
+  assert.equal(modelRequest.messages.at(-1).content, "What does shared vocabulary mean here?");
+});
+
 test("encrypts tokens and accepts the previous rotation key", () => {
   const currentKey = Buffer.alloc(32, 1);
   const previousKey = Buffer.alloc(32, 2);
@@ -220,6 +261,7 @@ test("completes challenge, passkey verification, session lookup and resource sig
   });
   const assessmentObjects = new Map();
   let subjectiveModelCalls = 0;
+  const assistantDeltas = [];
   const contentStore = {
     async readJson(path, { missing } = {}) {
       if (path.endsWith("/metadata.json")) return {
@@ -279,10 +321,21 @@ test("completes challenge, passkey verification, session lookup and resource sig
         authenticationInfo: { userVerified: true, newCounter: 0 },
       };
     },
+    onAssistantDelta: (delta) => assistantDeltas.push(delta),
     fetchImpl: async (url, options) => {
       assert.equal(url, "https://dashscope.example/v1/chat/completions");
       assert.equal(options.headers.Authorization, "Bearer test-api-key");
       const requestBody = JSON.parse(options.body);
+      if (requestBody.stream) {
+        assert.equal(requestBody.model, "qwen3.7-plus-2026-05-26");
+        assert.match(requestBody.messages[1].content, /shared vocabulary matters/u);
+        return new Response([
+          'data: {"choices":[{"delta":{"content":"这里指共同使用的词汇。"}}]}',
+          "",
+          "data: [DONE]",
+          "",
+        ].join("\n"), { status: 200, headers: { "content-type": "text/event-stream" } });
+      }
       assert.match(requestBody.messages[0].content, /every string in the JSON response in English only/);
       const subjective = requestBody.response_format.json_schema.name === "english_subjective_assessment";
       return {
@@ -371,6 +424,21 @@ test("completes challenge, passkey verification, session lookup and resource sig
   assert.match(signBody.resources.audio, /audio\.mp3\?auth_key=/);
   assert.match(signBody.resources.transcriptText, /transcript\.txt\?auth_key=/);
   assert.equal(Object.keys(signBody.resources).length, 4);
+
+  const assistantResponse = await handler(request({
+    method: "POST",
+    path: "/api/private-auth/assessment/ask",
+    cookie: sessionCookie,
+    csrf: verifyBody.csrfToken,
+    body: {
+      episodeId: "260827-how-do-we-describe-smells",
+      question: "What does shared vocabulary mean here?",
+      history: [],
+    },
+  }));
+  assert.equal(assistantResponse.statusCode, 200, assistantResponse.body);
+  assert.equal(responseJson(assistantResponse).answer, "这里指共同使用的词汇。");
+  assert.deepEqual(assistantDeltas, ["这里指共同使用的词汇。"]);
 
   const gradeResponse = await handler(request({
     method: "POST",

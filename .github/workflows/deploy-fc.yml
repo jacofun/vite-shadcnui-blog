@@ -61,17 +61,19 @@ jobs:
           mkdir -p "${PACKAGE_DIR}"
 
           cp "${SOURCE_DIR}/index.js" "${PACKAGE_DIR}/index.js"
+          cp "${SOURCE_DIR}/server.js" "${PACKAGE_DIR}/server.js"
           cp "${SOURCE_DIR}/package.json" "${PACKAGE_DIR}/package.json"
           cp "${SOURCE_DIR}/package-lock.json" "${PACKAGE_DIR}/package-lock.json"
           cp -R "${SOURCE_DIR}/node_modules" "${PACKAGE_DIR}/node_modules"
 
           (
             cd "${PACKAGE_DIR}"
-            zip -q -r "${ZIP_PATH}" index.js package.json package-lock.json node_modules
+            zip -q -r "${ZIP_PATH}" index.js server.js package.json package-lock.json node_modules
           )
 
           unzip -t "${ZIP_PATH}" >/dev/null
           unzip -Z1 "${ZIP_PATH}" | grep -Fx 'index.js' >/dev/null
+          unzip -Z1 "${ZIP_PATH}" | grep -Fx 'server.js' >/dev/null
           unzip -Z1 "${ZIP_PATH}" | grep -E '^node_modules/' >/dev/null
 
           echo "zip_path=${ZIP_PATH}" >> "${GITHUB_OUTPUT}"
@@ -173,8 +175,8 @@ jobs:
           ALIYUN_FC_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_FC_ACCESS_KEY_SECRET }}
           ALIYUN_FC_REGION: cn-beijing
           ALIYUN_FC_FUNCTION_NAME: fc-blog-authenticator
-          ALIYUN_FC_EXPECTED_RUNTIME: nodejs20
-          ALIYUN_FC_EXPECTED_HANDLER: index.handler
+          ALIYUN_FC_EXPECTED_RUNTIME: custom.debian10
+          ALIYUN_FC_EXPECTED_HANDLER: server.handler
           ALIYUN_FC_CODE_OSS_BUCKET: ${{ steps.fc_oss.outputs.bucket_name }}
           ALIYUN_FC_CODE_OSS_OBJECT: ${{ steps.fc_oss.outputs.object_name }}
         run: python scripts/deploy-fc-code.py

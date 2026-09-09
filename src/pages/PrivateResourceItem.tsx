@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import FixedAudioPlayer from "@/components/resources/FixedAudioPlayer";
 import EnglishAssessment from "@/components/resources/EnglishAssessment";
+import EpisodeAiAssistant from "@/components/resources/EpisodeAiAssistant";
 import FlvVideoPlayer from "@/components/resources/FlvVideoPlayer";
 import PrivateLoadingProgress from "@/components/resources/PrivateLoadingProgress";
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
@@ -312,6 +313,9 @@ export default function PrivateResourceItem(): JSX.Element {
           )}
         </article>
       </main>
+      {episode && access.session && (
+        <EpisodeAiAssistant key={episode.episodeId} episodeId={episode.episodeId} session={access.session} />
+      )}
       {episode && mediaSource && (
         <FixedAudioPlayer
           expandable={collectionId === "6minuteenglish"}
