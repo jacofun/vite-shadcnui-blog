@@ -23,8 +23,8 @@ def main() -> int:
     oss_bucket_name = required_env("ALIYUN_FC_CODE_OSS_BUCKET")
     oss_object_name = required_env("ALIYUN_FC_CODE_OSS_OBJECT")
 
-    expected_runtime = os.environ.get("ALIYUN_FC_EXPECTED_RUNTIME", "custom.debian10")
-    expected_handler = os.environ.get("ALIYUN_FC_EXPECTED_HANDLER", "server.handler")
+    expected_runtime = os.environ.get("ALIYUN_FC_EXPECTED_RUNTIME", "nodejs20")
+    expected_handler = os.environ.get("ALIYUN_FC_EXPECTED_HANDLER", "index.handler")
 
     config = open_api_models.Config(
         access_key_id=access_key_id,
@@ -36,24 +36,16 @@ def main() -> int:
     client = FcClient(config)
 
     print(
-        f"Deploying FC web function: {function_name} ({region}) "
+        f"Deploying code only to FC function: {function_name} ({region}) "
         f"from oss://{oss_bucket_name}/{oss_object_name}; "
         "existing environment variables and function settings are omitted from the update request"
     )
 
-    custom_runtime_config = fc_models.CustomRuntimeConfig(
-        command=["/var/fc/lang/nodejs20/bin/node"],
-        args=["server.js"],
-        port=9000,
-    )
     update_input = fc_models.UpdateFunctionInput(
         code=fc_models.InputCodeLocation(
             oss_bucket_name=oss_bucket_name,
             oss_object_name=oss_object_name,
-        ),
-        runtime=expected_runtime,
-        handler=expected_handler,
-        custom_runtime_config=custom_runtime_config,
+        )
     )
     request = fc_models.UpdateFunctionRequest(body=update_input)
     runtime = RuntimeOptions(
@@ -74,7 +66,7 @@ def main() -> int:
 
     if deployed_runtime != expected_runtime or deployed_handler != expected_handler:
         raise RuntimeError(
-            "Function was updated, but the returned configuration does not match "
+            "Function code was updated, but the returned configuration does not match "
             f"runtime={expected_runtime!r}, handler={expected_handler!r}; "
             f"actual runtime={deployed_runtime!r}, handler={deployed_handler!r}"
         )

@@ -12,8 +12,8 @@ separate private OSS bucket used only by Function Compute; that bucket must not 
 
 ## Runtime
 
-- Web function on the `custom.debian10` runtime
-- Startup command: `/var/fc/lang/nodejs20/bin/node server.js` on port `9000`
+- Node.js 20 or newer built-in runtime
+- Handler: `index.handler`
 - HTTP trigger path exposed through CDN: `/api/private-auth/*`
 - Minimum instances: `0`
 - Recommended maximum instances: `1` for this private deployment
@@ -248,7 +248,7 @@ All paths are relative to `/api/private-auth/`.
 | `POST clipboard/save` / `POST clipboard/delete` | Add or remove clipboard entries; owner or write grant only |
 | `POST assessment/grade` | Independently grade and persist a retelling or one AI short-answer question |
 | `POST assessment/result` | Return the latest retelling result, or a question result when `questionId` is supplied |
-| `POST assessment/ask` | Stream a question about the current episode through the shared assessment model |
+| `POST assessment/ask` | Answer a question about the current episode through the shared assessment model |
 | `POST uploads/init` | Validate metadata and return short-lived, path-bound OSS PUT URLs; owner or write grant only |
 | `POST uploads/complete` | Verify every uploaded object, write metadata and publish the collection index |
 | `POST logout` | Revoke the current persistent session |
@@ -286,8 +286,8 @@ Results are kept outside `PRIVATE_RESOURCE_ROOT`, so they cannot be exposed thro
 endpoint. Grading calls return JSON and completed attempt IDs are idempotent. The server recomputes
 objective scores from episode metadata before saving them.
 
-`POST /assessment/ask` uses the same `ASSESSMENT_MODEL` and streams answer fragments to the browser
-as server-sent events. It receives the current episode ID, one question and up to six recent chat
+`POST /assessment/ask` uses the same `ASSESSMENT_MODEL` and returns one JSON response. The browser
+reveals that completed answer progressively for a stream-like reading experience. It receives the current episode ID, one question and up to six recent chat
 messages. The server supplies the episode transcript and instructs the model to stay within that
 episode. Transcript and user text are treated as untrusted input so embedded instructions cannot
 change the assistant's scope or request secrets. Assistant questions do not consume

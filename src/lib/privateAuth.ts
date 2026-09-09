@@ -346,95 +346,16 @@ export function getLatestEnglishSubjectiveAssessment(
   });
 }
 
-function parseSseBlock(block: string): { event: string; data: unknown } | null {
-  let event = "message";
-  const data: string[] = [];
-  for (const line of block.split(/\r?\n/u)) {
-    if (line.startsWith("event:")) event = line.slice(6).trim();
-    if (line.startsWith("data:")) data.push(line.slice(5).trimStart());
-  }
-  if (data.length === 0) return null;
-  try {
-    return { event, data: JSON.parse(data.join("\n")) };
-  } catch {
-    return null;
-  }
-}
-
-export async function streamEnglishAssistant(
+export function askEnglishAssistant(
   session: PrivateAuthSession,
   body: { episodeId: string; question: string; history: EnglishAssistantHistoryMessage[] },
-  onDelta: (delta: string) => void,
   signal?: AbortSignal,
-): Promise<void> {
-  const response = await fetch(`${API_BASE}/assessment/ask`, {
-    method: "POST",
-    headers: {
-      Accept: "text/event-stream, application/json",
-      "Content-Type": "application/json",
-      "X-CSRF-Token": session.csrfToken,
-    },
-    body: JSON.stringify(body),
-    credentials: "same-origin",
-    cache: "no-store",
+): Promise<{ answer: string; model: string }> {
+  return request("assessment/ask", {
+    body,
+    csrfToken: session.csrfToken,
     signal,
   });
-
-  if (!response.ok) {
-    let error: ApiErrorBody = {};
-    try {
-      error = await response.json() as ApiErrorBody;
-    } catch {
-      error = { code: "INVALID_RESPONSE", message: "认证服务返回了无法解析的响应" };
-    }
-    if (response.status === 401) notifyPrivateAuthInvalidated();
-    throw new PrivateAuthApiError(
-      response.status,
-      error.code ?? "REQUEST_FAILED",
-      error.message ?? "AI 问答请求失败",
-    );
-  }
-
-  if (!response.headers.get("content-type")?.includes("text/event-stream")) {
-    const payload = await response.json() as { answer?: string };
-    if (payload.answer) onDelta(payload.answer);
-    return;
-  }
-
-  if (!response.body) {
-    throw new PrivateAuthApiError(502, "INVALID_RESPONSE", "AI 问答没有返回内容");
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  const consume = (block: string) => {
-    const parsed = parseSseBlock(block);
-    if (!parsed || typeof parsed.data !== "object" || parsed.data === null) return;
-    const data = parsed.data as { delta?: unknown; code?: unknown; message?: unknown };
-    if (parsed.event === "delta" && typeof data.delta === "string") onDelta(data.delta);
-    if (parsed.event === "error") {
-      throw new PrivateAuthApiError(
-        502,
-        typeof data.code === "string" ? data.code : "ASSISTANT_MODEL_ERROR",
-        typeof data.message === "string" ? data.message : "AI 问答请求失败",
-      );
-    }
-  };
-
-  while (true) {
-    const { value, done } = await reader.read();
-    buffer += decoder.decode(value, { stream: !done });
-    let boundary = buffer.search(/\r?\n\r?\n/u);
-    while (boundary >= 0) {
-      const separatorLength = buffer.slice(boundary).startsWith("\r\n\r\n") ? 4 : 2;
-      consume(buffer.slice(0, boundary));
-      buffer = buffer.slice(boundary + separatorLength);
-      boundary = buffer.search(/\r?\n\r?\n/u);
-    }
-    if (done) break;
-  }
-  if (buffer.trim()) consume(buffer);
 }
 
 export function beginPrivateResourceUpload(

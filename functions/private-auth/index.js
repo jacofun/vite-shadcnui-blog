@@ -1555,12 +1555,10 @@ function validateAssistantHistory(value) {
 }
 
 async function requestAssistantAnswer({
-  modelConfig, episode, transcript, question, history, onDelta, signal, fetchImpl,
+  modelConfig, episode, transcript, question, history, fetchImpl,
 }) {
   const controller = new AbortController();
-  const abort = () => controller.abort();
-  const timeout = setTimeout(abort, modelConfig.timeoutMs);
-  signal?.addEventListener("abort", abort, { once: true });
+  const timeout = setTimeout(() => controller.abort(), modelConfig.timeoutMs);
   const reference = transcript.slice(0, 30_000);
   const system = [
     "You are a concise English-learning assistant for one BBC Learning English episode.",
@@ -1586,7 +1584,6 @@ async function requestAssistantAnswer({
         enable_thinking: false,
         temperature: 0.2,
         max_tokens: 500,
-        stream: true,
         messages: [
           { role: "system", content: system },
           { role: "user", content: episodeReference },
@@ -1599,73 +1596,26 @@ async function requestAssistantAnswer({
     if (!response.ok) {
       throw new HttpError(502, "ASSISTANT_MODEL_ERROR", "Assistant model request failed");
     }
-    if (!response.body) {
-      throw new HttpError(502, "INVALID_ASSISTANT_RESULT", "Assistant model did not return a stream");
+    let answer;
+    try {
+      const payload = await response.json();
+      answer = payload?.choices?.[0]?.message?.content;
+    } catch {
+      throw new HttpError(502, "INVALID_ASSISTANT_RESULT", "Assistant model returned an invalid response");
     }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let answer = "";
-    let finished = false;
-
-    const consumeEvent = (eventBlock) => {
-      const data = eventBlock.split(/\r?\n/u)
-        .filter((line) => line.startsWith("data:"))
-        .map((line) => line.slice(5).trimStart())
-        .join("\n");
-      if (!data) return;
-      if (data.trim() === "[DONE]") {
-        finished = true;
-        return;
-      }
-      let payload;
-      try {
-        payload = JSON.parse(data);
-      } catch {
-        throw new HttpError(502, "INVALID_ASSISTANT_RESULT", "Assistant model returned an invalid stream");
-      }
-      const delta = payload?.choices?.[0]?.delta?.content;
-      if (typeof delta !== "string" || !delta) return;
-      answer += delta;
-      if (answer.length > 6000 || answer.includes("\0")) {
-        throw new HttpError(502, "INVALID_ASSISTANT_RESULT", "Assistant response is invalid");
-      }
-      onDelta?.(delta);
-    };
-
-    while (!finished) {
-      const { done, value } = await reader.read();
-      buffer += decoder.decode(value, { stream: !done });
-      let boundary;
-      while ((boundary = buffer.search(/\r?\n\r?\n/u)) >= 0) {
-        const block = buffer.slice(0, boundary);
-        const separator = /^\r\n/u.test(buffer.slice(boundary)) ? 4 : 2;
-        buffer = buffer.slice(boundary + separator);
-        consumeEvent(block);
-        if (finished) break;
-      }
-      if (done) {
-        if (buffer.trim()) consumeEvent(buffer);
-        break;
-      }
-    }
-    const normalized = answer.trim();
-    if (!normalized) {
+    const normalized = typeof answer === "string" ? answer.trim() : "";
+    if (!normalized || normalized.length > 6000 || normalized.includes("\0")) {
       throw new HttpError(502, "INVALID_ASSISTANT_RESULT", "Assistant model returned an empty answer");
     }
     return normalized;
   } catch (error) {
     if (error?.name === "AbortError") {
-      throw new HttpError(signal?.aborted ? 499 : 504,
-        signal?.aborted ? "ASSISTANT_CANCELLED" : "ASSISTANT_TIMEOUT",
-        signal?.aborted ? "Assistant request was cancelled" : "Assistant model timed out");
+      throw new HttpError(504, "ASSISTANT_TIMEOUT", "Assistant model timed out");
     }
     if (error instanceof HttpError) throw error;
     throw new HttpError(502, "ASSISTANT_MODEL_ERROR", "Assistant model request failed");
   } finally {
     clearTimeout(timeout);
-    signal?.removeEventListener("abort", abort);
   }
 }
 
@@ -1710,7 +1660,6 @@ function assessmentHistory(previous, score) {
 
 async function handleEnglishAssessment({
   route, body, user, config, contentStore, nowSeconds, env, fetchImpl,
-  onAssistantDelta, requestSignal,
 }) {
   if (!hasPrivateResourceAccess(user)) throw new HttpError(403, "MISSING_PERMISSION", "Private resource access has not been granted");
   if (!contentStore) throw new HttpError(503, "CONTENT_STORE_UNAVAILABLE", "Private resource storage is unavailable");
@@ -1735,8 +1684,7 @@ async function handleEnglishAssessment({
     const question = assessmentText(body.question, "question", 500);
     const history = validateAssistantHistory(body.history);
     const answer = await requestAssistantAnswer({
-      modelConfig, episode, transcript, question, history,
-      onDelta: onAssistantDelta, signal: requestSignal, fetchImpl,
+      modelConfig, episode, transcript, question, history, fetchImpl,
     });
     return { answer, model: modelConfig.model };
   }
@@ -1999,8 +1947,6 @@ export function createHandler({
   store,
   contentStore,
   fetchImpl = globalThis.fetch,
-  onAssistantDelta,
-  requestSignal,
 } = {}) {
   return async function privateAuthHandler(event, context = {}) {
     let config;
@@ -2036,7 +1982,7 @@ export function createHandler({
           : contentStore;
         return await persistentRequest({
           request, route, config, store: persistentStore, contentStore: privateContentStore,
-          nowSeconds, randomBytesImpl, env, fetchImpl, onAssistantDelta, requestSignal,
+          nowSeconds, randomBytesImpl, env, fetchImpl,
           generateAuthenticationOptionsImpl, verifyAuthenticationResponseImpl,
           generateRegistrationOptionsImpl, verifyRegistrationResponseImpl,
         });
@@ -2126,7 +2072,6 @@ export function createHandler({
         const result = route.startsWith("assessment/")
           ? await handleEnglishAssessment({
             route, body, user, config, contentStore: privateContentStore, nowSeconds, env, fetchImpl,
-            onAssistantDelta, requestSignal,
           })
           : route.startsWith("collections/")
           ? await handlePrivateResourceCollection({
@@ -2559,7 +2504,7 @@ function revokeUser(state, user) {
 async function persistentRequest(options) {
   const {
     request, route, config, store, contentStore, nowSeconds, randomBytesImpl,
-    env, fetchImpl, onAssistantDelta, requestSignal,
+    env, fetchImpl,
     generateAuthenticationOptionsImpl, verifyAuthenticationResponseImpl,
     generateRegistrationOptionsImpl, verifyRegistrationResponseImpl,
   } = options;
@@ -2810,7 +2755,6 @@ async function persistentRequest(options) {
   if (route.startsWith("assessment/")) {
     const result = await handleEnglishAssessment({
       route, body, user, config, contentStore, nowSeconds, env, fetchImpl,
-      onAssistantDelta, requestSignal,
     });
     return jsonResponse(config, 200, result);
   }

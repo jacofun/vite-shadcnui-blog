@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type JSX, type Ke
 
 import {
   PrivateAuthApiError,
-  streamEnglishAssistant,
+  askEnglishAssistant,
   type EnglishAssistantHistoryMessage,
   type PrivateAuthSession,
 } from "@/lib/privateAuth";
@@ -61,6 +61,24 @@ function errorMessage(error: unknown): string {
   return "AI 问答暂时不可用，请稍后再试。";
 }
 
+function waitForReveal(signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(new DOMException("Aborted", "AbortError"));
+      return;
+    }
+    const timer = window.setTimeout(finish, 18);
+    const abort = () => finish(new DOMException("Aborted", "AbortError"));
+    function finish(error?: DOMException): void {
+      window.clearTimeout(timer);
+      signal.removeEventListener("abort", abort);
+      if (error) reject(error);
+      else resolve();
+    }
+    signal.addEventListener("abort", abort, { once: true });
+  });
+}
+
 export default function EpisodeAiAssistant({ episodeId, session }: Props): JSX.Element {
   const storageKey = useMemo(() => `episode-ai:${session.user.id}:${episodeId}`, [episodeId, session.user.id]);
   const [open, setOpen] = useState(false);
@@ -107,14 +125,21 @@ export default function EpisodeAiAssistant({ episodeId, session }: Props): JSX.E
     setSending(true);
 
     try {
-      await streamEnglishAssistant(
+      const { answer } = await askEnglishAssistant(
         session,
         { episodeId, question, history },
-        (delta) => setMessages((current) => current.map((message) => (
-          message.id === assistantId ? { ...message, content: message.content + delta } : message
-        ))),
         controller.signal,
       );
+      const characters = Array.from(answer);
+      const chunkSize = Math.max(1, Math.ceil(characters.length / 180));
+      for (let index = 0; index < characters.length; index += chunkSize) {
+        if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
+        const delta = characters.slice(index, index + chunkSize).join("");
+        setMessages((current) => current.map((message) => (
+          message.id === assistantId ? { ...message, content: message.content + delta } : message
+        )));
+        if (index + chunkSize < characters.length) await waitForReveal(controller.signal);
+      }
     } catch (streamError) {
       setMessages((current) => current.filter((message) => message.id !== assistantId || message.content.trim()));
       if (!(streamError instanceof DOMException && streamError.name === "AbortError")) {
