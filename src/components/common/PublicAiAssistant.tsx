@@ -54,21 +54,50 @@ function errorMessage(error: unknown): string {
   return "AI 问答暂时不可用，请稍后再试。";
 }
 
-function waitForReveal(signal: AbortSignal): Promise<void> {
+function revealAnswer(
+  answer: string,
+  signal: AbortSignal,
+  update: (content: string) => void,
+): Promise<void> {
+  const characters = Array.from(answer);
+  const duration = Math.min(3200, Math.max(900, characters.length * 18));
+
   return new Promise((resolve, reject) => {
     if (signal.aborted) {
       reject(new DOMException("Aborted", "AbortError"));
       return;
     }
-    const timer = window.setTimeout(finish, 18);
+
+    let frame = 0;
+    let startedAt: number | null = null;
+    let revealed = 0;
     const abort = () => finish(new DOMException("Aborted", "AbortError"));
+
     function finish(error?: DOMException): void {
-      window.clearTimeout(timer);
+      window.cancelAnimationFrame(frame);
       signal.removeEventListener("abort", abort);
       if (error) reject(error);
       else resolve();
     }
+
+    function draw(timestamp: number): void {
+      if (signal.aborted) {
+        finish(new DOMException("Aborted", "AbortError"));
+        return;
+      }
+      startedAt ??= timestamp;
+      const progress = Math.min(1, (timestamp - startedAt) / duration);
+      const next = Math.min(characters.length, Math.max(revealed + 1, Math.ceil(characters.length * progress)));
+      if (next !== revealed) {
+        revealed = next;
+        update(characters.slice(0, revealed).join(""));
+      }
+      if (revealed >= characters.length) finish();
+      else frame = window.requestAnimationFrame(draw);
+    }
+
     signal.addEventListener("abort", abort, { once: true });
+    frame = window.requestAnimationFrame(draw);
   });
 }
 
@@ -95,9 +124,8 @@ export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  async function submit(event?: FormEvent): Promise<void> {
-    event?.preventDefault();
-    const question = draft.trim();
+  async function sendQuestion(value: string): Promise<void> {
+    const question = value.trim();
     if (!question || question.length > QUESTION_MAX_LENGTH || sending) return;
 
     const userMessage: ChatMessage = { id: messageId(), role: "user", content: question };
@@ -111,17 +139,11 @@ export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
 
     try {
       const { answer } = await askPublicAssistant({ pagePath, question }, controller.signal);
-      const characters = Array.from(answer);
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const chunkSize = reduceMotion ? characters.length : Math.max(1, Math.ceil(characters.length / 180));
-      for (let index = 0; index < characters.length; index += chunkSize) {
-        if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
-        const delta = characters.slice(index, index + chunkSize).join("");
+      await revealAnswer(answer, controller.signal, (content) => {
         setMessages((current) => current.map((message) => (
-          message.id === assistantId ? { ...message, content: message.content + delta } : message
+          message.id === assistantId ? { ...message, content } : message
         )));
-        if (index + chunkSize < characters.length) await waitForReveal(controller.signal);
-      }
+      });
     } catch (requestError) {
       setMessages((current) => current.filter((message) => message.id !== assistantId || message.content.trim()));
       if (!(requestError instanceof DOMException && requestError.name === "AbortError")) {
@@ -131,6 +153,16 @@ export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
       if (abortRef.current === controller) abortRef.current = null;
       setSending(false);
     }
+  }
+
+  async function submit(event?: FormEvent): Promise<void> {
+    event?.preventDefault();
+    await sendQuestion(draft);
+  }
+
+  function openAssistant(): void {
+    setOpen(true);
+    if (messages.length === 0 && !sending) void sendQuestion("帮我总结");
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): void {
@@ -151,10 +183,7 @@ export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
           className="fixed inset-x-3 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[120] flex max-h-[min(72dvh,620px)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0b101b]/[0.98] shadow-2xl shadow-black/50 backdrop-blur-xl sm:left-auto sm:right-6 sm:w-[400px]"
         >
           <header className="flex items-center justify-between border-b border-white/10 px-4 py-3.5">
-            <div>
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-white"><Bot className="size-4 text-cyan-300" />问问 AI</h2>
-              <p className="mt-1 text-xs text-slate-500">只回答当前页面；每次提问相互独立</p>
-            </div>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-white"><Bot className="size-4 text-cyan-300" />AI帮我总结</h2>
             <div className="flex items-center gap-1">
               {messages.some((message) => message.content) && !sending && (
                 <button
@@ -245,12 +274,12 @@ export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
         </aside>
       ) : (
         <button
-          aria-label="打开当前页面 AI 问答"
+          aria-label="让 AI 总结当前页面"
           className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[120] inline-flex h-12 items-center gap-2 rounded-full border border-cyan-300/20 bg-[#0b101b]/95 px-4 text-sm font-medium text-cyan-200 shadow-xl shadow-black/40 backdrop-blur-xl transition hover:border-cyan-300/40 hover:bg-[#111a29] sm:right-6"
-          onClick={() => setOpen(true)}
+          onClick={openAssistant}
           type="button"
         >
-          <Bot className="size-4" />问问 AI
+          <Bot className="size-4" />AI帮我总结
         </button>
       )}
     </>

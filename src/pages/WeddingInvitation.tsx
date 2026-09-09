@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Toaster } from "sonner";
 
+import PublicAiAssistant from "@/components/common/PublicAiAssistant";
 import HeroCarousel from "@/components/wedding/HeroCarousel";
 import SectionSchedule from "@/components/wedding/SectionSchedule";
 import SectionStory from "@/components/wedding/SectionStory";
@@ -35,6 +36,7 @@ export default function WeddingInvitation(): JSX.Element {
           <SectionSchedule />
         </section>
       </div>
+      <PublicAiAssistant pagePath="/wedding" />
       <Toaster richColors position="top-center" />
     </>
   );

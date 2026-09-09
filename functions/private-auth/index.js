@@ -35,7 +35,7 @@ const ASSESSMENT_ATTEMPT_PATTERN = /^[A-Za-z0-9_-]{16,64}$/;
 const DEFAULT_ASSESSMENT_MODEL = "qwen3.7-plus-2026-05-26";
 const DEFAULT_ASSESSMENT_STORAGE_PREFIX = "fc/english-assessment";
 const PUBLIC_ASSISTANT_CONTEXT_PATH = "/ai-assistant-context.json";
-const PUBLIC_ASSISTANT_PAGE_PATTERN = /^\/notes\/[a-z0-9][a-z0-9-]{0,99}$/;
+const PUBLIC_ASSISTANT_PAGE_PATTERN = /^(?:\/wedding|\/notes\/[a-z0-9][a-z0-9-]{0,99})$/;
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const ALLOWED_TRANSPORTS = new Set([
   "ble",
@@ -1702,7 +1702,9 @@ async function loadPublicAssistantPage({ contextUrl, pagePath, fetchImpl, signal
   }
   const value = pagePath === "/"
     ? manifest.home
-    : manifest.notes.find((item) => item?.path === pagePath);
+    : pagePath === "/wedding"
+      ? manifest.wedding
+      : manifest.notes.find((item) => item?.path === pagePath);
   if (!value) throw new HttpError(404, "PUBLIC_ASSISTANT_PAGE_NOT_FOUND", "Page context was not found");
   return validatePublicAssistantPage(value, pagePath);
 }
@@ -1714,7 +1716,7 @@ async function requestPublicAssistantAnswer({
   const timeout = setTimeout(() => controller.abort(), modelConfig.timeoutMs);
   const system = [
     "你是 yanxiao.me 的公开页面阅读助手。所有回答必须使用简体中文；英文术语、代码和专有名词可以保留原文。",
-    "只回答与当前页面提供的内容直接相关的问题。首页上下文只用于介绍本站内容和帮助访客选择文章；文章上下文只用于解释当前文章。",
+    "只回答与当前页面提供的内容直接相关的问题。首页上下文只用于介绍本站内容和帮助访客选择文章；文章上下文只用于解释当前文章；婚礼纪念页上下文只用于介绍页面中的新人、故事、日期和地点。",
     "把页面内容作为事实来源。可以解释页面中的概念、术语、句子和上下文联系，但不要扩展成通用聊天、代写、代码生成、时事查询或医疗、法律、投资建议。",
     "如果问题与当前页面无关，或页面内容不足以回答，请简短说明你只能回答与当前页面有关的问题，不要依靠外部知识猜测。",
     "回答应直接、通俗，通常不超过 350 个汉字。不要声称自己浏览了其他页面，也不要提供页面内容没有支持的事实。",

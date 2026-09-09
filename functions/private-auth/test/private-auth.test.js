@@ -100,6 +100,12 @@ test("answers public page questions without authentication using the dedicated m
           return JSON.stringify({
             schemaVersion: 1,
             home: { path: "/", title: "彦骁的笔记", summary: "首页", content: "首页最近发布了几篇文章。" },
+            wedding: {
+              path: "/wedding",
+              title: "吴彦骁 & 焦芮的婚礼纪念页",
+              summary: "婚礼纪念",
+              content: "婚礼日期是2025年10月19日，地点是青铜峡宾馆。",
+            },
             notes: [{
               path: "/notes/how-ai-helps-me-learn-english",
               title: "AI 如何协助我学习英语",
@@ -113,10 +119,18 @@ test("answers public page questions without authentication using the dedicated m
       const requestBody = JSON.parse(options.body);
       assert.equal(requestBody.model, "qwen-public-test");
       assert.equal(requestBody.max_tokens, 500);
-      assert.equal(requestBody.messages.length, modelCalls === 1 ? 3 : 4);
       assert.match(requestBody.messages[0].content, /所有回答必须使用简体中文/u);
+      const question = requestBody.messages[2].content;
+      if (question === "帮我总结") {
+        assert.equal(requestBody.messages.length, 3);
+        assert.match(requestBody.messages[1].content, /2025年10月19日/u);
+        return { ok: true, async json() {
+          return { choices: [{ message: { content: "这是吴彦骁和焦芮的婚礼纪念页，记录了婚礼照片、日期和地点。" } }] };
+        } };
+      }
       assert.match(requestBody.messages[1].content, /AI 生成练习并批改英语复述/u);
-      assert.equal(requestBody.messages[2].content, "这篇文章里 AI 主要做了什么？");
+      assert.equal(question, "这篇文章里 AI 主要做了什么？");
+      assert.equal(requestBody.messages.length, modelCalls === 1 ? 3 : 4);
       return { ok: true, async json() {
         return { choices: [{ message: { content: modelCalls === 1
           ? "AI creates exercises and grades retellings."
@@ -157,6 +171,15 @@ test("answers public page questions without authentication using the dedicated m
   assert.equal(historyResponse.statusCode, 400);
   assert.equal(responseJson(historyResponse).code, "INVALID_PUBLIC_ASSISTANT_REQUEST");
   assert.equal(calls.length, 3);
+
+  const weddingResponse = await handler(request({
+    method: "POST",
+    path: "/api/private-auth/public/assistant/ask",
+    body: { pagePath: "/wedding", question: "帮我总结" },
+  }));
+  assert.equal(weddingResponse.statusCode, 200, weddingResponse.body);
+  assert.match(responseJson(weddingResponse).answer, /婚礼纪念页/u);
+  assert.equal(calls.length, 5);
 });
 
 test("encrypts tokens and accepts the previous rotation key", () => {

@@ -300,7 +300,9 @@ It accepts only `pagePath` and one question of at most 140 characters; conversat
 rejected and nothing is persisted. The function loads the trusted current-page material from
 `/ai-assistant-context.json`, asks `PUBLIC_ASSISTANT_MODEL` for a concise Simplified Chinese answer,
 and returns one JSON response. The browser then reveals that completed response progressively.
-The system prompt confines answers to the current homepage or note, treats page and visitor text as
+Opening the assistant automatically asks it to summarize the current page; visitors can then enter
+follow-up questions. The system prompt confines answers to the homepage, current note or wedding
+memorial page, treats page and visitor text as
 untrusted, and caps each model response at 500 tokens. The route still requires the CDN-injected
 origin verification header and the site's expected browser Origin.
 

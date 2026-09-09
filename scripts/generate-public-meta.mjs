@@ -118,6 +118,18 @@ const assistantContext = {
         `- ${note.title}（${note.updated || note.date}，${note.tags.join("、") || "未分类"}）：${note.summary}`),
     ].join("\n"),
   },
+  wedding: {
+    path: "/wedding",
+    title: "吴彦骁 & 焦芮的婚礼纪念页",
+    summary: "记录吴彦骁和焦芮的婚礼邀请、婚纱照与婚礼日程。",
+    content: [
+      "这是吴彦骁和焦芮的婚礼纪念页。",
+      "婚礼时间：2025年10月19日上午11:28。",
+      "婚礼地点：宁夏吴忠市青铜峡宾馆二层奥斯卡厅。",
+      "页面收录了两人的婚纱照、相遇与相知的纪念文字，以及婚礼日程和地图。",
+      "页面文字：婚纱照里的光影，是我们一路走来的缩影；每一次按下快门，都是将相遇的惊喜与相知的暖意留在时间里。",
+    ].join("\n"),
+  },
   notes: notes.map((note) => ({
     path: `/notes/${note.slug}`,
     title: note.title,
