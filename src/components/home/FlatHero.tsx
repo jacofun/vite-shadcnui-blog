@@ -215,7 +215,7 @@ const flatHeroCss = `
 
 @media (max-width: 639px) {
   .flat-stage {
-    min-height: min(66svh, 610px);
+    min-height: min(52svh, 500px);
   }
 
   .flat-ghost-word {
@@ -368,7 +368,7 @@ export default function FlatHero(): JSX.Element {
       <div aria-hidden="true" className="flat-ghost-word pointer-events-none absolute font-sans">NOTES</div>
       <div aria-hidden="true" className="flat-signal pointer-events-none absolute" />
 
-      <div className="flat-stage relative mx-auto flex min-h-[62svh] w-full max-w-6xl flex-col justify-center px-6 pb-10 pt-14 sm:min-h-[620px] sm:px-8 sm:pb-14 lg:px-10">
+      <div className="flat-stage relative mx-auto flex min-h-[52svh] w-full max-w-6xl flex-col justify-center px-6 pb-8 pt-12 sm:min-h-[500px] sm:px-8 sm:pb-10 sm:pt-14 lg:px-10">
         <div className="flat-copy relative z-10 max-w-3xl">
           <h1 className="flat-title whitespace-nowrap text-[clamp(2.65rem,12vw,4.4rem)] font-semibold leading-[0.94] tracking-[-0.06em] text-white sm:text-[clamp(4rem,7vw,6.2rem)]">
             {titleCharacters.map((character, index) => (
@@ -386,11 +386,11 @@ export default function FlatHero(): JSX.Element {
             ))}
           </h1>
 
-          <p className="mt-6 max-w-lg text-sm leading-7 text-slate-400 sm:mt-7 sm:text-base sm:leading-8">
+          <p className="mt-5 max-w-lg text-sm leading-7 text-slate-400 sm:mt-6 sm:text-base sm:leading-8">
             技术、AI、金融市场，以及一些值得长期留下来的记录。
           </p>
 
-          <div className="mt-7 flex flex-wrap items-center gap-3 sm:mt-8">
+          <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-7">
             <Link className="flat-primary-link inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-slate-950" to="/notes">
               浏览全部笔记
               <ArrowRight className="size-4" />
@@ -402,7 +402,7 @@ export default function FlatHero(): JSX.Element {
           </div>
         </div>
 
-        <div className="flat-bottom-row relative z-10 mt-14 flex items-end justify-between gap-6 border-t border-white/[0.07] pt-4 sm:mt-20">
+        <div className="flat-bottom-row relative z-10 mt-10 flex items-end justify-between gap-6 border-t border-white/[0.07] pt-4 sm:mt-14">
           <div className="flex flex-wrap gap-x-6 gap-y-2 font-mono text-[8px] uppercase tracking-[0.18em] text-slate-700 sm:text-[9px]">
             <span className="flat-topic">TECH</span>
             <span className="flat-topic">AI</span>
