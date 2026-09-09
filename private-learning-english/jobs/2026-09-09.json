@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-09-09",
+  "episodeId": "240118-the-psychology-of-greed",
+  "title": "The psychology of greed",
+  "publishedAt": "2024-01-18",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2024/ep-240118",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/240118_6_minute_english_the_psychology_of_greed_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/240118_6_minute_english_the_psychology_of_greed.pdf",
+  "reason": "昨天的内容侧重技术演进与遗留系统，今天轮换到金融经济、团队决策与人际理解。本集通过一个被预设优势的 Monopoly 实验讨论财富、成功归因和同理心，适合联系金融产品公平性、项目资源分配及管理者如何评价团队贡献。练习会聚焦因果链、归因偏差和可迁移的地道表达，帮助训练雅思 7 分所需的比较、解释与审慎论证。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "金融与消费",
+    "行为心理",
+    "公平决策",
+    "团队管理",
+    "同理心",
+    "精听",
+    "写作"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "be rigged to give someone an advantage",
+        "meaning": "be deliberately arranged so that one person has an unfairly better chance of succeeding",
+        "usage": "Use it when rules, data or a process are unfairly designed: The selection process was rigged to give one supplier an advantage."
+      },
+      {
+        "expression": "take credit for something",
+        "meaning": "accept praise or recognition for a result, whether or not you fully deserve it",
+        "usage": "Use take credit for + noun or -ing form: The manager took credit for the team's successful delivery."
+      },
+      {
+        "expression": "a flip of a coin",
+        "meaning": "a result or decision determined by luck or random chance",
+        "usage": "It can describe uncertainty as well as a literal coin toss: With so little evidence, choosing either option would be a flip of a coin."
+      },
+      {
+        "expression": "pull yourself up by your bootstraps",
+        "meaning": "improve your situation through your own effort without help from other people",
+        "usage": "This idiom often describes self-reliance, but it may oversimplify the support or advantages behind success."
+      },
+      {
+        "expression": "well off",
+        "meaning": "having enough money to afford most of what you want",
+        "usage": "Use it after be or before a noun with a hyphen: They are well off; a well-off customer."
+      },
+      {
+        "expression": "put yourself in someone's place",
+        "meaning": "imagine another person's situation and feelings in order to understand them",
+        "usage": "Use it to recommend empathy: Before rejecting the request, put yourself in the customer's place."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "monopoly-rigged-cause",
+        "type": "single-choice",
+        "prompt": "Why was the Monopoly experiment described as rigged?",
+        "targetExpression": "be rigged to give someone an advantage",
+        "options": [
+          {
+            "id": "a",
+            "text": "One player received two dice and twice as much money when passing Go."
+          },
+          {
+            "id": "b",
+            "text": "Both players secretly changed the rules during the game."
+          },
+          {
+            "id": "c",
+            "text": "The richer player had practised Monopoly for several years."
+          },
+          {
+            "id": "d",
+            "text": "The result was decided by a fair tournament."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The rules were deliberately unequal: the 'rich' player rolled two dice and collected twice as much money, giving that player an artificial advantage."
+      },
+      {
+        "id": "take-credit-attribution",
+        "type": "single-choice",
+        "prompt": "What does the rich players' decision to take credit for winning reveal in the experiment?",
+        "targetExpression": "take credit for something",
+        "options": [
+          {
+            "id": "a",
+            "text": "They recognised that the unequal rules had determined the result."
+          },
+          {
+            "id": "b",
+            "text": "They attributed success mainly to their own choices and ability."
+          },
+          {
+            "id": "c",
+            "text": "They refused all praise because the game was unfair."
+          },
+          {
+            "id": "d",
+            "text": "They believed the poorer player had intentionally lost."
+          }
+        ],
+        "answer": "b",
+        "explanation": "Although the fixed rules largely determined the outcome, the winners talked about controlling their outcomes and treated their own decisions as the cause of success."
+      },
+      {
+        "id": "coin-expression",
+        "type": "fill-blank",
+        "prompt": "Complete the expression used for a result based on random chance: “Their privileged starting position came from ______.”",
+        "targetExpression": "a flip of a coin",
+        "answers": [
+          "a flip of a coin",
+          "the flip of a coin"
+        ],
+        "explanation": "The transcript uses the flip of a coin to represent luck or random chance rather than skill."
+      },
+      {
+        "id": "bootstraps-nuance",
+        "type": "single-choice",
+        "prompt": "Which statement best reflects the programme's use of “pull yourself up by your bootstraps”?",
+        "targetExpression": "pull yourself up by your bootstraps",
+        "options": [
+          {
+            "id": "a",
+            "text": "Personal effort never contributes to success."
+          },
+          {
+            "id": "b",
+            "text": "Success always comes entirely from inherited wealth."
+          },
+          {
+            "id": "c",
+            "text": "Some people advance through hard work, but the experiment shows that hidden advantages can also shape outcomes."
+          },
+          {
+            "id": "d",
+            "text": "People can improve only when someone changes the rules for them."
+          }
+        ],
+        "answer": "c",
+        "explanation": "Professor Piff acknowledges that some people succeed through their own effort, while the experiment demonstrates how privilege and chance may be overlooked."
+      },
+      {
+        "id": "well-off-collocation",
+        "type": "fill-blank",
+        "prompt": "Complete the sentence with the transcript's expression: “People who are ______ may rely less on others because money buys them more space and independence.”",
+        "targetExpression": "well off",
+        "answers": [
+          "well off",
+          "well-off"
+        ],
+        "explanation": "Well off means rich enough to afford most of what one wants. The transcript links it with greater social independence."
+      },
+      {
+        "id": "empathy-completion",
+        "type": "fill-blank",
+        "prompt": "Complete the advice with an expression connected to empathy: “Before judging a disadvantaged player, try to ______.”",
+        "targetExpression": "put yourself in someone's place",
+        "answers": [
+          "put yourself in their place",
+          "put yourself in someone else's place",
+          "put yourself in the disadvantaged player's place"
+        ],
+        "explanation": "Empathy involves imagining what another person's situation and feelings are like—putting yourself in that person's place."
+      },
+      {
+        "id": "wealth-empathy-chain",
+        "type": "single-choice",
+        "prompt": "Which causal chain matches Professor Piff's explanation?",
+        "targetExpression": "well off",
+        "options": [
+          {
+            "id": "a",
+            "text": "Being well off can create more social independence, reduced reliance on others, and potentially less empathy."
+          },
+          {
+            "id": "b",
+            "text": "Being well off forces people to share offices, which automatically increases empathy."
+          },
+          {
+            "id": "c",
+            "text": "Empathy creates wealth by making every decision predictable."
+          },
+          {
+            "id": "d",
+            "text": "Wealth affects possessions but cannot influence social relationships."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme connects wealth with private space and social independence; needing others less may cause empathy to suffer."
+      },
+      {
+        "id": "fair-project-credit",
+        "type": "single-choice",
+        "prompt": "A project succeeded partly because one team received extra staff and priority access to infrastructure. Which sentence uses the lesson's language most fairly?",
+        "targetExpression": "take credit for something",
+        "options": [
+          {
+            "id": "a",
+            "text": "The team should take all the credit because resources never affect outcomes."
+          },
+          {
+            "id": "b",
+            "text": "The team can take credit for strong execution while also acknowledging the structural advantage it received."
+          },
+          {
+            "id": "c",
+            "text": "The success was a flip of a coin, so nobody's work mattered."
+          },
+          {
+            "id": "d",
+            "text": "Only well-off teams are capable of good engineering."
+          }
+        ],
+        "answer": "b",
+        "explanation": "The transcript distinguishes genuine effort from advantages in the starting conditions. A balanced attribution recognises both execution and structural support."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "comprehension-monopoly",
+        "type": "comprehension",
+        "prompt": "In 50–80 words, explain how the Monopoly experiment challenges the winners' explanation of their own success. Distinguish their decisions from the conditions created by the game.",
+        "targetExpression": "take credit for something",
+        "gradingCriteria": "Award points for explaining the unequal dice and money rules, showing that these conditions largely determined the result, noting that winners took credit for their choices or skill, distinguishing effort from structural advantage, and writing clear English within the requested length."
+      },
+      {
+        "id": "paraphrase-privilege",
+        "type": "paraphrase",
+        "prompt": "In 25–50 words, paraphrase this idea without copying it: “The winners believed they had pulled themselves up by their bootstraps, although a flip of a coin had put them in a position of privilege.” Use both target expressions naturally.",
+        "targetExpression": "pull yourself up by your bootstraps",
+        "gradingCriteria": "Award points for preserving the contrast between claimed self-reliance and randomly assigned advantage, correctly using pull yourself up by your bootstraps and a flip of a coin, avoiding close copying, and producing natural, grammatical English."
+      },
+      {
+        "id": "application-fair-credit",
+        "type": "application",
+        "prompt": "In 50–90 words, describe how a manager should allocate credit after a successful software project when teams received unequal resources. Use “put yourself in someone's place” and propose one concrete action.",
+        "targetExpression": "put yourself in someone's place",
+        "gradingCriteria": "Award points for a realistic project context, recognition of unequal resources, natural use of put yourself in someone's place, one concrete action such as reviewing contributions or sharing recognition, balanced reasoning, and clear English within the requested length."
+      }
+    ],
+    "retellingPrompt": "Without looking at the transcript, retell the episode in 100–150 words. Explain the programme's main argument about greed, describe the Monopoly experiment and what it suggests about success and privilege, explain the proposed link between wealth and empathy, and include the final nuance about what people may be greedy for. Use at least three target expressions naturally; do not list vocabulary definitions.",
+    "referencePoints": [
+      "Greed is presented as a desire to accumulate possessions, and the brain's reward system can make people feel good without consciously considering unfair effects on others.",
+      "In the Monopoly experiment, one randomly selected player received two dice and twice as much money when passing Go, so the game was rigged in that player's favour.",
+      "Winning players still took credit for success and emphasised their own decisions, overlooking the flip of a coin that created their privileged position.",
+      "The episode acknowledges that effort can matter while warning that the idea of pulling yourself up by your bootstraps can hide structural advantages.",
+      "People who are well off may become more socially independent and rely less on others; Professor Piff suggests their empathy can suffer as a result.",
+      "The discussion ends with a qualification: greed may be judged differently depending on its object, such as material possessions versus social justice or a clean environment."
+    ]
+  }
+}
