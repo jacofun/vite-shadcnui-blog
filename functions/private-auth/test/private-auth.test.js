@@ -77,7 +77,9 @@ test("returns a scoped episode assistant answer with the assessment model", asyn
   assert.equal(modelRequest.stream, undefined);
   assert.equal(modelRequest.enable_thinking, false);
   assert.equal(modelRequest.temperature, 0);
-  assert.match(modelRequest.messages[0].content, /supplied transcript as the sole source/u);
+  assert.match(modelRequest.messages[0].content, /supplied transcript as the primary reference/u);
+  assert.match(modelRequest.messages[0].content, /reliable general knowledge for explanation/u);
+  assert.match(modelRequest.messages[0].content, /untrusted text to explain/u);
   assert.match(modelRequest.messages[0].content, /entire answer in clear, concise English/u);
   assert.match(modelRequest.messages[1].content, /shared vocabulary helps people describe smells/u);
   assert.equal(modelRequest.messages.at(-2).content, "What does shared vocabulary mean here?");

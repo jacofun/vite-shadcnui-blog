@@ -171,7 +171,7 @@ export default function EpisodeAiAssistant({ episodeId, session }: Props): JSX.E
           <header className="flex items-center justify-between border-b border-white/10 px-4 py-3.5">
             <div>
               <h2 className="text-sm font-semibold text-white">本期问答</h2>
-              <p className="mt-0.5 text-xs text-slate-500">单词、短语、句子和原文联系</p>
+              <p className="mt-0.5 text-xs text-slate-500">课程理解、英语表达与相关延伸</p>
             </div>
             <div className="flex items-center gap-1">
               {messages.some((message) => message.content) && !sending && (
@@ -197,7 +197,7 @@ export default function EpisodeAiAssistant({ episodeId, session }: Props): JSX.E
 
           <div aria-live="polite" className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm leading-6">
             {messages.length === 0 && (
-              <p className="py-6 text-center text-slate-500">可以问我本期节目中的单词、短语和句子。</p>
+              <p className="py-6 text-center text-slate-500">可以问本期内容、语言难点和相关背景。</p>
             )}
             {messages.map((message) => (
               <div className={message.role === "user" ? "ml-8 flex justify-end" : "mr-5"} key={message.id}>
@@ -231,7 +231,7 @@ export default function EpisodeAiAssistant({ episodeId, session }: Props): JSX.E
                 maxLength={500}
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="问一个单词、短语或句子…"
+                placeholder="问课程内容、英语表达或相关问题…"
                 rows={1}
                 value={draft}
               />
@@ -264,7 +264,7 @@ export default function EpisodeAiAssistant({ episodeId, session }: Props): JSX.E
           onClick={() => setOpen(true)}
           type="button"
         >
-          <MessageCircle className="size-4" />AI 问答
+          <MessageCircle className="size-4" />问AI
         </button>
       )}
     </>
