@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-09-10",
+  "episodeId": "200206-is-it-good-to-disagree",
+  "title": "Is it good to disagree?",
+  "publishedAt": "2020-02-06",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english/ep-200206",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/200206_6min_english_disagreeing_better_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/200206_6min_english_disagreeing_better.pdf",
+  "reason": "近期课程覆盖了财富心理、旧技术与个人生产力，今天轮换到团队协作和职场沟通。本集讨论如何在不贬低对方的前提下表达分歧、认真倾听并挑战可能导致停滞的观点，适合迁移到代码评审、架构讨论、项目决策和跨团队协作。练习重点放在对比、因果链和礼貌但坚定的论证，帮助提升雅思 7 分所需的理解、改写与观点表达能力。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "团队协作",
+    "职场沟通",
+    "分歧处理",
+    "项目管理",
+    "批判性思维",
+    "精听",
+    "写作"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "agree to disagree",
+        "meaning": "accept that two people hold different opinions and stop trying to make either person change their mind",
+        "usage": "Use it to close a respectful debate without pretending there is agreement: We could not choose the same architecture, so we agreed to disagree."
+      },
+      {
+        "expression": "a point of view",
+        "meaning": "a particular way of thinking about or understanding a subject",
+        "usage": "Use it when comparing perspectives: From the operations team's point of view, reliability matters more than release speed."
+      },
+      {
+        "expression": "find the middle ground",
+        "meaning": "reach a position between two opposing views, usually through compromise",
+        "usage": "Use it when both sides adjust their demands: The teams found the middle ground on the release date."
+      },
+      {
+        "expression": "listen intently",
+        "meaning": "give complete and careful attention to what someone is saying",
+        "usage": "Use it to describe active, concentrated listening: The reviewer listened intently before challenging the proposal."
+      },
+      {
+        "expression": "speak truthfully",
+        "meaning": "say what you genuinely believe to be true without deliberately hiding or distorting it",
+        "usage": "Use it when emphasising honesty in a difficult conversation: Managers should speak truthfully about delivery risks."
+      },
+      {
+        "expression": "a recipe for stagnation",
+        "meaning": "a situation or approach that is likely to prevent progress or development",
+        "usage": "Use it to warn about a predictable negative result: Avoiding every technical disagreement is a recipe for stagnation."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "bad-disagreement-contempt",
+        "type": "single-choice",
+        "prompt": "According to Esther Perel, what turns disagreement into a damaging battle?",
+        "targetExpression": "a point of view",
+        "options": [
+          {
+            "id": "a",
+            "text": "Treating another point of view as proof that the other person is inferior"
+          },
+          {
+            "id": "b",
+            "text": "Asking the other person to explain their point of view"
+          },
+          {
+            "id": "c",
+            "text": "Pausing the discussion to check the evidence"
+          },
+          {
+            "id": "d",
+            "text": "Accepting that neither side has complete information"
+          }
+        ],
+        "answer": "a",
+        "explanation": "Perel says bad disagreement involves hierarchy and contempt: it goes beyond rejecting a point of view and treats the other person as a lesser human being."
+      },
+      {
+        "id": "middle-ground-meaning",
+        "type": "single-choice",
+        "prompt": "What does “find the middle ground” mean in the context of a disagreement?",
+        "targetExpression": "find the middle ground",
+        "options": [
+          {
+            "id": "a",
+            "text": "Prove that one side is completely wrong"
+          },
+          {
+            "id": "b",
+            "text": "Avoid discussing the issue at all"
+          },
+          {
+            "id": "c",
+            "text": "Reach a compromise between opposing positions"
+          },
+          {
+            "id": "d",
+            "text": "Ask a senior person to impose a decision"
+          }
+        ],
+        "answer": "c",
+        "explanation": "The programme explains middle ground as another way of talking about compromise, although its advice says a good disagreement need not always aim for it."
+      },
+      {
+        "id": "listen-intently-completion",
+        "type": "fill-blank",
+        "prompt": "Complete Douglas Alexander's description of an honest conversation: “It involves speaking truthfully and ______.”",
+        "targetExpression": "listen intently",
+        "answers": [
+          "listening intently",
+          "to listen intently"
+        ],
+        "explanation": "Alexander says honest conversations involve listening intently as well as speaking truthfully."
+      },
+      {
+        "id": "truthfully-project-risk",
+        "type": "fill-blank",
+        "prompt": "Complete the recommendation using the lesson's expression: “Even when the deadline is unpopular, the project lead should ______ about the delivery risk.”",
+        "targetExpression": "speak truthfully",
+        "answers": [
+          "speak truthfully"
+        ],
+        "explanation": "Speak truthfully means expressing what one honestly believes to be true; the sentence applies that principle to transparent project communication."
+      },
+      {
+        "id": "stagnation-causal-chain",
+        "type": "single-choice",
+        "prompt": "Which causal chain best matches Douglas Alexander's argument?",
+        "targetExpression": "a recipe for stagnation",
+        "options": [
+          {
+            "id": "a",
+            "text": "Politeness removes the need for evidence, so decisions become faster"
+          },
+          {
+            "id": "b",
+            "text": "Valuing civility above justice and truth can prevent challenges and become a recipe for stagnation"
+          },
+          {
+            "id": "c",
+            "text": "Frequent disagreement always destroys social progress"
+          },
+          {
+            "id": "d",
+            "text": "Compromise guarantees that every idea will develop"
+          }
+        ],
+        "answer": "b",
+        "explanation": "Alexander argues that disagreement is necessary for progress and that prioritising civility over justice and truth would be a recipe for stagnation."
+      },
+      {
+        "id": "agree-to-disagree-completion",
+        "type": "fill-blank",
+        "prompt": "Complete the sentence with the episode's expression: “After both architects had explained their evidence but remained unconvinced, they decided to ______.”",
+        "targetExpression": "agree to disagree",
+        "answers": [
+          "agree to disagree"
+        ],
+        "explanation": "Agree to disagree means accepting that the difference remains without continuing to force agreement."
+      },
+      {
+        "id": "good-disagreement-practice",
+        "type": "single-choice",
+        "prompt": "Which behaviour best represents the programme's model of good disagreement?",
+        "targetExpression": "listen intently",
+        "options": [
+          {
+            "id": "a",
+            "text": "Listen intently, speak truthfully and treat the other person with respect"
+          },
+          {
+            "id": "b",
+            "text": "Remain polite by accepting every claim without question"
+          },
+          {
+            "id": "c",
+            "text": "Win by placing yourself above the other person in a hierarchy"
+          },
+          {
+            "id": "d",
+            "text": "Search for compromise before either side explains its reasoning"
+          }
+        ],
+        "answer": "a",
+        "explanation": "The episode recommends truthful speech, attentive listening and empathy, while rejecting contempt and the assumption that agreement or compromise is always required."
+      },
+      {
+        "id": "point-of-view-response",
+        "type": "single-choice",
+        "prompt": "A developer challenges your design in a code review. Which response best applies the lesson?",
+        "targetExpression": "a point of view",
+        "options": [
+          {
+            "id": "a",
+            "text": "Your point of view is irrelevant because I am more senior."
+          },
+          {
+            "id": "b",
+            "text": "I understand your point of view; let us compare the reliability evidence before deciding."
+          },
+          {
+            "id": "c",
+            "text": "Let us find the middle ground by combining both designs without testing either."
+          },
+          {
+            "id": "d",
+            "text": "Any disagreement is a recipe for stagnation, so the review should end now."
+          }
+        ],
+        "answer": "b",
+        "explanation": "The response recognises the other person's perspective, avoids hierarchy and contempt, and keeps the discussion focused on evidence."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "comprehension-progress-civility",
+        "type": "comprehension",
+        "prompt": "In 50–80 words, explain why the episode says disagreement can support progress, and contrast good disagreement with the kind driven by hierarchy and contempt.",
+        "targetExpression": "a recipe for stagnation",
+        "gradingCriteria": "Award points for explaining that ideas need to be challenged in the search for truth or justice, stating why avoiding challenge can be a recipe for stagnation, contrasting respectful honesty and attentive listening with hierarchy or contempt, and using clear English within the requested length."
+      },
+      {
+        "id": "paraphrase-honest-conversation",
+        "type": "paraphrase",
+        "prompt": "In 25–50 words, paraphrase this idea without copying it: “An honest conversation requires both careful attention to the other person and an open statement of your own belief.” Use “listen intently” and “speak truthfully”.",
+        "targetExpression": "listen intently",
+        "gradingCriteria": "Award points for preserving both sides of the idea, using listen intently and speak truthfully naturally and accurately, avoiding close copying, and producing grammatical English within the requested length."
+      },
+      {
+        "id": "application-architecture-disagreement",
+        "type": "application",
+        "prompt": "In 50–90 words, describe how you would handle a serious architecture disagreement between development and operations teams. Use “a point of view” and state one concrete action before deciding whether to find the middle ground or agree to disagree.",
+        "targetExpression": "a point of view",
+        "gradingCriteria": "Award points for a realistic engineering conflict, respectful treatment of both perspectives, natural use of a point of view, one concrete action such as comparing evidence or running a test, a justified decision about compromise or unresolved disagreement, and clear English within the requested length."
+      }
+    ],
+    "retellingPrompt": "Without looking at the transcript, retell the episode in 100–150 words. Explain why disagreement is normal and may support progress, describe what makes disagreement harmful, and present the main recommendations for disagreeing better. Include the warning about valuing politeness above truth or justice, and naturally use at least three target expressions; do not list vocabulary definitions.",
+    "referencePoints": [
+      "Disagreement is presented as normal, and agreement is not required at the end of every discussion.",
+      "A damaging disagreement becomes a battle when hierarchy and contempt make one person treat another as inferior rather than simply reject a point of view.",
+      "The programme's advice includes speaking truthfully, listening intently and aiming for empathy; it also says the middle ground is not always the goal.",
+      "Douglas Alexander argues that disagreement is necessary for social progress because thoughts and ideas need to be challenged and questioned.",
+      "Valuing civility above justice and truth can become a recipe for stagnation, but challenge should still be conducted politely and with respect."
+    ]
+  }
+}
