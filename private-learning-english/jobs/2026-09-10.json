@@ -217,28 +217,42 @@
     ],
     "subjectiveQuestions": [
       {
-        "id": "comprehension-progress-civility",
+        "id": "guided-recall-honest-conversation",
         "type": "comprehension",
-        "prompt": "In 50–80 words, explain why the episode says disagreement can support progress, and contrast good disagreement with the kind driven by hierarchy and contempt.",
+        "prompt": "In 10–25 words, say what two actions Douglas Alexander includes in an honest conversation. Use “speak truthfully” and “listen intently”. Start with: “People should…”",
+        "targetExpression": "speak truthfully",
+        "gradingCriteria": "First check that the answer includes both speaking truthfully and listening intently. Then check that the expressions are used naturally. Accept one simple, accurate sentence without requiring advanced vocabulary. Distinguish missing content from wording that is only less idiomatic, and give only one or two high-value improvements."
+      },
+      {
+        "id": "guided-comprehension-progress",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why disagreement can help society or a team make progress. Use “a recipe for stagnation”. You may start with: “If people never challenge ideas…”",
         "targetExpression": "a recipe for stagnation",
-        "gradingCriteria": "Award points for explaining that ideas need to be challenged in the search for truth or justice, stating why avoiding challenge can be a recipe for stagnation, contrasting respectful honesty and attentive listening with hierarchy or contempt, and using clear English within the requested length."
+        "gradingCriteria": "First check that the answer explains that ideas need to be challenged or questioned for progress. Then check that a recipe for stagnation is used naturally. Accept simple, direct English; do not demand complex sentences. Distinguish an incorrect idea from a correct but less idiomatic expression, and give only one or two high-value improvements."
       },
       {
-        "id": "paraphrase-honest-conversation",
+        "id": "paraphrase-point-of-view",
         "type": "paraphrase",
-        "prompt": "In 25–50 words, paraphrase this idea without copying it: “An honest conversation requires both careful attention to the other person and an open statement of your own belief.” Use “listen intently” and “speak truthfully”.",
-        "targetExpression": "listen intently",
-        "gradingCriteria": "Award points for preserving both sides of the idea, using listen intently and speak truthfully naturally and accurately, avoiding close copying, and producing grammatical English within the requested length."
+        "prompt": "In 20–40 words, rewrite this idea while keeping its meaning: “A damaging disagreement attacks the person instead of only challenging their idea.” Use “a point of view”.",
+        "targetExpression": "a point of view",
+        "gradingCriteria": "First check that the contrast between rejecting an idea and treating a person as inferior is preserved. Then check that a point of view is used naturally. Accept straightforward English and do not reward complexity for its own sake. Give only one or two high-value improvements."
       },
       {
-        "id": "application-architecture-disagreement",
+        "id": "supported-application-code-review",
         "type": "application",
-        "prompt": "In 50–90 words, describe how you would handle a serious architecture disagreement between development and operations teams. Use “a point of view” and state one concrete action before deciding whether to find the middle ground or agree to disagree.",
-        "targetExpression": "a point of view",
-        "gradingCriteria": "Award points for a realistic engineering conflict, respectful treatment of both perspectives, natural use of a point of view, one concrete action such as comparing evidence or running a test, a justified decision about compromise or unresolved disagreement, and clear English within the requested length."
+        "prompt": "In 30–60 words, respond to this situation: a colleague rejects your design during a code review. Say what you would do next. Use one phrase from this bank: “listen intently”, “speak truthfully”, “find the middle ground”.",
+        "targetExpression": "listen intently",
+        "gradingCriteria": "First check that the answer gives a concrete and respectful next action in the code-review situation. Then check that at least one phrase-bank expression is used naturally. Accept a simple, realistic response with basically correct grammar. Distinguish missing action from merely less idiomatic wording, and give only one or two high-value improvements."
+      },
+      {
+        "id": "bounded-response-agreement",
+        "type": "application",
+        "prompt": "In 40–70 words, give your view: must colleagues reach the same conclusion after every disagreement? Keep your answer within a workplace or project context and use “agree to disagree” or “find the middle ground”.",
+        "targetExpression": "agree to disagree",
+        "gradingCriteria": "First check that the answer gives a clear view about whether colleagues must reach agreement and supports it within a workplace or project context. Then check that agree to disagree or find the middle ground is used naturally. Simple, correct English can receive full credit. Give only one or two high-value improvements and, if useful, at most one alternative expression from the lesson."
       }
     ],
-    "retellingPrompt": "Without looking at the transcript, retell the episode in 100–150 words. Explain why disagreement is normal and may support progress, describe what makes disagreement harmful, and present the main recommendations for disagreeing better. Include the warning about valuing politeness above truth or justice, and naturally use at least three target expressions; do not list vocabulary definitions.",
+    "retellingPrompt": "Without looking at the transcript, retell the episode in 80–120 words. Use this structure: the main question → what makes disagreement harmful → how good disagreement can support progress → one conclusion or workplace example. Choose from “a point of view”, “listen intently” and “a recipe for stagnation”, and use at least two naturally. Simple, clear English is enough.",
     "referencePoints": [
       "Disagreement is presented as normal, and agreement is not required at the end of every discussion.",
       "A damaging disagreement becomes a battle when hierarchy and contempt make one person treat another as inferior rather than simply reject a point of view.",
