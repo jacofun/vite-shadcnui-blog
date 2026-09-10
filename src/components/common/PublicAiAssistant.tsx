@@ -12,6 +12,7 @@ import {
   PublicAssistantApiError,
   askPublicAssistant,
 } from "@/lib/publicAssistant";
+import AssistantMessage from "@/components/common/AssistantMessage";
 
 interface Props {
   pagePath: string;
@@ -215,7 +216,7 @@ export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
                 {message.role === "user" ? (
                   <p className="max-w-full whitespace-pre-wrap rounded-2xl rounded-br-md bg-cyan-300/[0.12] px-3.5 py-2.5 text-slate-200">{message.content}</p>
                 ) : message.content ? (
-                  <p className="whitespace-pre-wrap text-slate-300">{message.content}</p>
+                  <AssistantMessage content={message.content} />
                 ) : waitingForFirstText ? (
                   <div aria-label="等待回答" className="flex h-6 items-center gap-1">
                     {[0, 1, 2].map((index) => (

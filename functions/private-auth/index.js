@@ -407,7 +407,7 @@ function routeName(path, cookiePath, persistent = false) {
     "collections/create", "collections/delete", "files/delete",
     "clipboard/get", "clipboard/save", "clipboard/delete",
     "assessment/grade", "assessment/result", "assessment/ask",
-    "public/assistant/ask",
+    "public/assistant/ask", "health",
   ];
   if (persistent) knownRoutes.push(
     "register/options", "register/verify", "reauth/challenge", "reauth/verify",
@@ -2163,6 +2163,9 @@ export function createHandler({
         throw new HttpError(405, "METHOD_NOT_ALLOWED", "Method is not allowed");
       }
       if (request.method === "POST") requireExpectedOrigin(request, config);
+
+      // A foreground heartbeat needs no session, model call or persistent store.
+      if (route === "health") return jsonResponse(config, 200, { ok: true });
 
       const nowSeconds = now();
 

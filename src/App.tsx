@@ -4,8 +4,10 @@ import { Outlet, useLocation } from "react-router-dom";
 import AiDisclaimer from "./components/common/AiDisclaimer";
 import Footer from "./components/common/Footer";
 import SiteHeader from "./components/common/SiteHeader";
+import { useFunctionHeartbeat } from "./hooks/useFunctionHeartbeat";
 
 function App() {
+  useFunctionHeartbeat();
   const { pathname } = useLocation();
   const [readingProgress, setReadingProgress] = useState(0);
   const [routePending, setRoutePending] = useState(false);

@@ -46,6 +46,29 @@ function cookiePair(setCookie) {
   return setCookie.split(";", 1)[0];
 }
 
+test("foreground health checks skip auth storage and models but enforce gateway and origin", async () => {
+  for (const mode of ["environment", "oss"]) {
+    const unexpectedCall = () => { throw new Error("Health must not access dependencies"); };
+    const handler = createHandler({
+      env: createEnv({ AUTH_STORE: mode }),
+      store: new Proxy({}, { get: unexpectedCall }),
+      contentStore: new Proxy({}, { get: unexpectedCall }),
+      fetchImpl: unexpectedCall,
+    });
+    const response = await handler(request({ method: "POST", path: "/api/private-auth/health" }));
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(responseJson(response), { ok: true });
+    assert.equal(response.headers["cache-control"], "no-store");
+    assert.equal(response.headers["set-cookie"], undefined);
+    for (const overrides of [{ gateway: false }, { origin: "https://other.example" }, { origin: null }]) {
+      const rejected = await handler(request({ method: "POST", path: "/api/private-auth/health", ...overrides }));
+      assert.equal(rejected.statusCode, 403);
+    }
+    const wrongMethod = await handler(request({ method: "GET", path: "/api/private-auth/health" }));
+    assert.equal(wrongMethod.statusCode, 405);
+  }
+});
+
 test("returns a scoped episode assistant answer with the assessment model", async () => {
   let modelRequest;
   let modelCalls = 0;

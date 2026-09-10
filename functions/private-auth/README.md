@@ -12,6 +12,13 @@ separate private OSS bucket used only by Function Compute; that bucket must not 
 
 ## Runtime
 
+The website sends `POST /api/private-auth/health` on foreground entry and every 60 seconds
+after the previous check completes. Hidden or offline pages pause checks; returning to the
+page resumes them. Each request times out after 10 seconds. This best-effort heartbeat reduces
+idle cold starts but cannot prevent platform recycling. It omits credentials and does not renew
+sessions, access OSS or invoke a model. The endpoint requires the existing CDN verification
+header and expected Origin, and returns uncached `{ "ok": true }` in either auth-store mode.
+
 - Node.js 20 or newer built-in runtime
 - Handler: `index.handler`
 - HTTP trigger path exposed through CDN: `/api/private-auth/*`
