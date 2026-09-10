@@ -1351,7 +1351,7 @@ const subjectiveAssessmentResponseSchema = {
     improvements: {
       type: "array",
       minItems: 1,
-      maxItems: 3,
+      maxItems: 2,
       items: { type: "string", description: "One actionable improvement written in English only." },
     },
     revisedAnswer: { type: "string", description: "An improved answer written entirely in English." },
@@ -1448,7 +1448,7 @@ function validateSubjectiveModelGrading(value) {
     maxScore: 10,
     summary: value.summary.trim(),
     strengths: stringArray("strengths", 3),
-    improvements: stringArray("improvements", 3, 1),
+    improvements: stringArray("improvements", 2, 1),
     revisedAnswer,
   };
 }
@@ -1537,6 +1537,7 @@ async function requestSubjectiveAssessmentGrading({ modelConfig, episode, transc
     `Question: ${question.prompt}`,
     `Grading criteria: ${question.gradingCriteria}`,
     question.targetExpression ? `Target expression: ${question.targetExpression}${target ? ` — ${target.meaning}. ${target.usage}` : ""}` : "",
+    `Lesson target expressions:\n${assessment.targetExpressions.map((item) => `- ${item.expression}: ${item.meaning}`).join("\n") || "None supplied."}`,
     `Reference transcript:\n${transcript.slice(0, 30_000)}`,
     `Expected content points:\n${assessment.referencePoints.map((point) => `- ${point}`).join("\n") || "Use the transcript as the source of truth."}`,
     `Learner answer:\n${answer}`,
@@ -1545,7 +1546,15 @@ async function requestSubjectiveAssessmentGrading({ modelConfig, episode, transc
     modelConfig,
     schemaName: "english_subjective_assessment",
     schema: subjectiveAssessmentResponseSchema,
-    system: "You are a strict but constructive English teacher grading one short-answer exercise for an IELTS 6 learner aiming for 7. Follow the supplied question-specific criteria. For comprehension and paraphrase, treat the transcript as the source of truth. For application, judge whether the target expression is natural in the learner's new context. Return only the requested JSON and write every field in English.",
+    system: [
+      "You are a supportive and precise English teacher grading one scaffolded short-answer exercise for an IELTS 6 learner aiming for 7.",
+      "First decide whether the learner answered the actual question; then assess whether the required target expression is used accurately and naturally.",
+      "For comprehension and paraphrase, treat the transcript as the source of truth. For application, judge whether the answer fits the bounded scenario and whether the chosen lesson expression is natural.",
+      "Simple, direct English can receive full credit when its meaning is accurate, its grammar is basically correct, and its target expression is natural. Never require advanced vocabulary or complex sentences for a high score.",
+      "Distinguish a missing or incorrect idea from an idea that is correct but phrased less idiomatically. Give only one or two high-value improvements.",
+      "When suggesting a more natural expression, give at most one alternative and take it from the lesson target expressions or transcript.",
+      "Return only the requested JSON and write every field in English.",
+    ].join(" "),
     prompt,
     validate: validateSubjectiveModelGrading,
     fetchImpl,
@@ -1903,7 +1912,7 @@ async function handleEnglishAssessment({
         status: "completed",
         completedAt: new Date().toISOString(),
         model: modelConfig.model,
-        rubricVersion: "short-answer-v1",
+        rubricVersion: "short-answer-v2",
         grading,
         ...assessmentHistory(previous, grading.score),
       };

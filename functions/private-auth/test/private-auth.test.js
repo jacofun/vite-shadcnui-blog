@@ -342,6 +342,10 @@ test("validates subjective grading and derives compatible questions for older le
   });
   assert.equal(grading.maxScore, 10);
   assert.throws(() => __test.validateSubjectiveModelGrading({ ...grading, score: 11 }), /invalid subjective feedback/);
+  assert.throws(() => __test.validateSubjectiveModelGrading({
+    ...grading,
+    improvements: ["First.", "Second.", "Third."],
+  }), /invalid improvements/);
   assert.equal(__test.validateEnglishOnlyAssessmentResult(grading), grading);
   assert.throws(() => __test.validateEnglishOnlyAssessmentResult({
     ...grading,
@@ -428,6 +432,11 @@ test("completes challenge, passkey verification, session lookup and resource sig
       }
       assert.match(requestBody.messages[0].content, /every string in the JSON response in English only/);
       const subjective = requestBody.response_format.json_schema.name === "english_subjective_assessment";
+      if (subjective) {
+        assert.match(requestBody.messages[0].content, /Simple, direct English can receive full credit/u);
+        assert.match(requestBody.messages[0].content, /Give only one or two high-value improvements/u);
+        assert.match(requestBody.messages[1].content, /Lesson target expressions/u);
+      }
       return {
         ok: true,
         async json() {
@@ -569,6 +578,7 @@ test("completes challenge, passkey verification, session lookup and resource sig
   }));
   assert.equal(subjectiveResponse.statusCode, 200);
   assert.equal(responseJson(subjectiveResponse).grading.score, 8);
+  assert.equal(responseJson(subjectiveResponse).rubricVersion, "short-answer-v2");
   assert.equal(responseJson(subjectiveResponse).attemptNumber, 1);
   assert.equal(subjectiveModelCalls, 2);
 

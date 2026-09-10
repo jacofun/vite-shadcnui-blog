@@ -49,6 +49,18 @@ function correctAnswer(question: PrivateLearningObjectiveQuestion): string {
   return question.options.find((option) => option.id === question.answer)?.text ?? question.answer;
 }
 
+function subjectiveStageLabel(type: "comprehension" | "paraphrase" | "application", index: number, total: number): string {
+  if (total >= 5) {
+    return ["原文支撑", "受控理解", "限定改写", "支持迁移", "有限自由输出"][Math.min(index, 4)];
+  }
+  return { comprehension: "深层理解", paraphrase: "限定表达改写", application: "场景迁移" }[type];
+}
+
+function suggestedWordRange(prompt: string): string | null {
+  const match = prompt.match(/\b(?:about\s+)?(\d{1,3})\s*[–—-]\s*(\d{1,3})\s+words?\b/iu);
+  return match ? `${match[1]}–${match[2]}` : null;
+}
+
 function errorMessage(error: unknown): string {
   if (error instanceof PrivateAuthApiError) {
     if (error.code === "ASSESSMENT_NOT_CONFIGURED") return "AI 批改服务尚未配置，请设置百炼环境变量后再提交。";
@@ -379,16 +391,21 @@ export default function EnglishAssessment({ assessment, episodeId, session }: En
         {subjectiveQuestions.length > 0 && (
           <div className="mt-9 border-t border-white/10 pt-8">
             <h3 className="text-sm font-medium text-white">AI 短答题</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-400">每题独立提交和保存，完成一题即可立即批改。</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              {subjectiveQuestions.length >= 5
+                ? "按原文支撑、理解、改写和迁移逐步增加难度；每题可独立提交并立即批改。"
+                : "每题独立提交和保存，完成一题即可立即批改。"}
+            </p>
             <div className="mt-4 divide-y divide-white/10">
               {subjectiveQuestions.map((question, index) => {
                 const answer = subjectiveAnswers[question.id] ?? "";
                 const answerWords = answer.match(/[A-Za-z]+(?:['’-][A-Za-z]+)*/gu)?.length ?? 0;
                 const isSubmitting = Boolean(subjectiveGrading[question.id]);
-                const labels = { comprehension: "深层理解", paraphrase: "限定表达改写", application: "场景迁移" } as const;
+                const stageLabel = subjectiveStageLabel(question.type, index, subjectiveQuestions.length);
+                const wordRange = suggestedWordRange(question.prompt);
                 return (
                   <div className="py-6 first:pt-2" key={question.id}>
-                    <p className="text-xs text-cyan-300">{labels[question.type]}</p>
+                    <p className="text-xs text-cyan-300">第 {index + 1} 级 · {stageLabel}</p>
                     <h4 className="mt-2 text-sm font-medium leading-7 text-slate-200">{index + 1}. {question.prompt}</h4>
                     <textarea
                       className="mt-3 min-h-32 w-full resize-y rounded-xl border border-white/10 bg-black/20 p-4 text-[15px] leading-7 text-white outline-none placeholder:text-slate-600 focus:border-cyan-300/40"
@@ -397,7 +414,9 @@ export default function EnglishAssessment({ assessment, episodeId, session }: En
                       value={answer}
                     />
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                      <p className={`text-xs ${answerWords > 0 && answerWords < 3 ? "text-amber-300" : "text-slate-500"}`}>{answerWords} words · 至少 3 词</p>
+                      <p className={`text-xs ${answerWords > 0 && answerWords < 3 ? "text-amber-300" : "text-slate-500"}`}>
+                        {answerWords} words · {wordRange ? `建议 ${wordRange} 词` : "至少 3 词"}
+                      </p>
                       <button
                         className="inline-flex items-center gap-2 rounded-xl bg-cyan-300 px-4 py-2.5 text-sm font-medium text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
                         disabled={isSubmitting || answerWords < 3 || answerWords > 500}
@@ -405,7 +424,7 @@ export default function EnglishAssessment({ assessment, episodeId, session }: En
                         type="button"
                       >
                         {isSubmitting && <Loader2 className="size-4 animate-spin" />}
-                        {isSubmitting ? "正在批改…" : `提交${labels[question.type]}题`}
+                        {isSubmitting ? "正在批改…" : `提交第 ${index + 1} 题`}
                       </button>
                     </div>
                     {subjectiveErrors[question.id] && <p className="mt-4 text-sm text-rose-200">{subjectiveErrors[question.id]}</p>}
