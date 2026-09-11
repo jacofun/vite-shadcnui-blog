@@ -1,6 +1,6 @@
-# Private authentication function
+# Private authentication Web function
 
-This Node.js Function Compute handler supports two explicitly selected modes:
+This Node.js Function Compute Web function supports two explicitly selected modes:
 
 - `AUTH_STORE=environment` (default): single-owner login with pre-registered Passkeys.
 - `AUTH_STORE=oss`: invitation-only registration, per-user Passkeys, revocable sessions,
@@ -19,8 +19,9 @@ idle cold starts but cannot prevent platform recycling. It omits credentials and
 sessions, access OSS or invoke a model. The endpoint requires the existing CDN verification
 header and expected Origin, and returns uncached `{ "ok": true }` in either auth-store mode.
 
-- Node.js 20 or newer built-in runtime
-- Handler: `index.handler`
+- Custom runtime: Debian 10 with Node.js 20
+- Startup command: `node server.js`
+- Listening port: `9000` (read from `FC_SERVER_PORT` when supplied by Function Compute)
 - HTTP trigger path exposed through CDN: `/api/private-auth/*`
 - Minimum instances: `0`
 - Recommended maximum instances: `1` for this private deployment
@@ -113,9 +114,10 @@ CDN_AUTH_KEY=<existing CDN type-A key>
 CDN_ORIGIN_VERIFY_KEY=<existing origin header secret>
 ```
 
-Use the same region as Function Compute and the HTTPS internal OSS endpoint. The handler reads
-rotating STS credentials from `context.credentials`; no long-lived AccessKey is required in the
-function environment. Local administrator commands can use:
+Use the same region as Function Compute and the HTTPS internal OSS endpoint. The Web server reads
+rotating STS credentials from the `x-fc-access-key-id`, `x-fc-access-key-secret` and
+`x-fc-security-token` request headers supplied by Function Compute; no long-lived AccessKey is
+required in the function environment. Local administrator commands can use:
 
 ```text
 ALIBABA_CLOUD_ACCESS_KEY_ID=...
@@ -363,7 +365,8 @@ ambiguous appends, independent persistent rate counters, recovery/session revoca
 P-256 WebAuthn verification. A real FC RAM role, internal OSS endpoint and device registration
 must still be checked before production rollout.
 
-The website deployment workflow creates `private-auth.zip` with `index.js`, `package.json`,
-`package-lock.json` and production `node_modules` at the ZIP root. It uploads the ZIP and SHA-256
-file to the private content bucket under `functions/`. Runtime secrets, operator scripts and tests
-are excluded from the artifact.
+The function deployment workflow creates `fc-blog-authenticator-web.zip` with `server.js`,
+`index.js`, `package.json`, `package-lock.json` and production `node_modules` at the ZIP root. It
+uploads the ZIP to the private content bucket under `functions/fc-cicd/`, then updates only the
+code of `fc-blog-authenticator-web`. Runtime secrets, operator scripts and tests are excluded from
+the artifact.

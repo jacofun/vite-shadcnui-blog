@@ -23,8 +23,8 @@ def main() -> int:
     oss_bucket_name = required_env("ALIYUN_FC_CODE_OSS_BUCKET")
     oss_object_name = required_env("ALIYUN_FC_CODE_OSS_OBJECT")
 
-    expected_runtime = os.environ.get("ALIYUN_FC_EXPECTED_RUNTIME", "nodejs20")
-    expected_handler = os.environ.get("ALIYUN_FC_EXPECTED_HANDLER", "index.handler")
+    expected_runtime = os.environ.get("ALIYUN_FC_EXPECTED_RUNTIME", "custom.debian10")
+    expected_handler = os.environ.get("ALIYUN_FC_EXPECTED_HANDLER", "").strip()
 
     config = open_api_models.Config(
         access_key_id=access_key_id,
@@ -64,10 +64,14 @@ def main() -> int:
     code_size = getattr(response, "code_size", None)
     last_modified = getattr(response, "last_modified_time", None)
 
-    if deployed_runtime != expected_runtime or deployed_handler != expected_handler:
+    if deployed_runtime != expected_runtime or (
+        expected_handler and deployed_handler != expected_handler
+    ):
         raise RuntimeError(
             "Function code was updated, but the returned configuration does not match "
-            f"runtime={expected_runtime!r}, handler={expected_handler!r}; "
+            f"runtime={expected_runtime!r}"
+            + (f", handler={expected_handler!r}" if expected_handler else "")
+            + "; "
             f"actual runtime={deployed_runtime!r}, handler={deployed_handler!r}"
         )
 

@@ -44,7 +44,7 @@ test("private content metadata publication is idempotent and rejects conflicting
   const client = fakeOssClient();
   const store = await createPrivateResourceContentStore({
     env: contentEnv(),
-    context: { credentials: { accessKeyId: "test-id", accessKeySecret: "test-secret" } },
+    credentials: { accessKeyId: "test-id", accessKeySecret: "test-secret" },
     client,
     publicClient: client,
   });
@@ -62,7 +62,7 @@ test("private content store can overwrite server-owned assessment results", asyn
   const client = fakeOssClient();
   const store = await createPrivateResourceContentStore({
     env: contentEnv(),
-    context: { credentials: { accessKeyId: "test-id", accessKeySecret: "test-secret" } },
+    credentials: { accessKeyId: "test-id", accessKeySecret: "test-secret" },
     client,
     publicClient: client,
   });
@@ -77,7 +77,7 @@ test("private index updates serialize concurrent publishers without losing chang
   const client = fakeOssClient();
   const store = await createPrivateResourceContentStore({
     env: contentEnv(),
-    context: { credentials: { accessKeyId: "test-id", accessKeySecret: "test-secret" } },
+    credentials: { accessKeyId: "test-id", accessKeySecret: "test-secret" },
     client,
     publicClient: client,
   });

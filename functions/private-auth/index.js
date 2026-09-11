@@ -353,38 +353,27 @@ function normalizeHeaders(rawHeaders = {}) {
   return headers;
 }
 
-function parseEvent(event) {
-  let parsed = event;
-  if (Buffer.isBuffer(parsed)) parsed = parsed.toString("utf8");
-  if (typeof parsed === "string") {
-    try {
-      parsed = JSON.parse(parsed);
-    } catch {
-      throw new HttpError(400, "INVALID_REQUEST", "Request event is not valid JSON");
-    }
-  }
-  if (!parsed || typeof parsed !== "object") {
-    throw new HttpError(400, "INVALID_REQUEST", "Request event is invalid");
+function normalizeRequest(request) {
+  if (!request || typeof request !== "object") {
+    throw new HttpError(400, "INVALID_REQUEST", "Request is invalid");
   }
 
-  const method = String(
-    parsed.requestContext?.http?.method || parsed.httpMethod || parsed.method || "GET",
-  ).toUpperCase();
-  const path = String(parsed.rawPath || parsed.path || parsed.requestContext?.http?.path || "/")
-    .split("?", 1)[0];
-  const headers = normalizeHeaders(parsed.headers);
-
-  let body = parsed.body;
-  if (parsed.isBase64Encoded && typeof body === "string") {
-    body = Buffer.from(body, "base64").toString("utf8");
-  }
+  const method = String(request.method || "GET").toUpperCase();
+  const path = String(request.path || "/").split("?", 1)[0];
+  const headers = normalizeHeaders(request.headers);
+  const body = request.body;
   if (typeof body === "string" && Buffer.byteLength(body, "utf8") > 131_072) {
     throw new HttpError(413, "REQUEST_TOO_LARGE", "Request body is too large");
   }
 
-  // Only trust platform-provided source IP, never a caller's X-Forwarded-For.
-  const sourceIp = parsed.requestContext?.http?.sourceIp;
-  return { method, path, headers, body, sourceIp };
+  return {
+    method,
+    path,
+    headers,
+    body,
+    sourceIp: request.sourceIp,
+    credentials: request.credentials || {},
+  };
 }
 
 function parseJsonBody(body) {
@@ -424,7 +413,6 @@ function usesPrivateContentStore(route) {
 function jsonResponse(config, statusCode, body, extraHeaders = {}) {
   return {
     statusCode,
-    isBase64Encoded: false,
     headers: {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-store",
@@ -443,7 +431,6 @@ function jsonResponse(config, statusCode, body, extraHeaders = {}) {
 function emptyResponse(config, statusCode, extraHeaders = {}) {
   return {
     statusCode,
-    isBase64Encoded: false,
     headers: {
       "cache-control": "no-store",
       "access-control-allow-origin": config.expectedOrigin,
@@ -750,8 +737,7 @@ function normalizeUploadRequest(body, catalog, config, randomBytesImpl) {
   };
 }
 
-function contentCredentials(env, context) {
-  const credentials = context.credentials || {};
+function contentCredentials(env, credentials = {}) {
   const accessKeyId = credentials.accessKeyId || env.ALIBABA_CLOUD_ACCESS_KEY_ID;
   const accessKeySecret = credentials.accessKeySecret || env.ALIBABA_CLOUD_ACCESS_KEY_SECRET;
   const stsToken = credentials.securityToken || env.ALIBABA_CLOUD_SECURITY_TOKEN;
@@ -778,7 +764,7 @@ function isOssAlreadyExists(error) {
 
 let contentIndexUpdate = Promise.resolve();
 
-export async function createPrivateResourceContentStore({ env = process.env, context = {}, sdk, client, publicClient } = {}) {
+export async function createPrivateResourceContentStore({ env = process.env, credentials = {}, sdk, client, publicClient } = {}) {
   const OSS = sdk || (client ? null : (await import("ali-oss")).default);
   const bucket = requiredString(env, "OSS_CONTENT_BUCKET");
   const region = requiredString(env, "OSS_CONTENT_REGION");
@@ -787,8 +773,8 @@ export async function createPrivateResourceContentStore({ env = process.env, con
     env.OSS_CONTENT_PUBLIC_ENDPOINT?.trim() || `https://${region}.aliyuncs.com`,
     "OSS_CONTENT_PUBLIC_ENDPOINT",
   );
-  const credentials = contentCredentials(env, context);
-  const common = { bucket, region, authorizationV4: false, secure: true, ...credentials };
+  const ossCredentials = contentCredentials(env, credentials);
+  const common = { bucket, region, authorizationV4: false, secure: true, ...ossCredentials };
   const oss = client || new OSS({ ...common, endpoint: internalEndpoint });
   const signer = publicClient || new OSS({ ...common, endpoint: publicEndpoint });
 
@@ -2139,11 +2125,11 @@ export function createHandler({
   contentStore,
   fetchImpl = globalThis.fetch,
 } = {}) {
-  return async function privateAuthHandler(event, context = {}) {
+  return async function privateAuthHandler(input) {
     let config;
     try {
       config = loadConfig(env);
-      const request = parseEvent(event);
+      const request = normalizeRequest(input);
       requireOriginGateway(request, config);
 
       if (request.method === "OPTIONS") {
@@ -2177,9 +2163,15 @@ export function createHandler({
       }
 
       if (config.storeMode === "oss") {
-        const persistentStore = store || await createOssEventStore({ env, context });
+        const persistentStore = store || await createOssEventStore({
+          env,
+          credentials: request.credentials,
+        });
         const privateContentStore = usesPrivateContentStore(route)
-          ? contentStore || await createPrivateResourceContentStore({ env, context })
+          ? contentStore || await createPrivateResourceContentStore({
+            env,
+            credentials: request.credentials,
+          })
           : contentStore;
         return await persistentRequest({
           request, route, config, store: persistentStore, contentStore: privateContentStore,
@@ -2267,7 +2259,10 @@ export function createHandler({
       requireCsrf(request, session);
 
       if (usesPrivateContentStore(route)) {
-        const privateContentStore = contentStore || await createPrivateResourceContentStore({ env, context });
+        const privateContentStore = contentStore || await createPrivateResourceContentStore({
+          env,
+          credentials: request.credentials,
+        });
         const body = parseJsonBody(request.body);
         const user = { id: "owner", role: "owner", permissions: [] };
         const result = route.startsWith("assessment/")
@@ -2435,7 +2430,7 @@ function parseOssEvents(content, startPosition, startSequence, initialState) {
  * but authoritative writes use AppendObject because mount rename/file locking is
  * not atomic across FC instances.
  */
-export async function createOssEventStore({ env = process.env, context = {}, sdk, client } = {}) {
+export async function createOssEventStore({ env = process.env, credentials = {}, sdk, client } = {}) {
   const OSS = sdk || (client ? null : (await import("ali-oss")).default);
   const bucket = requiredString(env, "OSS_AUTH_BUCKET");
   const region = requiredString(env, "OSS_AUTH_REGION");
@@ -2449,20 +2444,22 @@ export async function createOssEventStore({ env = process.env, context = {}, sdk
       logObject === snapshotObject || [logObject, snapshotObject, ratePrefix].some((value) => value.includes(".."))) {
     throw new HttpError(500, "CONFIGURATION_ERROR", "OSS authentication storage paths are invalid");
   }
-  // FC supplies rotating credentials on each invocation. The CLI uses RAM/STS environment credentials.
-  const credentials = context.credentials || {
-    accessKeyId: env.ALIBABA_CLOUD_ACCESS_KEY_ID,
-    accessKeySecret: env.ALIBABA_CLOUD_ACCESS_KEY_SECRET,
-    securityToken: env.ALIBABA_CLOUD_SECURITY_TOKEN,
-  };
-  if (!client && (!credentials.accessKeyId || !credentials.accessKeySecret)) {
+  // The Web function passes rotating FC role credentials per request. The CLI uses environment credentials.
+  const ossCredentials = credentials.accessKeyId && credentials.accessKeySecret
+    ? credentials
+    : {
+      accessKeyId: env.ALIBABA_CLOUD_ACCESS_KEY_ID,
+      accessKeySecret: env.ALIBABA_CLOUD_ACCESS_KEY_SECRET,
+      securityToken: env.ALIBABA_CLOUD_SECURITY_TOKEN,
+    };
+  if (!client && (!ossCredentials.accessKeyId || !ossCredentials.accessKeySecret)) {
     throw new HttpError(503, "STORAGE_CREDENTIALS_MISSING", "OSS credentials are not configured");
   }
   const oss = client || new OSS({
     bucket, region, endpoint,
-    accessKeyId: credentials.accessKeyId,
-    accessKeySecret: credentials.accessKeySecret,
-    stsToken: credentials.securityToken,
+    accessKeyId: ossCredentials.accessKeyId,
+    accessKeySecret: ossCredentials.accessKeySecret,
+    stsToken: ossCredentials.securityToken,
     secure: true,
     timeout: 3_000,
     retryMax: 0,
@@ -3075,8 +3072,6 @@ export async function administer({ store, command, userId, displayName = "Owner"
   }, { initialize: ["bootstrap", "import-owner"].includes(command) });
 }
 
-export const handler = createHandler();
-
 export const __test = {
   assessmentResponseSchema,
   subjectiveAssessmentResponseSchema,
@@ -3085,7 +3080,7 @@ export const __test = {
   gradeObjectiveAnswers,
   genericUploadFile,
   loadConfig,
-  parseEvent,
+  normalizeRequest,
   requestAssistantAnswer,
   requestPublicAssistantAnswer,
   signCdnPath,

@@ -31,8 +31,8 @@ function request({ method, path, cookie, csrf, body, origin = "https://yanxiao.m
   if (csrf) headers["x-csrf-token"] = csrf;
   if (body) headers["content-type"] = "application/json";
   return {
-    requestContext: { http: { method, path } },
-    rawPath: path,
+    method,
+    path,
     headers,
     body: body ? JSON.stringify(body) : undefined,
   };

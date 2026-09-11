@@ -57,7 +57,7 @@ function harness({ real = false, storage = memoryStore() } = {}) {
     } : {}),
   });
   const call = (path, { body = {}, cookies = [], csrf, method = "POST", origin = env.WEBAUTHN_ORIGIN, gateway = true, ip } = {}) => handler({
-    rawPath: `/api/private-auth/${path}`, requestContext: { http: { method, sourceIp: ip } },
+    method, path: `/api/private-auth/${path}`, sourceIp: ip,
     headers: { origin, ...(gateway ? { "x-origin-verify": env.CDN_ORIGIN_VERIFY_KEY } : {}),
       cookie: cookies.join("; "), "x-csrf-token": csrf },
     body: JSON.stringify(body),
