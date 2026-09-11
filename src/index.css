@@ -142,7 +142,7 @@
 }
 
 .ai-orbit-border {
-  border: 1px solid transparent;
+  border: 2px solid transparent;
   background:
     linear-gradient(#0b101b, #0b101b) padding-box,
     conic-gradient(
