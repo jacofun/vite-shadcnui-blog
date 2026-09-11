@@ -1,6 +1,7 @@
 import { notifyPrivateAuthInvalidated } from "@/lib/privateAuthEvents";
+import { PRIVATE_AUTH_API_BASE, readAssistantEventStream } from "@/lib/privateAuthApi";
 
-const API_BASE = "/api/private-auth";
+const API_BASE = PRIVATE_AUTH_API_BASE;
 
 export interface PrivateAuthUser {
   id: string;
@@ -177,7 +178,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     method,
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    credentials: "same-origin",
+    credentials: "include",
     cache: "no-store",
     signal: options.signal,
   });
@@ -349,12 +350,27 @@ export function getLatestEnglishSubjectiveAssessment(
 export function askEnglishAssistant(
   session: PrivateAuthSession,
   body: { episodeId: string; question: string; history: EnglishAssistantHistoryMessage[] },
+  onDelta: (content: string) => void,
   signal?: AbortSignal,
-): Promise<{ answer: string; model: string }> {
-  return request("assessment/ask", {
-    body,
-    csrfToken: session.csrfToken,
+): Promise<{ model: string }> {
+  return fetch(`${API_BASE}/assessment/ask`, {
+    method: "POST",
+    headers: {
+      Accept: "text/event-stream",
+      "Content-Type": "application/json",
+      "X-CSRF-Token": session.csrfToken,
+    },
+    body: JSON.stringify(body),
+    credentials: "include",
+    cache: "no-store",
     signal,
+  }).then((response) => {
+    if (response.status === 401) notifyPrivateAuthInvalidated();
+    return readAssistantEventStream(
+      response,
+      onDelta,
+      (status, code, message) => new PrivateAuthApiError(status, code, message),
+    );
   });
 }
 

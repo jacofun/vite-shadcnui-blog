@@ -1,9 +1,6 @@
-const PUBLIC_ASSISTANT_ENDPOINT = "/api/private-auth/public/assistant/ask";
+import { PRIVATE_AUTH_API_BASE, readAssistantEventStream } from "@/lib/privateAuthApi";
 
-interface ErrorBody {
-  code?: string;
-  message?: string;
-}
+const PUBLIC_ASSISTANT_ENDPOINT = `${PRIVATE_AUTH_API_BASE}/public/assistant/ask`;
 
 export class PublicAssistantApiError extends Error {
   readonly code: string;
@@ -19,32 +16,21 @@ export class PublicAssistantApiError extends Error {
 
 export async function askPublicAssistant(
   body: { pagePath: string; question: string },
+  onDelta: (content: string) => void,
   signal?: AbortSignal,
-): Promise<{ answer: string; model: string }> {
+): Promise<{ model: string }> {
   const response = await fetch(PUBLIC_ASSISTANT_ENDPOINT, {
     method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    headers: { Accept: "text/event-stream", "Content-Type": "application/json" },
     body: JSON.stringify(body),
     credentials: "omit",
     cache: "no-store",
     signal,
   });
 
-  let payload: { answer: string; model: string } | ErrorBody;
-  try {
-    payload = await response.json() as { answer: string; model: string } | ErrorBody;
-  } catch {
-    throw new PublicAssistantApiError(response.status, "INVALID_RESPONSE", "AI 服务返回了无法解析的响应");
-  }
-
-  if (!response.ok) {
-    const error = payload as ErrorBody;
-    throw new PublicAssistantApiError(
-      response.status,
-      error.code ?? "REQUEST_FAILED",
-      error.message ?? "AI 问答暂时不可用",
-    );
-  }
-
-  return payload as { answer: string; model: string };
+  return readAssistantEventStream(
+    response,
+    onDelta,
+    (status, code, message) => new PublicAssistantApiError(status, code, message),
+  );
 }

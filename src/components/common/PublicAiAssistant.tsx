@@ -55,53 +55,6 @@ function errorMessage(error: unknown): string {
   return "AI 问答暂时不可用，请稍后再试。";
 }
 
-function revealAnswer(
-  answer: string,
-  signal: AbortSignal,
-  update: (content: string) => void,
-): Promise<void> {
-  const characters = Array.from(answer);
-  const duration = Math.min(3200, Math.max(900, characters.length * 18));
-
-  return new Promise((resolve, reject) => {
-    if (signal.aborted) {
-      reject(new DOMException("Aborted", "AbortError"));
-      return;
-    }
-
-    let frame = 0;
-    let startedAt: number | null = null;
-    let revealed = 0;
-    const abort = () => finish(new DOMException("Aborted", "AbortError"));
-
-    function finish(error?: DOMException): void {
-      window.cancelAnimationFrame(frame);
-      signal.removeEventListener("abort", abort);
-      if (error) reject(error);
-      else resolve();
-    }
-
-    function draw(timestamp: number): void {
-      if (signal.aborted) {
-        finish(new DOMException("Aborted", "AbortError"));
-        return;
-      }
-      startedAt ??= timestamp;
-      const progress = Math.min(1, (timestamp - startedAt) / duration);
-      const next = Math.min(characters.length, Math.max(revealed + 1, Math.ceil(characters.length * progress)));
-      if (next !== revealed) {
-        revealed = next;
-        update(characters.slice(0, revealed).join(""));
-      }
-      if (revealed >= characters.length) finish();
-      else frame = window.requestAnimationFrame(draw);
-    }
-
-    signal.addEventListener("abort", abort, { once: true });
-    frame = window.requestAnimationFrame(draw);
-  });
-}
-
 export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -139,12 +92,11 @@ export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
     setSending(true);
 
     try {
-      const { answer } = await askPublicAssistant({ pagePath, question }, controller.signal);
-      await revealAnswer(answer, controller.signal, (content) => {
+      await askPublicAssistant({ pagePath, question }, (delta) => {
         setMessages((current) => current.map((message) => (
-          message.id === assistantId ? { ...message, content } : message
+          message.id === assistantId ? { ...message, content: message.content + delta } : message
         )));
-      });
+      }, controller.signal);
     } catch (requestError) {
       setMessages((current) => current.filter((message) => message.id !== assistantId || message.content.trim()));
       if (!(requestError instanceof DOMException && requestError.name === "AbortError")) {

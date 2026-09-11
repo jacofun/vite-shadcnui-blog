@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { PRIVATE_AUTH_API_BASE } from "@/lib/privateAuthApi";
 
 const INTERVAL_MS = 60_000;
 const TIMEOUT_MS = 10_000;
@@ -26,7 +27,7 @@ export function useFunctionHeartbeat(): void {
       controller = current;
       const timeout = setTimeout(() => current.abort(), TIMEOUT_MS);
       try {
-        await fetch("/api/private-auth/health", {
+        await fetch(`${PRIVATE_AUTH_API_BASE}/health`, {
           method: "POST",
           credentials: "omit",
           cache: "no-store",
