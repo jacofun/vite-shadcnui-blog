@@ -238,7 +238,7 @@ export default function EpisodeAiAssistant({ episodeId, session }: Props): JSX.E
       ) : (
         <button
           aria-label="打开本期节目 AI 问答"
-          className="fixed bottom-[calc(9.25rem+env(safe-area-inset-bottom))] right-4 z-[110] inline-flex h-12 items-center gap-2 rounded-full border border-cyan-300/20 bg-[#0b101b]/95 px-4 text-sm font-medium text-cyan-200 shadow-xl shadow-black/40 backdrop-blur-xl transition hover:border-cyan-300/40 hover:bg-[#111a29] sm:right-6"
+          className="ai-orbit-border fixed bottom-[calc(9.25rem+env(safe-area-inset-bottom))] right-4 z-[110] inline-flex h-12 items-center gap-2 rounded-full px-4 text-sm font-medium text-cyan-200 backdrop-blur-xl sm:right-6"
           onClick={() => setOpen(true)}
           type="button"
         >

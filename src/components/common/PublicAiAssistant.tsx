@@ -228,7 +228,7 @@ export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
       ) : (
         <button
           aria-label="让 AI 总结当前页面"
-          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[120] inline-flex h-12 items-center gap-2 rounded-full border border-cyan-300/20 bg-[#0b101b]/95 px-4 text-sm font-medium text-cyan-200 shadow-xl shadow-black/40 backdrop-blur-xl transition hover:border-cyan-300/40 hover:bg-[#111a29] sm:right-6"
+          className="ai-orbit-border fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[120] inline-flex h-12 items-center gap-2 rounded-full px-4 text-sm font-medium text-cyan-200 backdrop-blur-xl sm:right-6"
           onClick={openAssistant}
           type="button"
         >
