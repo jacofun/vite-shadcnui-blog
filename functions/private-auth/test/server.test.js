@@ -78,3 +78,39 @@ test("web server rejects request bodies larger than 128 KiB", async () => {
     await close(server);
   }
 });
+
+test("web server forwards async response chunks as they become available", async () => {
+  let releaseSecondChunk;
+  const secondChunkReady = new Promise((resolve) => { releaseSecondChunk = resolve; });
+  const server = createWebServer({
+    handler: async () => ({
+      statusCode: 200,
+      headers: { "content-type": "text/event-stream; charset=utf-8" },
+      body: (async function* stream() {
+        yield 'event: delta\ndata: {"content":"first"}\n\n';
+        await secondChunkReady;
+        yield 'event: done\ndata: {}\n\n';
+      })(),
+    }),
+  });
+  const port = await listen(server);
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/api/private-auth/public/assistant/ask`, {
+      method: "POST",
+    });
+    const reader = response.body.getReader();
+    const first = new TextDecoder().decode((await reader.read()).value);
+    assert.match(first, /"first"/u);
+    releaseSecondChunk();
+    let remainder = "";
+    for (;;) {
+      const item = await reader.read();
+      if (item.done) break;
+      remainder += new TextDecoder().decode(item.value);
+    }
+    assert.match(remainder, /event: done/u);
+  } finally {
+    releaseSecondChunk?.();
+    await close(server);
+  }
+});

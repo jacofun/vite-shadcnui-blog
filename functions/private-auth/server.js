@@ -41,9 +41,25 @@ function fcCredentials(headers) {
   };
 }
 
-function transportError(error, env) {
-  const statusCode = error instanceof RequestBodyError ? error.statusCode : 500;
-  const code = error instanceof RequestBodyError ? error.code : "INTERNAL_ERROR";
+function transportCorsOrigin(headers, env) {
+  const expected = env.WEBAUTHN_ORIGIN || "https://yanxiao.me";
+  const rpID = env.WEBAUTHN_RP_ID || new URL(expected).hostname;
+  const origin = firstHeader(headers, "origin");
+  try {
+    const url = new URL(origin);
+    if (url.origin === origin && url.protocol === "https:" && !url.port &&
+        (url.hostname === rpID || url.hostname.endsWith(`.${rpID}`))) {
+      return origin;
+    }
+  } catch {
+    // Return the configured origin so an untrusted caller never receives a matching CORS header.
+  }
+  return expected;
+}
+
+function transportError(error, env, headers = {}) {
+  const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
+  const code = typeof error?.code === "string" ? error.code : "INTERNAL_ERROR";
   const message = statusCode >= 500 ? "Private authentication service is unavailable" : error.message;
   return {
     statusCode,
@@ -52,7 +68,7 @@ function transportError(error, env) {
       "cache-control": "no-store",
       pragma: "no-cache",
       "x-content-type-options": "nosniff",
-      "access-control-allow-origin": env.WEBAUTHN_ORIGIN || "https://yanxiao.me",
+      "access-control-allow-origin": transportCorsOrigin(headers, env),
       "access-control-allow-credentials": "true",
       vary: "Origin",
     },
@@ -60,16 +76,57 @@ function transportError(error, env) {
   };
 }
 
-function writeResponse(response, result) {
+function isAsyncIterable(value) {
+  return value && typeof value[Symbol.asyncIterator] === "function";
+}
+
+function streamErrorEvent(error) {
+  const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
+  const code = typeof error?.code === "string" ? error.code : "STREAM_ERROR";
+  const message = status >= 500 ? "AI service is unavailable" : error.message;
+  return `event: error\ndata: ${JSON.stringify({ status, code, message })}\n\n`;
+}
+
+async function writeResponse(response, result) {
   response.statusCode = result.statusCode;
   for (const [name, value] of Object.entries(result.headers || {})) {
     if (value !== undefined) response.setHeader(name, value);
   }
-  response.end(result.body || "");
+  if (!isAsyncIterable(result.body)) {
+    response.end(result.body || "");
+    return;
+  }
+  try {
+    for await (const chunk of result.body) {
+      if (!response.write(chunk)) {
+        await new Promise((resolve) => {
+          const finish = () => {
+            response.off("drain", finish);
+            response.off("close", finish);
+            resolve();
+          };
+          response.once("drain", finish);
+          response.once("close", finish);
+        });
+      }
+    }
+    response.end();
+  } catch (error) {
+    if (!response.headersSent) throw error;
+    if (!response.writableEnded && !response.destroyed) {
+      response.end(streamErrorEvent(error));
+    }
+  }
 }
 
 export function createWebServer({ env = process.env, handler = createHandler({ env }) } = {}) {
   return createServer(async (request, response) => {
+    const controller = new AbortController();
+    const abort = () => {
+      if (!response.writableEnded) controller.abort();
+    };
+    request.once("aborted", abort);
+    response.once("close", abort);
     try {
       const result = await handler({
         method: request.method,
@@ -78,10 +135,15 @@ export function createWebServer({ env = process.env, handler = createHandler({ e
         body: await readBody(request),
         sourceIp: firstHeader(request.headers, "x-fc-client-ip") || request.socket.remoteAddress,
         credentials: fcCredentials(request.headers),
+        signal: controller.signal,
       });
-      writeResponse(response, result);
+      await writeResponse(response, result);
     } catch (error) {
-      writeResponse(response, transportError(error, env));
+      if (!response.headersSent) await writeResponse(response, transportError(error, env, request.headers));
+      else if (!response.writableEnded && !response.destroyed) response.end();
+    } finally {
+      request.off("aborted", abort);
+      response.off("close", abort);
     }
   });
 }

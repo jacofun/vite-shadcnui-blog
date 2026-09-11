@@ -17,16 +17,15 @@ function createEnv(overrides = {}) {
     SESSION_CURRENT_KEY: SESSION_KEY,
     SESSION_VERSION: "1",
     CDN_AUTH_KEY: "PrivateCdnKey123456",
-    CDN_ORIGIN_VERIFY_KEY: "origin-verification-key-with-32-bytes",
     CDN_URL_TTL_SECONDS: "3600",
     ...overrides,
   };
 }
 
-function request({ method, path, cookie, csrf, body, origin = "https://yanxiao.me", gateway = true }) {
+function request({ method, path, cookie, csrf, body, origin = "https://yanxiao.me", accept }) {
   const headers = {};
   if (origin) headers.origin = origin;
-  if (gateway) headers["x-origin-verify"] = "origin-verification-key-with-32-bytes";
+  if (accept) headers.accept = accept;
   if (cookie) headers.cookie = cookie;
   if (csrf) headers["x-csrf-token"] = csrf;
   if (body) headers["content-type"] = "application/json";
@@ -46,7 +45,7 @@ function cookiePair(setCookie) {
   return setCookie.split(";", 1)[0];
 }
 
-test("foreground health checks skip auth storage and models but enforce gateway and origin", async () => {
+test("foreground health checks skip dependencies and allow trusted HTTPS subdomains", async () => {
   for (const mode of ["environment", "oss"]) {
     const unexpectedCall = () => { throw new Error("Health must not access dependencies"); };
     const handler = createHandler({
@@ -60,7 +59,17 @@ test("foreground health checks skip auth storage and models but enforce gateway 
     assert.deepEqual(responseJson(response), { ok: true });
     assert.equal(response.headers["cache-control"], "no-store");
     assert.equal(response.headers["set-cookie"], undefined);
-    for (const overrides of [{ gateway: false }, { origin: "https://other.example" }, { origin: null }]) {
+    const subdomain = await handler(request({
+      method: "POST", path: "/api/private-auth/health", origin: "https://preview.yanxiao.me",
+    }));
+    assert.equal(subdomain.statusCode, 200);
+    assert.equal(subdomain.headers["access-control-allow-origin"], "https://preview.yanxiao.me");
+    for (const overrides of [
+      { origin: "https://other.example" },
+      { origin: "https://yanxiao.me.other.example" },
+      { origin: "http://preview.yanxiao.me" },
+      { origin: null },
+    ]) {
       const rejected = await handler(request({ method: "POST", path: "/api/private-auth/health", ...overrides }));
       assert.equal(rejected.statusCode, 403);
     }
@@ -107,6 +116,41 @@ test("returns a scoped episode assistant answer with the assessment model", asyn
   assert.match(modelRequest.messages[1].content, /shared vocabulary helps people describe smells/u);
   assert.equal(modelRequest.messages.at(-2).content, "What does shared vocabulary mean here?");
   assert.match(modelRequest.messages.at(-1).content, /previous answer contained non-English characters/u);
+});
+
+test("streams episode assistant deltas without buffering the complete answer", async () => {
+  let modelRequest;
+  const encoder = new TextEncoder();
+  const deltas = __test.requestAssistantAnswerStream({
+    modelConfig: {
+      apiKey: "test-api-key",
+      endpoint: "https://dashscope.example/v1/chat/completions",
+      model: "qwen-test-model",
+      timeoutMs: 5_000,
+    },
+    episode: { title: "Describing smells" },
+    transcript: "The speakers explain that shared vocabulary helps people describe smells. ".repeat(3),
+    question: "What does shared vocabulary mean here?",
+    history: [],
+    fetchImpl: async (_url, options) => {
+      modelRequest = JSON.parse(options.body);
+      return new Response(new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode('data: {"choices":[{"delta":{"content":"It means "}}]}\n\n'));
+          controller.enqueue(encoder.encode('data: {"choices":[{"delta":{"content":"shared words."}}]}\n\ndata: [DONE]\n\n'));
+          controller.close();
+        },
+      }), { status: 200 });
+    },
+  });
+  let output = "";
+  for await (const chunk of __test.assistantEventStream("qwen-test-model", deltas)) output += chunk;
+
+  assert.equal(modelRequest.stream, true);
+  assert.match(output, /event: meta\ndata: \{"model":"qwen-test-model"\}/u);
+  assert.match(output, /event: delta\ndata: \{"content":"It means "\}/u);
+  assert.match(output, /event: delta\ndata: \{"content":"shared words\."\}/u);
+  assert.match(output, /event: done/u);
 });
 
 test("answers public page questions without authentication using the dedicated model", async () => {
@@ -205,6 +249,53 @@ test("answers public page questions without authentication using the dedicated m
   assert.equal(weddingResponse.statusCode, 200, weddingResponse.body);
   assert.match(responseJson(weddingResponse).answer, /婚礼纪念页/u);
   assert.equal(calls.length, 5);
+});
+
+test("streams public assistant responses when requested by the browser", async () => {
+  const encoder = new TextEncoder();
+  const handler = createHandler({
+    env: createEnv({
+      DASHSCOPE_API_KEY: "test-api-key",
+      DASHSCOPE_BASE_URL: "https://dashscope.example/v1",
+      PUBLIC_ASSISTANT_MODEL: "qwen-public-test",
+    }),
+    fetchImpl: async (url, options) => {
+      if (url === "https://yanxiao.me/ai-assistant-context.json") {
+        return { ok: true, async text() {
+          return JSON.stringify({
+            schemaVersion: 1,
+            home: { path: "/", title: "彦骁的笔记", summary: "首页", content: "首页介绍了本站文档和站点内容。" },
+            notes: [],
+          });
+        } };
+      }
+      assert.equal(JSON.parse(options.body).stream, true);
+      return new Response(new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode('data: {"choices":[{"delta":{"content":"这里是"}}]}\n\n'));
+          controller.enqueue(encoder.encode('data: {"choices":[{"delta":{"content":"首页介绍。"}}]}\n\ndata: [DONE]\n\n'));
+          controller.close();
+        },
+      }), { status: 200 });
+    },
+  });
+
+  const response = await handler(request({
+    method: "POST",
+    path: "/api/private-auth/public/assistant/ask",
+    accept: "text/event-stream",
+    origin: "https://notes.yanxiao.me",
+    body: { pagePath: "/", question: "帮我总结" },
+  }));
+  let output = "";
+  for await (const chunk of response.body) output += chunk;
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.headers["content-type"], "text/event-stream; charset=utf-8");
+  assert.equal(response.headers["access-control-allow-origin"], "https://notes.yanxiao.me");
+  assert.match(output, /这里是/u);
+  assert.match(output, /首页介绍。/u);
+  assert.match(output, /event: done/u);
 });
 
 test("encrypts tokens and accepts the previous rotation key", () => {
@@ -635,7 +726,7 @@ test("completes challenge, passkey verification, session lookup and resource sig
   assert.equal(responseJson(latestSubjectiveResponse).result.attemptId, "subjective-987654321");
 });
 
-test("rejects direct origin access, invalid CSRF and arbitrary episode paths", async () => {
+test("accepts direct function access and rejects invalid CSRF and arbitrary episode paths", async () => {
   const handler = createHandler({
     env: createEnv(),
     now: () => NOW,
@@ -647,9 +738,8 @@ test("rejects direct origin access, invalid CSRF and arbitrary episode paths", a
     method: "POST",
     path: "/challenge",
     body: {},
-    gateway: false,
   }));
-  assert.equal(directResponse.statusCode, 403);
+  assert.equal(directResponse.statusCode, 200);
 
   const challengeResponse = await handler(request({
     method: "POST",

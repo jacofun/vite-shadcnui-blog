@@ -8,7 +8,7 @@ const START = 1_787_932_800;
 const env = {
   AUTH_STORE: "oss", WEBAUTHN_ORIGIN: "https://yanxiao.me", WEBAUTHN_RP_ID: "yanxiao.me",
   SESSION_CURRENT_KEY: Buffer.alloc(32, 7).toString("base64url"),
-  CDN_AUTH_KEY: "PrivateCdnKey123456", CDN_ORIGIN_VERIFY_KEY: "origin-verification-key-with-32-bytes",
+  CDN_AUTH_KEY: "PrivateCdnKey123456",
 };
 const digest = (value) => createHash("sha256").update(value).digest();
 const json = (response) => JSON.parse(response.body);
@@ -56,10 +56,9 @@ function harness({ real = false, storage = memoryStore() } = {}) {
       verifyAuthenticationResponseImpl: async () => ({ verified: !fail, authenticationInfo: { userVerified: !fail, newCounter: 0 } }),
     } : {}),
   });
-  const call = (path, { body = {}, cookies = [], csrf, method = "POST", origin = env.WEBAUTHN_ORIGIN, gateway = true, ip } = {}) => handler({
+  const call = (path, { body = {}, cookies = [], csrf, method = "POST", origin = env.WEBAUTHN_ORIGIN, ip } = {}) => handler({
     method, path: `/api/private-auth/${path}`, sourceIp: ip,
-    headers: { origin, ...(gateway ? { "x-origin-verify": env.CDN_ORIGIN_VERIFY_KEY } : {}),
-      cookie: cookies.join("; "), "x-csrf-token": csrf },
+    headers: { origin, cookie: cookies.join("; "), "x-csrf-token": csrf },
     body: JSON.stringify(body),
   });
   const admin = (command, options = {}) => administer({ store, command, nowSeconds: time, ...options });
@@ -215,7 +214,7 @@ test("Passkey management requires own account, CSRF and recent authentication", 
   assert.equal((await h.call("passkeys/remove", { ...owner, body: { credentialId: owner.cred.id } })).statusCode, 409);
   assert.equal((await h.call("passkeys/options", { ...owner, csrf: "wrong" })).statusCode, 403);
   assert.equal((await h.call("passkeys/options", { ...owner, origin: "https://evil.example" })).statusCode, 403);
-  assert.equal((await h.call("challenge", { gateway: false })).statusCode, 403);
+  assert.equal((await h.call("challenge", { origin: "https://auth-preview.yanxiao.me" })).statusCode, 200);
   h.advance(301);
   assert.equal((await h.call("passkeys/options", owner)).statusCode, 403);
   const reauth = await h.call("reauth/challenge", owner);

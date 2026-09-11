@@ -16,19 +16,20 @@ The website sends `POST /api/private-auth/health` on foreground entry and every 
 after the previous check completes. Hidden or offline pages pause checks; returning to the
 page resumes them. Each request times out after 10 seconds. This best-effort heartbeat reduces
 idle cold starts but cannot prevent platform recycling. It omits credentials and does not renew
-sessions, access OSS or invoke a model. The endpoint requires the existing CDN verification
-header and expected Origin, and returns uncached `{ "ok": true }` in either auth-store mode.
+sessions, access OSS or invoke a model. The endpoint requires an allowed browser Origin and
+returns uncached `{ "ok": true }` in either auth-store mode.
 
 - Custom runtime: Debian 10 with Node.js 20
 - Startup command: `node server.js`
 - Listening port: `9000` (read from `FC_SERVER_PORT` when supplied by Function Compute)
-- HTTP trigger path exposed through CDN: `/api/private-auth/*`
+- Direct HTTPS domain: `https://www.yanxiao.me/api/private-auth/*`
 - Minimum instances: `0`
 - Recommended maximum instances: `1` for this private deployment
 - Timeout: at least `45` seconds when AI grading or question answering is enabled
 
-The CDN origin must overwrite `X-Origin-Verify` for `/api/private-auth/*`. Do not log this header,
-cookies, WebAuthn assertions, invitation tokens, registry data or signed resource URLs.
+The HTTP trigger must allow anonymous browser requests; application authentication is enforced by
+the handler. Do not log cookies, WebAuthn assertions, invitation tokens, registry data or signed
+resource URLs.
 
 ## Common configuration
 
@@ -37,10 +38,9 @@ WEBAUTHN_ORIGIN=https://yanxiao.me
 WEBAUTHN_RP_ID=yanxiao.me
 SESSION_CURRENT_KEY=<32 random bytes encoded as base64url>
 CDN_AUTH_KEY=<the alphanumeric key configured for CDN type-A authentication>
-CDN_ORIGIN_VERIFY_KEY=<at least 32 random characters, also configured in the CDN origin header>
 ```
 
-Generate the session and origin verification secrets locally:
+Generate the session secret locally:
 
 ```bash
 node scripts/generate-secrets.mjs
@@ -61,9 +61,10 @@ AUTH_COOKIE_NAME=__Secure-private_auth
 AUTH_COOKIE_PATH=/api/private-auth/
 ```
 
-Every request must contain the CDN-injected origin verification header. Every POST must contain
-`Origin: https://yanxiao.me`; authenticated POSTs also require the CSRF token returned by
-`verify` or `session`. Authentication responses must remain uncacheable at the CDN.
+Every POST must contain an HTTPS Origin on `yanxiao.me` or one of its subdomains. Credentialed
+CORS responses reflect the validated Origin because wildcard subdomains cannot be combined with
+`Access-Control-Allow-Credentials`. Authenticated POSTs also require the CSRF token returned by
+`verify` or `session`. Authentication responses are always uncacheable.
 
 ## Environment mode
 
@@ -111,7 +112,6 @@ WEBAUTHN_RP_ID=yanxiao.me
 SESSION_CURRENT_KEY=<32-byte base64url key>
 SESSION_VERSION=2
 CDN_AUTH_KEY=<existing CDN type-A key>
-CDN_ORIGIN_VERIFY_KEY=<existing origin header secret>
 ```
 
 Use the same region as Function Compute and the HTTPS internal OSS endpoint. The Web server reads
@@ -297,8 +297,9 @@ Results are kept outside `PRIVATE_RESOURCE_ROOT`, so they cannot be exposed thro
 endpoint. Grading calls return JSON and completed attempt IDs are idempotent. The server recomputes
 objective scores from episode metadata before saving them.
 
-`POST /assessment/ask` uses the same `ASSESSMENT_MODEL` and returns one JSON response. The browser
-reveals that completed answer progressively for a stream-like reading experience. It receives the current episode ID, one question and up to six recent chat
+`POST /assessment/ask` uses the same `ASSESSMENT_MODEL`. Requests with
+`Accept: text/event-stream` receive `meta`, `delta`, `done` and `error` events as model output is
+generated; JSON responses remain available during migration. It receives the current episode ID, one question and up to six recent chat
 messages. The server supplies the episode transcript and instructs the model to stay within that
 episode. Transcript and user text are treated as untrusted input so embedded instructions cannot
 change the assistant's scope or request secrets. Assistant questions do not consume
@@ -308,12 +309,12 @@ change the assistant's scope or request secrets. Assistant questions do not cons
 It accepts only `pagePath` and one question of at most 140 characters; conversation history is
 rejected and nothing is persisted. The function loads the trusted current-page material from
 `/ai-assistant-context.json`, asks `PUBLIC_ASSISTANT_MODEL` for a concise Simplified Chinese answer,
-and returns one JSON response. The browser then reveals that completed response progressively.
+and supports the same streamed and JSON response modes.
 Opening the assistant automatically asks it to summarize the current page; visitors can then enter
 follow-up questions. The system prompt confines answers to the homepage, current note or wedding
 memorial page, treats page and visitor text as
-untrusted, and caps each model response at 500 tokens. The route still requires the CDN-injected
-origin verification header and the site's expected browser Origin.
+untrusted, and caps each model response at 500 tokens. The route requires an allowed browser
+Origin.
 
 Upload URLs bind the object path, method, content type and `x-oss-forbid-overwrite=true`, and expire
 after 15 minutes. The browser never receives OSS credentials. Audio and plain-text transcript are
