@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-09-11",
+  "episodeId": "230615-the-benefits-of-doing-nothing",
+  "title": "The benefits of doing nothing",
+  "publishedAt": "2023-06-15",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2023/ep-230615",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230615_6min_english_nothing_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230615_6min_english_nothing.pdf",
+  "reason": "昨天的课程侧重团队分歧和职场沟通，今天轮换到工作生活平衡与日常数字习惯。本集从动物的休息行为谈到人类的无聊、创造力和持续刷屏，内容贴近忙碌工作后的真实生活。练习会反复调用六个高频表达，并从原文支撑的一句话逐步过渡到受控改写和有限迁移，帮助把被动理解转化为主动表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "工作生活平衡",
+    "数字生活",
+    "休息与恢复",
+    "创造力",
+    "生产力",
+    "渐进输出",
+    "精听"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "kick back",
+        "meaning": "stop doing things and relax completely",
+        "usage": "Use it informally when talking about rest after work: I like to kick back for half an hour after a difficult release."
+      },
+      {
+        "expression": "be as busy as a bee",
+        "meaning": "be very busy and active",
+        "usage": "Use it after be to describe a busy person: She has been as busy as a bee preparing the project launch."
+      },
+      {
+        "expression": "at any given time",
+        "meaning": "at any particular moment, although the exact moment is not specified",
+        "usage": "Use it for a general state that can be true at different moments: At any given time, one engineer is monitoring the service."
+      },
+      {
+        "expression": "step in",
+        "meaning": "become involved in order to help or deal with a problem",
+        "usage": "Use it when someone takes over or provides support: Another developer can step in if the on-call engineer is unavailable."
+      },
+      {
+        "expression": "constant stimulation",
+        "meaning": "a continuous supply of activity or information that keeps the mind engaged",
+        "usage": "Use it for an environment with no mental pause: Notifications create constant stimulation throughout the day."
+      },
+      {
+        "expression": "switch off",
+        "meaning": "stop worrying or thinking about something and relax",
+        "usage": "Use it for mental rest as well as turning off a device: A short walk helps me switch off after work."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "kick-back-completion",
+        "type": "fill-blank",
+        "prompt": "Complete Beth's description of relaxing: “I was sitting around doing nothing, relaxing and ______.”",
+        "targetExpression": "kick back",
+        "answers": [
+          "kicking back"
+        ],
+        "explanation": "Beth says she was “relaxing and kicking back”. Kick back means to stop doing things and relax completely."
+      },
+      {
+        "id": "busy-bee-contrast",
+        "type": "single-choice",
+        "prompt": "Why does Beth say she is “as busy as a bee” while discussing doing nothing?",
+        "targetExpression": "be as busy as a bee",
+        "options": [
+          {
+            "id": "a",
+            "text": "She uses a familiar image of constant activity before revealing that many apparently busy animals also spend long periods inactive."
+          },
+          {
+            "id": "b",
+            "text": "She has been working in an ant colony all day."
+          },
+          {
+            "id": "c",
+            "text": "She believes people should copy bees and never rest."
+          },
+          {
+            "id": "d",
+            "text": "She wants to prove that only insects are productive."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The phrase sets up a contrast: nature programmes make animals look constantly active, but away from the cameras they often do nothing."
+      },
+      {
+        "id": "given-time-completion",
+        "type": "fill-blank",
+        "prompt": "Complete the research finding: “Roughly half the ant colony is inactive ______.”",
+        "targetExpression": "at any given time",
+        "answers": [
+          "at any given time"
+        ],
+        "explanation": "Professor Charbonneau says roughly half the colony is inactive at any given time, meaning at any particular moment."
+      },
+      {
+        "id": "step-in-reserve",
+        "type": "single-choice",
+        "prompt": "What possible purpose do the inactive “reserve ants” serve?",
+        "targetExpression": "step in",
+        "options": [
+          {
+            "id": "a",
+            "text": "They step in when disease or disaster affects the colony."
+          },
+          {
+            "id": "b",
+            "text": "They leave the colony whenever work becomes boring."
+          },
+          {
+            "id": "c",
+            "text": "They prevent active ants from finding food."
+          },
+          {
+            "id": "d",
+            "text": "They teach humans how to use social media."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript suggests reserve ants may be ready to step in if disease or disaster strikes."
+      },
+      {
+        "id": "constant-stimulation-completion",
+        "type": "fill-blank",
+        "prompt": "Complete the description of modern life: “In this world of ______, switching off is harder than ever.”",
+        "targetExpression": "constant stimulation",
+        "answers": [
+          "constant stimulation"
+        ],
+        "explanation": "The transcript directly links constant stimulation with swiping, scrolling and difficulty switching off."
+      },
+      {
+        "id": "switch-off-meaning",
+        "type": "single-choice",
+        "prompt": "Which situation best shows someone “switching off” in the sense used in the programme?",
+        "targetExpression": "switch off",
+        "options": [
+          {
+            "id": "a",
+            "text": "Taking a quiet walk and temporarily letting go of work worries"
+          },
+          {
+            "id": "b",
+            "text": "Checking every notification while answering emails"
+          },
+          {
+            "id": "c",
+            "text": "Replacing one work task with another urgent task"
+          },
+          {
+            "id": "d",
+            "text": "Working faster to avoid feeling bored"
+          }
+        ],
+        "answer": "a",
+        "explanation": "In the programme, switch off means to stop worrying or thinking about something and relax."
+      },
+      {
+        "id": "boredom-paradox",
+        "type": "single-choice",
+        "prompt": "What is the paradox Dr Sandi Mann describes?",
+        "targetExpression": "constant stimulation",
+        "options": [
+          {
+            "id": "a",
+            "text": "Constant stimulation removes boredom permanently and always improves creativity."
+          },
+          {
+            "id": "b",
+            "text": "To become less troubled by boredom, people may need to allow more boredom into their lives."
+          },
+          {
+            "id": "c",
+            "text": "People become bored only when they stop inventing things."
+          },
+          {
+            "id": "d",
+            "text": "The more people switch off, the more notifications they receive."
+          }
+        ],
+        "answer": "b",
+        "explanation": "Dr Mann says people constantly seek the next new thing, yet the way to reduce the unpleasant power of boredom may be to allow more boredom."
+      },
+      {
+        "id": "step-in-workplace",
+        "type": "fill-blank",
+        "prompt": "Complete the project sentence with the target expression: “If the primary developer is unavailable during release, the backup engineer can ______.”",
+        "targetExpression": "step in",
+        "answers": [
+          "step in"
+        ],
+        "explanation": "Step in is the natural phrasal verb for becoming involved to help or handle a problem, so it transfers directly to this work situation."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-ants",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. Use “at any given time” and complete this idea: “The research found that…”",
+        "targetExpression": "at any given time",
+        "gradingCriteria": "A supported answer should say that roughly half the ant colony is inactive at any given time. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-reserve",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why inactivity may help an ant colony. Use “step in”. You may start: “Inactive ants may be useful because…”",
+        "targetExpression": "step in",
+        "gradingCriteria": "A supported answer should explain that reserve ants may step in when disease or disaster strikes. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-rest",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, paraphrase this idea using “switch off”: “People can benefit from stopping their worries and allowing themselves time to relax.” Keep the meaning simple.",
+        "targetExpression": "switch off",
+        "gradingCriteria": "A successful answer should preserve the benefit of mental rest and use switch off naturally; one clear sentence is enough. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-after-work",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about recovering after a busy software release. Phrase bank: “switch off”, “step in”, “kick back”. Use at least one phrase and mention one specific action you would take.",
+        "targetExpression": "switch off",
+        "gradingCriteria": "A successful answer should stay within the software-release scenario, include one concrete recovery or support action, and naturally use at least one phrase from the supplied bank. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "bounded-free-response-boredom",
+        "type": "application",
+        "prompt": "In 40–70 words, give your view: can a little boredom improve creativity in work or study? Give one reason or example and naturally use at least one of today's target expressions.",
+        "targetExpression": "constant stimulation",
+        "gradingCriteria": "A successful answer should state a clear view, give one relevant reason or example, and naturally use at least one target expression. It does not need a complex argument. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) topic—why animals and humans may do nothing; (2) two key ideas—the inactive ants and the link between boredom and creativity; (3) conclusion—how people might rest in a world of scrolling and notifications. Phrase bank: “at any given time”, “constant stimulation”, “switch off”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "Many animals appear constantly active in nature programmes, but they actually spend much of their time doing nothing.",
+      "Roughly half of a rock-ant colony is inactive at any given time; one possible explanation is that reserve ants can step in during disease or disaster.",
+      "Dr Sandi Mann argues that productivity is overrated and that boredom may encourage curiosity and invention.",
+      "Modern constant stimulation, including swiping and scrolling, makes people bored quickly and makes switching off harder.",
+      "The episode presents a paradox: allowing more boredom into life may reduce its unpleasant effect and open people to its benefits.",
+      "Switching off and slowing down are offered as practical ways to stop worrying and relax."
+    ]
+  }
+}
