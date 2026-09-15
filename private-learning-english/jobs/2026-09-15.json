@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-09-15",
+  "episodeId": "220929-why-are-prices-going-up",
+  "title": "Why are prices going up?",
+  "publishedAt": "2022-09-29",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2022/ep-220929",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/220929_6min_%20english_inflation_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/220929_6min_english_inflation.pdf",
+  "reason": "昨天的课程讨论聊天机器人与信息判断，今天轮换到金融经济与日常消费。本集用清晰的因果链解释通胀、供应减少、企业成本传导、利率与需求之间的关系，既贴近金融科技业务，也能连接家庭预算和项目成本管理。练习会反复调用六个高频表达，先借助原文完成识别与填空，再逐步用于解释和熟悉的工作场景。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "金融经济",
+    "通货膨胀",
+    "消费",
+    "利率",
+    "成本管理",
+    "渐进输出",
+    "精听"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "have a lot to do with",
+        "meaning": "be strongly connected with or caused by something",
+        "usage": "Use it to explain an important connection: The delay has a lot to do with the supplier change."
+      },
+      {
+        "expression": "be hit in the pocket",
+        "meaning": "have less money available because costs have increased",
+        "usage": "Use it when a price rise directly affects someone's finances: Commuters are being hit in the pocket by higher fares."
+      },
+      {
+        "expression": "be in short supply",
+        "meaning": "be available only in limited quantities",
+        "usage": "Use it when demand is greater than the amount available: Skilled engineers can be in short supply during a large migration."
+      },
+      {
+        "expression": "pass on the extra costs",
+        "meaning": "make customers pay for additional costs faced by a business",
+        "usage": "Use it when a company transfers higher expenses to buyers: The provider may pass on the extra costs through higher fees."
+      },
+      {
+        "expression": "discourage someone from doing something",
+        "meaning": "make someone less willing or less likely to do an action",
+        "usage": "Use discourage + person + from + -ing: Higher interest rates can discourage businesses from borrowing."
+      },
+      {
+        "expression": "make sense",
+        "meaning": "be understandable, logical or reasonable",
+        "usage": "Use it after an explanation or for a sensible decision: The pricing change makes sense when the higher costs are included."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "inflation-connection",
+        "type": "fill-blank",
+        "prompt": "Complete Beth's explanation: Our money buying less these days ______ inflation.",
+        "targetExpression": "have a lot to do with",
+        "answers": [
+          "has a lot to do with"
+        ],
+        "explanation": "Beth says the reduced buying power of money has a lot to do with inflation, the increase in prices over time."
+      },
+      {
+        "id": "hit-in-pocket",
+        "type": "fill-blank",
+        "prompt": "Complete the description of consumers: Rising prices mean that people are being ______.",
+        "targetExpression": "be hit in the pocket",
+        "answers": [
+          "hit in the pocket"
+        ],
+        "explanation": "The transcript defines being hit in the pocket as having less money to spend."
+      },
+      {
+        "id": "short-supply-effect",
+        "type": "single-choice",
+        "prompt": "What usually happens to prices when essential goods are in short supply?",
+        "targetExpression": "be in short supply",
+        "options": [
+          {
+            "id": "a",
+            "text": "They rise because only limited quantities are available."
+          },
+          {
+            "id": "b",
+            "text": "They fall because every consumer stops needing the goods."
+          },
+          {
+            "id": "c",
+            "text": "They stay fixed because supply cannot affect prices."
+          },
+          {
+            "id": "d",
+            "text": "They disappear from company accounts but not from shops."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme explains that reduced supply of necessary goods contributed to price rises; in short supply means available in limited quantities."
+      },
+      {
+        "id": "pass-on-costs",
+        "type": "fill-blank",
+        "prompt": "Complete the explanation: Companies may ______ by charging more for their goods and services.",
+        "targetExpression": "pass on the extra costs",
+        "answers": [
+          "pass on the extra costs"
+        ],
+        "explanation": "The transcript says companies can pass on costs they have already faced by increasing what customers pay."
+      },
+      {
+        "id": "discourage-borrowing",
+        "type": "fill-blank",
+        "prompt": "Complete the policy effect using the target pattern: Higher interest rates can ______ people ______ borrowing.",
+        "targetExpression": "discourage someone from doing something",
+        "answers": [
+          "discourage people from"
+        ],
+        "explanation": "Vicky Pryce explains that increasing interest rates discourages individuals and businesses from borrowing."
+      },
+      {
+        "id": "make-sense-usage",
+        "type": "single-choice",
+        "prompt": "Which sentence uses “make sense” naturally?",
+        "targetExpression": "make sense",
+        "options": [
+          {
+            "id": "a",
+            "text": "The explanation makes sense because lower borrowing can reduce demand."
+          },
+          {
+            "id": "b",
+            "text": "The explanation makes a sense about borrowing."
+          },
+          {
+            "id": "c",
+            "text": "The bank made sense the interest rate yesterday."
+          },
+          {
+            "id": "d",
+            "text": "Demand was make sense by the customer."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Make sense means be logical or understandable and does not take an article or a direct object in this use."
+      },
+      {
+        "id": "sustained-price-rises",
+        "type": "single-choice",
+        "prompt": "Why might inflation continue even if food and energy prices later come down?",
+        "targetExpression": "pass on the extra costs",
+        "options": [
+          {
+            "id": "a",
+            "text": "Companies may still pass on costs they have already faced through higher prices."
+          },
+          {
+            "id": "b",
+            "text": "Consumers immediately borrow more whenever energy becomes cheaper."
+          },
+          {
+            "id": "c",
+            "text": "Developing economies stop producing all goods when prices fall."
+          },
+          {
+            "id": "d",
+            "text": "Interest rates automatically become fees paid directly to shops."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Linda Yueh says sustained increases can enter company pricing, so businesses may pass on costs already incurred even after volatile input prices decline."
+      },
+      {
+        "id": "interest-rate-chain",
+        "type": "single-choice",
+        "prompt": "Which chain correctly summarises the programme's explanation of higher interest rates?",
+        "targetExpression": "discourage someone from doing something",
+        "options": [
+          {
+            "id": "a",
+            "text": "They discourage borrowing, which can reduce buying and slow demand."
+          },
+          {
+            "id": "b",
+            "text": "They encourage borrowing, which immediately removes inflation."
+          },
+          {
+            "id": "c",
+            "text": "They increase the supply of food without affecting demand."
+          },
+          {
+            "id": "d",
+            "text": "They guarantee higher incomes while production falls."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The economist's causal chain is higher interest rates, less borrowing, fewer purchases and slower demand, which can help control inflation."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-consumers",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. Use “be hit in the pocket” and complete this idea: “Consumers are…”",
+        "targetExpression": "be hit in the pocket",
+        "gradingCriteria": "A supported answer should say consumers are being hit in the pocket because rising prices leave them with less money to spend. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-supply",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why reduced supplies can raise prices. Use “be in short supply”. You may start: “When essential goods are in short supply…”",
+        "targetExpression": "be in short supply",
+        "gradingCriteria": "A supported answer should connect limited quantities of needed goods with rising prices; it may mention food, gas or electricity. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-company-costs",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, paraphrase this idea using “pass on the extra costs”: “Companies charge customers more to recover the higher expenses they have already faced.”",
+        "targetExpression": "pass on the extra costs",
+        "gradingCriteria": "A successful answer should keep the meaning that businesses transfer previously incurred higher expenses to customers through prices, while using pass on the extra costs naturally. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-project-budget",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about a software project facing higher supplier or infrastructure costs. Phrase bank: “be in short supply”, “pass on the extra costs”, “make sense”. Use at least one phrase and name one practical response.",
+        "targetExpression": "make sense",
+        "gradingCriteria": "A successful answer should stay within the project-cost scenario, name a practical response such as changing scope, reviewing suppliers or revising the budget, and naturally use at least one supplied phrase. First judge whether the response answers the question, then check whether the requested expression or another phrase from the bank is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "bounded-free-response-rates",
+        "type": "application",
+        "prompt": "In 40–70 words, give your view: is raising interest rates a reasonable way to control inflation? Mention one benefit and one cost, and naturally use at least one of today's target expressions.",
+        "targetExpression": "discourage someone from doing something",
+        "gradingCriteria": "A successful answer should give a clear view, mention one benefit such as lower borrowing or demand and one possible cost such as slower activity, and naturally use at least one target expression. First judge whether the response answers the question, then check whether the selected target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) topic—what inflation is and how it affects consumers; (2) causes—reduced supply and company costs; (3) response—how higher interest rates may slow demand. Phrase bank: “be hit in the pocket”, “be in short supply”, “pass on the extra costs”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "Inflation means prices increase over time, so consumers have less money to spend and are hit in the pocket.",
+      "Food and energy prices were rising, while the pandemic and the war in Ukraine reduced supplies of necessary goods.",
+      "When goods are in short supply, limited availability can push their prices upward.",
+      "Sustained increases can enter company pricing, and businesses may pass on costs they have already faced.",
+      "A recession involves falling production and incomes together with rising unemployment.",
+      "Higher interest rates discourage borrowing, which can reduce purchases and slow demand to help control inflation."
+    ]
+  }
+}
