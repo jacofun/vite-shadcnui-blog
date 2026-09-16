@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-09-16",
+  "episodeId": "240201-what-is-the-future-of-work",
+  "title": "What is the future of work?",
+  "publishedAt": "2024-02-01",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2024/ep-240201",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/240201_6_minute_english_future_of_work_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/240201_6_minute_english_future_of_work.pdf",
+  "reason": "昨天的课程讨论通胀、供应与消费，今天轮换到工作方式和技术变化。本集比较关于 AI、远程办公和缩短工作周的预测，重点分析预测记录、岗位替代以及新旧岗位出现时间不一致的风险，适合联系平台建设、团队规划和职业发展。练习围绕六个常用表达重复调用，从原文支撑的填空逐步过渡到技术项目中的有限迁移。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "未来工作",
+    "人工智能",
+    "项目管理",
+    "团队规划",
+    "职业发展",
+    "渐进输出",
+    "精听"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "take something with a pinch of salt",
+        "meaning": "not completely believe a claim because it may be inaccurate or unlikely",
+        "usage": "Use it for a doubtful claim: We should take confident technology forecasts with a pinch of salt."
+      },
+      {
+        "expression": "track record",
+        "meaning": "the achievements and failures shown by past performance",
+        "usage": "Use it when evaluating previous results: The supplier has a strong track record of reliable delivery."
+      },
+      {
+        "expression": "come to pass",
+        "meaning": "happen or become true, especially after being predicted",
+        "usage": "Use it for an expected event that eventually happens: The predicted reduction in workload never came to pass."
+      },
+      {
+        "expression": "be at risk",
+        "meaning": "be in danger of being harmed, lost or negatively affected",
+        "usage": "Use it to identify possible harm: Manual roles may be at risk when a process is automated."
+      },
+      {
+        "expression": "get rid of",
+        "meaning": "remove something that is no longer wanted or needed",
+        "usage": "Use it for deliberate removal: The upgrade lets us get rid of several manual steps."
+      },
+      {
+        "expression": "crop up",
+        "meaning": "appear or happen unexpectedly",
+        "usage": "Use it for an unplanned event or need: New compatibility issues can crop up during migration."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "pinch-of-salt-predictions",
+        "type": "fill-blank",
+        "prompt": "Complete the advice: We should ______.",
+        "targetExpression": "take something with a pinch of salt",
+        "answers": [
+          "take predictions about the future of work with a pinch of salt",
+          "take some predictions about the future of work with a pinch of salt"
+        ],
+        "explanation": "The presenter asks whether current predictions should be taken with a pinch of salt because many earlier forecasts were inaccurate."
+      },
+      {
+        "id": "track-record-meaning",
+        "type": "single-choice",
+        "prompt": "What does a prediction expert's “track record” describe?",
+        "targetExpression": "track record",
+        "options": [
+          {
+            "id": "a",
+            "text": "Their past achievements and failures"
+          },
+          {
+            "id": "b",
+            "text": "The number of hours they work each day"
+          },
+          {
+            "id": "c",
+            "text": "A list of future jobs they personally prefer"
+          },
+          {
+            "id": "d",
+            "text": "A route used by machines in a factory"
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript defines a track record as all the achievements or failures in someone's past performance."
+      },
+      {
+        "id": "come-to-pass-predictions",
+        "type": "fill-blank",
+        "prompt": "Complete Professor Burchell's point: Predictions of very large reductions in working time have not ______.",
+        "targetExpression": "come to pass",
+        "answers": [
+          "come to pass"
+        ],
+        "explanation": "He says dramatic historical predictions about reduced working time have not come to pass, meaning they have not happened."
+      },
+      {
+        "id": "jobs-at-risk",
+        "type": "fill-blank",
+        "prompt": "Complete Andrew Palmer's concern: Some jobs and professions ______ because of disruption from AI.",
+        "targetExpression": "be at risk",
+        "answers": [
+          "are at risk"
+        ],
+        "explanation": "Andrew expects some disruption from AI and explicitly says that certain jobs and professions are at risk."
+      },
+      {
+        "id": "get-rid-of-jobs",
+        "type": "single-choice",
+        "prompt": "What does “get rid of all jobs” mean in the discussion?",
+        "targetExpression": "get rid of",
+        "options": [
+          {
+            "id": "a",
+            "text": "Remove or eliminate all jobs"
+          },
+          {
+            "id": "b",
+            "text": "Make every job more highly paid"
+          },
+          {
+            "id": "c",
+            "text": "Move all jobs into one office"
+          },
+          {
+            "id": "d",
+            "text": "Predict which jobs workers will enjoy"
+          }
+        ],
+        "answer": "a",
+        "explanation": "Get rid of means remove something because it is no longer wanted; Andrew does not believe machines will eliminate every job."
+      },
+      {
+        "id": "new-jobs-crop-up",
+        "type": "fill-blank",
+        "prompt": "Complete the expectation: Economists say that new jobs will ______ after technology changes work.",
+        "targetExpression": "crop up",
+        "answers": [
+          "crop up"
+        ],
+        "explanation": "The transcript says new jobs will crop up, meaning they will appear unexpectedly."
+      },
+      {
+        "id": "sequencing-risk",
+        "type": "single-choice",
+        "prompt": "Why does Andrew Palmer worry about a sequencing risk?",
+        "targetExpression": "be at risk",
+        "options": [
+          {
+            "id": "a",
+            "text": "Existing jobs may disappear before new jobs appear in a coordinated way."
+          },
+          {
+            "id": "b",
+            "text": "Every new job will appear before any old job changes."
+          },
+          {
+            "id": "c",
+            "text": "Economists can accurately schedule every future profession."
+          },
+          {
+            "id": "d",
+            "text": "A four-day week always removes the need for worker support."
+          }
+        ],
+        "answer": "a",
+        "explanation": "He expects both disruption and new jobs, but worries they will not be aligned in time, leaving affected workers needing support."
+      },
+      {
+        "id": "track-record-project-usage",
+        "type": "single-choice",
+        "prompt": "Which sentence uses “track record” naturally in a project decision?",
+        "targetExpression": "track record",
+        "options": [
+          {
+            "id": "a",
+            "text": "We reviewed the vendor's track record before choosing its platform."
+          },
+          {
+            "id": "b",
+            "text": "We track recorded the platform before choosing it."
+          },
+          {
+            "id": "c",
+            "text": "The project ran a track record into production."
+          },
+          {
+            "id": "d",
+            "text": "The vendor was track record by the team."
+          }
+        ],
+        "answer": "a",
+        "explanation": "A vendor's track record is its history of successes and failures, which is relevant evidence for a selection decision."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-old-predictions",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. Use “come to pass” and complete this idea: “Many predictions about working time…”",
+        "targetExpression": "come to pass",
+        "gradingCriteria": "A supported answer should say that many dramatic predictions about large reductions in working time have not come to pass. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-worker-support",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why some workers may need support during AI-driven change. Use “be at risk”. You may start: “Some workers may need support because…”",
+        "targetExpression": "be at risk",
+        "gradingCriteria": "A supported answer should explain that some existing jobs are at risk and replacement jobs may not appear at the same time. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-new-jobs",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, paraphrase this idea using “crop up”: “Technology may create unexpected new jobs, but they may not appear when displaced workers need them.”",
+        "targetExpression": "crop up",
+        "gradingCriteria": "A successful answer should preserve both ideas: new jobs may appear unexpectedly, and their timing may not match the loss of existing jobs. It should use crop up naturally. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-platform-change",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about evaluating a major platform change. Phrase bank: “track record”, “be at risk”, “crop up”. Use at least one phrase and name one practical action the team should take.",
+        "targetExpression": "track record",
+        "gradingCriteria": "A successful answer should stay within the platform-change scenario, mention a practical action such as reviewing evidence, testing or preparing support, and naturally use at least one supplied phrase. First judge whether the response answers the question, then check whether the requested expression or another phrase from the bank is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "bounded-free-response-ai-work",
+        "type": "application",
+        "prompt": "In 40–70 words, give your view: how will AI change your kind of work over the next few years? Mention one opportunity and one risk, and naturally use at least one of today's target expressions.",
+        "targetExpression": "be at risk",
+        "gradingCriteria": "A successful answer should give a clear view, describe one plausible opportunity and one risk within the future-of-work theme, and naturally use at least one target expression. First judge whether the response answers the question, then check whether the selected target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) topic—why predictions about work are difficult; (2) evidence—past predictions and possible AI disruption; (3) conclusion—why workers may need support when new jobs appear. Phrase bank: “take something with a pinch of salt”, “track record”, “crop up”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "Predictions about work have included robots taking over jobs, universal home working and much shorter working time.",
+      "Many dramatic predictions about reductions in working time have not come to pass, giving forecasters a weak track record.",
+      "Predictions should therefore be taken with a pinch of salt rather than accepted automatically.",
+      "Andrew Palmer does not think machines or AI will get rid of all jobs, but he expects some disruption.",
+      "Some jobs and professions are at risk, so affected workers may require support.",
+      "New jobs may crop up, but they may not appear at the same time as old jobs disappear, creating a sequencing risk."
+    ]
+  }
+}
