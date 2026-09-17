@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-09-17",
+  "episodeId": "250904-the-joys-of-writing-lists",
+  "title": "The joys of writing lists",
+  "publishedAt": "2025-09-04",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2025/ep-250904",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/250904_6_minute_english_the_joys_of_writing_lists_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/250904_6_minute_english_the_joys_of_writing_lists_transcript.pdf",
+  "reason": "昨天的课程讨论未来工作与技术变化，今天轮换到生产力和日常组织。本集从购物清单、歌曲和利弊清单说明列表如何帮助记忆、快速抓住重点并辅助决策，适合联系项目任务拆分、问题跟踪和个人计划。练习会反复调用六个常用表达，从原文识别逐步过渡到项目场景中的简短输出。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "生产力",
+    "任务管理",
+    "决策",
+    "项目协作",
+    "日常生活",
+    "渐进输出",
+    "精听"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "work out",
+        "meaning": "find an answer by thinking about the available information",
+        "usage": "Use it when solving or understanding something: We need to work out why the deployment failed."
+      },
+      {
+        "expression": "come back to",
+        "meaning": "return to a topic that was mentioned earlier",
+        "usage": "Use it in a discussion: Let's come back to the budget after reviewing the risks."
+      },
+      {
+        "expression": "a way of reminding someone to do something",
+        "meaning": "a method that helps a person remember an action",
+        "usage": "Use it to explain a memory aid: A checklist is a way of reminding the team to complete every review step."
+      },
+      {
+        "expression": "get a big bang for your buck",
+        "meaning": "gain a lot of value for the money, time or effort spent",
+        "usage": "Use it for good value: Automating the repeated check gives us a big bang for our buck."
+      },
+      {
+        "expression": "get to the nub of something",
+        "meaning": "reach the most important or essential point quickly",
+        "usage": "Use it when removing unnecessary detail: A short incident summary should get to the nub of the problem."
+      },
+      {
+        "expression": "pros and cons",
+        "meaning": "the advantages and disadvantages of a choice",
+        "usage": "Use it when comparing options: We listed the pros and cons of upgrading now."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "work-out-list-code",
+        "type": "single-choice",
+        "prompt": "What is Phil trying to do when he works out what the unusual shopping-list words mean?",
+        "targetExpression": "work out",
+        "options": [
+          {
+            "id": "a",
+            "text": "Find the answer by thinking about the clues"
+          },
+          {
+            "id": "b",
+            "text": "Exercise while reading the list"
+          },
+          {
+            "id": "c",
+            "text": "Remove every item from the list"
+          },
+          {
+            "id": "d",
+            "text": "Calculate the total price of the shopping"
+          }
+        ],
+        "answer": "a",
+        "explanation": "Phil uses clues such as shortened words and rhymes to work out what the list items represent."
+      },
+      {
+        "id": "come-back-to-puke",
+        "type": "fill-blank",
+        "prompt": "Complete Michael Rosen's return to an earlier topic: “Let's just ______ puke.”",
+        "targetExpression": "come back to",
+        "answers": [
+          "come back to"
+        ],
+        "explanation": "Come back to means return to a subject already mentioned; Michael wants to discuss the word 'puke' again."
+      },
+      {
+        "id": "way-of-reminding",
+        "type": "fill-blank",
+        "prompt": "Complete the explanation: The rhyme between “puke” and “cuc” is ______ Jo to buy cucumbers.",
+        "targetExpression": "a way of reminding someone to do something",
+        "answers": [
+          "a way of reminding"
+        ],
+        "explanation": "The unusual word acts as a memory aid which reminds Jo that cucumber is on the shopping list."
+      },
+      {
+        "id": "bang-for-buck-meaning",
+        "type": "single-choice",
+        "prompt": "What does “get a big bang for your buck” mean in the discussion of the song?",
+        "targetExpression": "get a big bang for your buck",
+        "options": [
+          {
+            "id": "a",
+            "text": "Gain a lot of value for the effort or money spent"
+          },
+          {
+            "id": "b",
+            "text": "Spend more money than originally planned"
+          },
+          {
+            "id": "c",
+            "text": "Make a list that is difficult to understand"
+          },
+          {
+            "id": "d",
+            "text": "Avoid mentioning the main point of a song"
+          }
+        ],
+        "answer": "a",
+        "explanation": "The expression means receiving a large return in value for the money, time or effort put into something."
+      },
+      {
+        "id": "nub-of-things",
+        "type": "fill-blank",
+        "prompt": "Complete Jo's point about efficient lists: They help you ______ quickly.",
+        "targetExpression": "get to the nub of something",
+        "answers": [
+          "get to the nub of things"
+        ],
+        "explanation": "Lists avoid long sentences and unnecessary wording, allowing people to reach the essential point quickly."
+      },
+      {
+        "id": "pros-and-cons-decision",
+        "type": "fill-blank",
+        "prompt": "Complete the decision-making method: Jo's friend divides the page and writes the ______ of the situation.",
+        "targetExpression": "pros and cons",
+        "answers": [
+          "pros and cons"
+        ],
+        "explanation": "Writing advantages and disadvantages on separate sides helps Jo's friend resolve a situation."
+      },
+      {
+        "id": "lists-efficient-reason",
+        "type": "single-choice",
+        "prompt": "Why can a list communicate information efficiently according to Jo?",
+        "targetExpression": "get to the nub of something",
+        "options": [
+          {
+            "id": "a",
+            "text": "It can remove long wording and reach the essential point quickly."
+          },
+          {
+            "id": "b",
+            "text": "It always explains every item in a complete paragraph."
+          },
+          {
+            "id": "c",
+            "text": "It prevents people from abbreviating any words."
+          },
+          {
+            "id": "d",
+            "text": "It makes every decision without human judgement."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Jo says lists encourage efficient and economical thinking because they do not waste time on long sentences or words."
+      },
+      {
+        "id": "come-back-to-meeting-usage",
+        "type": "single-choice",
+        "prompt": "Which sentence uses “come back to” naturally in a project meeting?",
+        "targetExpression": "come back to",
+        "options": [
+          {
+            "id": "a",
+            "text": "Let's come back to the release date after checking the test results."
+          },
+          {
+            "id": "b",
+            "text": "Let's come the release date back to after testing."
+          },
+          {
+            "id": "c",
+            "text": "The release date came back the server yesterday."
+          },
+          {
+            "id": "d",
+            "text": "We are come back to complete the release date."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Come back to is naturally used to say that a discussion will return to an earlier topic later."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-memory-aid",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. Use “a way of reminding someone to do something” and explain why Jo writes “puke”.",
+        "targetExpression": "a way of reminding someone to do something",
+        "gradingCriteria": "A supported answer should say that 'puke', which rhymes with 'cuc', is a way of reminding Jo to buy cucumber. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-decision",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain how a list can help someone make a decision. Use “pros and cons”. You may start: “A person can…”",
+        "targetExpression": "pros and cons",
+        "gradingCriteria": "A supported answer should explain that writing the advantages and disadvantages helps a person compare options and resolve a situation. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-essential-point",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, paraphrase this idea using “get to the nub of something”: “Lists avoid long sentences and communicate the essential point quickly.”",
+        "targetExpression": "get to the nub of something",
+        "gradingCriteria": "A successful answer should preserve the contrast between unnecessary wording and reaching the essential point quickly, while using get to the nub naturally. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-project-list",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about using a list before a production release. Phrase bank: “work out”, “come back to”, “pros and cons”. Use at least one phrase and name one specific item the team should check.",
+        "targetExpression": "work out",
+        "gradingCriteria": "A successful answer should stay within the release scenario, name a concrete check such as tests, rollback steps or approvals, and naturally use at least one supplied phrase. First judge whether the response answers the question, then check whether the requested expression or another phrase from the bank is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "bounded-free-response-lists",
+        "type": "application",
+        "prompt": "In 40–70 words, give your view: when are lists useful, and when can they become unhelpful? Give one example and naturally use at least one of today's target expressions.",
+        "targetExpression": "pros and cons",
+        "gradingCriteria": "A successful answer should state a clear view, include one relevant example or contrast, and naturally use at least one target expression. First judge whether the response answers the question, then check whether the selected target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) topic—where people use lists; (2) two benefits—remembering information and communicating efficiently; (3) decision-making—how lists help compare options. Phrase bank: “a way of reminding someone to do something”, “get to the nub of something”, “pros and cons”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "Lists appear in many forms, including shopping lists, to-do lists and bucket lists.",
+      "Jo's unusual shopping-list abbreviations act like a private code and help her remember items.",
+      "Lists can communicate economically because they avoid long sentences and get to the essential point quickly.",
+      "The song My Favourite Things gains a lot of effect from a compact list, described as a big bang for your buck.",
+      "Writing pros and cons can help someone compare advantages and disadvantages and resolve a decision.",
+      "Lists also appear in menus and bank statements, and therapists may suggest listing positive things to support wellbeing."
+    ]
+  }
+}
