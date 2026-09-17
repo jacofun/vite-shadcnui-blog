@@ -1529,7 +1529,107 @@ async function requestAssessmentModel({ modelConfig, schemaName, schema, system,
   }
 }
 
-async function requestAssessmentGrading({ modelConfig, episode, transcript, assessment, retelling, fetchImpl }) {
+async function* requestAssessmentModelStream({
+  modelConfig, schemaName, schema, system, prompt, validate, fetchImpl, signal,
+}) {
+  const controller = new AbortController();
+  let timedOut = false;
+  const abortFromClient = () => controller.abort(signal?.reason);
+  if (signal?.aborted) abortFromClient();
+  else signal?.addEventListener("abort", abortFromClient, { once: true });
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, modelConfig.timeoutMs);
+
+  try {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const messages = [
+        { role: "system", content: `${system}\n\n${ENGLISH_ONLY_ASSESSMENT_INSTRUCTION}` },
+        { role: "user", content: prompt },
+      ];
+      if (attempt > 0) {
+        messages.push({
+          role: "user",
+          content: "Regenerate the complete JSON response. The previous result contained non-English characters. Keep all output strings strictly in English.",
+        });
+      }
+      const response = await fetchImpl(modelConfig.endpoint, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${modelConfig.apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: modelConfig.model,
+          enable_thinking: false,
+          temperature: attempt > 0 ? 0 : 0.2,
+          response_format: {
+            type: "json_schema",
+            json_schema: { name: schemaName, strict: true, schema },
+          },
+          messages,
+          stream: true,
+        }),
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new HttpError(502, "ASSESSMENT_MODEL_ERROR", "Assessment model request failed");
+
+      let content = "";
+      for await (const delta of parseModelEventStream(response.body)) {
+        content += delta;
+        if (content.length > 50_000 || content.includes("\0")) {
+          throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", "Assessment model returned invalid feedback");
+        }
+        yield delta.length;
+      }
+      let value;
+      try {
+        value = validate(JSON.parse(content));
+      } catch (error) {
+        if (error instanceof HttpError) throw error;
+        throw new HttpError(502, "INVALID_ASSESSMENT_RESULT", "Assessment model returned invalid JSON");
+      }
+      try {
+        return validateEnglishOnlyAssessmentResult(value);
+      } catch (error) {
+        if (error instanceof HttpError && error.code === "NON_ENGLISH_ASSESSMENT_RESULT" && attempt === 0) continue;
+        throw error;
+      }
+    }
+    throw new HttpError(502, "NON_ENGLISH_ASSESSMENT_RESULT", "Assessment model returned non-English feedback");
+  } catch (error) {
+    if (timedOut) throw new HttpError(504, "ASSESSMENT_TIMEOUT", "Assessment model timed out");
+    if (signal?.aborted) throw signal.reason || new DOMException("Aborted", "AbortError");
+    if (error instanceof HttpError) throw error;
+    throw new HttpError(502, "ASSESSMENT_MODEL_ERROR", "Assessment model request failed");
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener("abort", abortFromClient);
+  }
+}
+
+async function* assessmentGradingEventStream({ model, gradingStream, complete, fail }) {
+  yield sseEvent("meta", { model });
+  let receivedChars = 0;
+  try {
+    let grading;
+    for (;;) {
+      const next = await gradingStream.next();
+      if (next.done) {
+        grading = next.value;
+        break;
+      }
+      receivedChars += next.value;
+      yield sseEvent("progress", { receivedChars });
+    }
+    const result = await complete(grading);
+    yield sseEvent("result", { result });
+    yield sseEvent("done", {});
+  } catch (error) {
+    await fail(error);
+    throw error;
+  }
+}
+
+async function requestAssessmentGrading({ modelConfig, episode, transcript, assessment, retelling, fetchImpl, signal, stream = false }) {
   const prompt = [
     `Episode title: ${episode.title}`,
     `Reference transcript:\n${transcript.slice(0, 30_000)}`,
@@ -1537,7 +1637,7 @@ async function requestAssessmentGrading({ modelConfig, episode, transcript, asse
     `Target expressions:\n${(assessment?.targetExpressions || []).map((item) => `- ${item.expression}: ${item.meaning}`).join("\n") || "Evaluate natural, reusable English expressions."}`,
     `Learner retelling:\n${retelling}`,
   ].join("\n\n");
-  return requestAssessmentModel({
+  const request = {
     modelConfig,
     schemaName: "english_retelling_assessment",
     schema: assessmentResponseSchema,
@@ -1545,10 +1645,15 @@ async function requestAssessmentGrading({ modelConfig, episode, transcript, asse
     prompt,
     validate: validateModelGrading,
     fetchImpl,
-  });
+    signal,
+  };
+  return stream ? requestAssessmentModelStream(request) : requestAssessmentModel(request);
 }
 
-async function requestSubjectiveAssessmentGrading({ modelConfig, episode, transcript, assessment, question, answer, fetchImpl }) {
+async function requestSubjectiveAssessmentGrading({
+  modelConfig, episode, transcript, assessment, question, answer, attemptNumber, fetchImpl, signal, stream = false,
+}) {
+  const referenceAnswerAllowed = attemptNumber >= 3;
   const target = assessment.targetExpressions.find((item) => item.expression === question.targetExpression);
   const prompt = [
     `Episode title: ${episode.title}`,
@@ -1560,8 +1665,11 @@ async function requestSubjectiveAssessmentGrading({ modelConfig, episode, transc
     `Reference transcript:\n${transcript.slice(0, 30_000)}`,
     `Expected content points:\n${assessment.referencePoints.map((point) => `- ${point}`).join("\n") || "Use the transcript as the source of truth."}`,
     `Learner answer:\n${answer}`,
+    referenceAnswerAllowed
+      ? "Feedback stage: this is attempt 3 or later. You may provide one complete improved answer in revisedAnswer for comparison."
+      : "Feedback stage: this is attempt 1 or 2. Give improvement guidance only. Do not reveal, rewrite, or reconstruct a complete answer in summary, strengths, improvements, or revisedAnswer. Set revisedAnswer to exactly: Reference answer withheld until a later attempt.",
   ].filter(Boolean).join("\n\n");
-  return requestAssessmentModel({
+  const request = {
     modelConfig,
     schemaName: "english_subjective_assessment",
     schema: subjectiveAssessmentResponseSchema,
@@ -1572,12 +1680,15 @@ async function requestSubjectiveAssessmentGrading({ modelConfig, episode, transc
       "Simple, direct English can receive full credit when its meaning is accurate, its grammar is basically correct, and its target expression is natural. Never require advanced vocabulary or complex sentences for a high score.",
       "Distinguish a missing or incorrect idea from an idea that is correct but phrased less idiomatically. Give only one or two high-value improvements.",
       "When suggesting a more natural expression, give at most one alternative and take it from the lesson target expressions or transcript.",
+      "Follow the feedback stage exactly. During attempts 1 and 2, preserve active recall by giving hints and revision directions without supplying a complete corrected answer or a copyable replacement sentence.",
       "Return only the requested JSON and write every field in English.",
     ].join(" "),
     prompt,
     validate: validateSubjectiveModelGrading,
     fetchImpl,
-  });
+    signal,
+  };
+  return stream ? requestAssessmentModelStream(request) : requestAssessmentModel(request);
 }
 
 function validateAssistantHistory(value) {
@@ -2099,22 +2210,50 @@ async function handleEnglishAssessment({
     const submittedAt = existing?.submittedAt || new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
     const pending = { schemaVersion: 1, status: "grading", submissionType, attemptId, episodeId, questionId, questionType: question.type, submittedAt, contentHash, answer };
     await contentStore.putJson(paths.attempt, pending);
-    try {
-      const grading = await requestSubjectiveAssessmentGrading({ modelConfig, episode, transcript, assessment, question, answer, fetchImpl });
+    const attemptNumber = Number.isInteger(previous?.attemptNumber) ? previous.attemptNumber + 1 : previous ? 2 : 1;
+    const completeSubjective = async (modelGrading) => {
+      const grading = {
+        ...modelGrading,
+        revisedAnswer: attemptNumber >= 3 ? modelGrading.revisedAnswer : null,
+      };
       const completed = {
         ...pending,
         status: "completed",
         completedAt: new Date().toISOString(),
         model: modelConfig.model,
-        rubricVersion: "short-answer-v2",
+        rubricVersion: "short-answer-v3",
         grading,
         ...assessmentHistory(previous, grading.score),
       };
       await contentStore.putJson(paths.attempt, completed);
       await contentStore.putJson(paths.latest, completed);
       return completed;
+    };
+    const failSubjective = (error) => contentStore.putJson(paths.attempt, {
+      ...pending,
+      status: "failed",
+      failedAt: new Date().toISOString(),
+      errorCode: error instanceof HttpError ? error.code : "INTERNAL_ERROR",
+    });
+    if (stream) {
+      const gradingStream = await requestSubjectiveAssessmentGrading({
+        modelConfig, episode, transcript, assessment, question, answer, attemptNumber, fetchImpl,
+        signal, stream: true,
+      });
+      return assessmentGradingEventStream({
+        model: modelConfig.model,
+        gradingStream,
+        complete: completeSubjective,
+        fail: failSubjective,
+      });
+    }
+    try {
+      const modelGrading = await requestSubjectiveAssessmentGrading({
+        modelConfig, episode, transcript, assessment, question, answer, attemptNumber, fetchImpl,
+      });
+      return await completeSubjective(modelGrading);
     } catch (error) {
-      await contentStore.putJson(paths.attempt, { ...pending, status: "failed", failedAt: new Date().toISOString(), errorCode: error instanceof HttpError ? error.code : "INTERNAL_ERROR" });
+      await failSubjective(error);
       throw error;
     }
   }
@@ -2138,8 +2277,7 @@ async function handleEnglishAssessment({
   const submittedAt = existing?.submittedAt || new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
   const pending = { schemaVersion: 1, status: "grading", submissionType: "retelling", attemptId, episodeId, submittedAt, contentHash, retelling, objective };
   await contentStore.putJson(paths.attempt, pending);
-  try {
-    const grading = await requestAssessmentGrading({ modelConfig, episode, transcript, assessment, retelling, fetchImpl });
+  const completeRetelling = async (grading) => {
     const completed = {
       ...pending,
       status: "completed",
@@ -2152,8 +2290,29 @@ async function handleEnglishAssessment({
     await contentStore.putJson(paths.attempt, completed);
     await contentStore.putJson(paths.latest, completed);
     return completed;
+  };
+  const failRetelling = (gradingError) => contentStore.putJson(paths.attempt, {
+    ...pending,
+    status: "failed",
+    failedAt: new Date().toISOString(),
+    errorCode: gradingError instanceof HttpError ? gradingError.code : "INTERNAL_ERROR",
+  });
+  if (stream) {
+    const gradingStream = await requestAssessmentGrading({
+      modelConfig, episode, transcript, assessment, retelling, fetchImpl, signal, stream: true,
+    });
+    return assessmentGradingEventStream({
+      model: modelConfig.model,
+      gradingStream,
+      complete: completeRetelling,
+      fail: failRetelling,
+    });
+  }
+  try {
+    const grading = await requestAssessmentGrading({ modelConfig, episode, transcript, assessment, retelling, fetchImpl });
+    return await completeRetelling(grading);
   } catch (error) {
-    await contentStore.putJson(paths.attempt, { ...pending, status: "failed", failedAt: new Date().toISOString(), errorCode: error instanceof HttpError ? error.code : "INTERNAL_ERROR" });
+    await failRetelling(error);
     throw error;
   }
 }
@@ -2474,10 +2633,11 @@ export function createHandler({
         });
         const body = parseJsonBody(request.body);
         const user = { id: "owner", role: "owner", permissions: [] };
+        const assessmentStream = ["assessment/ask", "assessment/grade"].includes(route) && acceptsEventStream(request);
         const result = route.startsWith("assessment/")
           ? await handleEnglishAssessment({
             route, body, user, config, contentStore: privateContentStore, nowSeconds, env, fetchImpl,
-            signal: request.signal, stream: route === "assessment/ask" && acceptsEventStream(request),
+            signal: request.signal, stream: assessmentStream,
           })
           : route.startsWith("collections/")
           ? await handlePrivateResourceCollection({
@@ -2495,7 +2655,7 @@ export function createHandler({
             route, body, user, auth: session,
             config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
           });
-        return route === "assessment/ask" && acceptsEventStream(request)
+        return assessmentStream
           ? streamResponse(config, result)
           : jsonResponse(config, 200, result);
       }
@@ -3163,7 +3323,7 @@ async function persistentRequest(options) {
     return jsonResponse(config, 200, result);
   }
   if (route.startsWith("assessment/")) {
-    const stream = route === "assessment/ask" && acceptsEventStream(request);
+    const stream = ["assessment/ask", "assessment/grade"].includes(route) && acceptsEventStream(request);
     const result = await handleEnglishAssessment({
       route, body, user, config, contentStore, nowSeconds, env, fetchImpl,
       signal: request.signal, stream,

@@ -1,5 +1,5 @@
 import { notifyPrivateAuthInvalidated } from "@/lib/privateAuthEvents";
-import { PRIVATE_AUTH_API_BASE, readAssistantEventStream } from "@/lib/privateAuthApi";
+import { PRIVATE_AUTH_API_BASE, readAssessmentEventStream, readAssistantEventStream } from "@/lib/privateAuthApi";
 
 const API_BASE = PRIVATE_AUTH_API_BASE;
 
@@ -69,7 +69,7 @@ export interface EnglishSubjectiveAssessmentGrading {
   summary: string;
   strengths: string[];
   improvements: string[];
-  revisedAnswer: string;
+  revisedAnswer: string | null;
 }
 
 export interface EnglishSubjectiveAssessmentResult {
@@ -296,12 +296,27 @@ export function gradeEnglishRetelling(
     retelling: string;
     objectiveAnswers: Record<string, string>;
   },
+  onProgress: (receivedChars: number) => void,
   signal?: AbortSignal,
 ): Promise<EnglishAssessmentResult> {
-  return request<EnglishAssessmentResult>("assessment/grade", {
-    body,
-    csrfToken: session.csrfToken,
+  return fetch(`${API_BASE}/assessment/grade`, {
+    method: "POST",
+    headers: {
+      Accept: "text/event-stream",
+      "Content-Type": "application/json",
+      "X-CSRF-Token": session.csrfToken,
+    },
+    body: JSON.stringify(body),
+    credentials: "include",
+    cache: "no-store",
     signal,
+  }).then((response) => {
+    if (response.status === 401) notifyPrivateAuthInvalidated();
+    return readAssessmentEventStream<EnglishAssessmentResult>(
+      response,
+      onProgress,
+      (status, code, message) => new PrivateAuthApiError(status, code, message),
+    );
   });
 }
 
@@ -313,12 +328,27 @@ export function gradeEnglishSubjectiveAnswer(
     attemptId: string;
     answer: string;
   },
+  onProgress: (receivedChars: number) => void,
   signal?: AbortSignal,
 ): Promise<EnglishSubjectiveAssessmentResult> {
-  return request<EnglishSubjectiveAssessmentResult>("assessment/grade", {
-    body: { ...body, submissionType: "subjective" },
-    csrfToken: session.csrfToken,
+  return fetch(`${API_BASE}/assessment/grade`, {
+    method: "POST",
+    headers: {
+      Accept: "text/event-stream",
+      "Content-Type": "application/json",
+      "X-CSRF-Token": session.csrfToken,
+    },
+    body: JSON.stringify({ ...body, submissionType: "subjective" }),
+    credentials: "include",
+    cache: "no-store",
     signal,
+  }).then((response) => {
+    if (response.status === 401) notifyPrivateAuthInvalidated();
+    return readAssessmentEventStream<EnglishSubjectiveAssessmentResult>(
+      response,
+      onProgress,
+      (status, code, message) => new PrivateAuthApiError(status, code, message),
+    );
   });
 }
 

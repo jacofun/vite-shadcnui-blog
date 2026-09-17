@@ -552,6 +552,26 @@ test("completes challenge, passkey verification, session lookup and resource sig
         assert.match(requestBody.messages[0].content, /Simple, direct English can receive full credit/u);
         assert.match(requestBody.messages[0].content, /Give only one or two high-value improvements/u);
         assert.match(requestBody.messages[1].content, /Lesson target expressions/u);
+        if (requestBody.stream) {
+          subjectiveModelCalls += 1;
+          assert.match(requestBody.messages[1].content, /attempt 3 or later/u);
+          const encoder = new TextEncoder();
+          const content = JSON.stringify({
+            score: 8,
+            summary: "Accurate and clear.",
+            strengths: ["The main reason is correct."],
+            improvements: ["Add a concrete example."],
+            revisedAnswer: "Shared vocabulary helps people describe smells consistently and understand one another.",
+          });
+          return new Response(new ReadableStream({
+            start(controller) {
+              const midpoint = Math.floor(content.length / 2);
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: content.slice(0, midpoint) } }] })}\n\n`));
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: content.slice(midpoint) } }] })}\n\ndata: [DONE]\n\n`));
+              controller.close();
+            },
+          }), { status: 200 });
+        }
       }
       return {
         ok: true,
@@ -694,7 +714,8 @@ test("completes challenge, passkey verification, session lookup and resource sig
   }));
   assert.equal(subjectiveResponse.statusCode, 200);
   assert.equal(responseJson(subjectiveResponse).grading.score, 8);
-  assert.equal(responseJson(subjectiveResponse).rubricVersion, "short-answer-v2");
+  assert.equal(responseJson(subjectiveResponse).grading.revisedAnswer, null);
+  assert.equal(responseJson(subjectiveResponse).rubricVersion, "short-answer-v3");
   assert.equal(responseJson(subjectiveResponse).attemptNumber, 1);
   assert.equal(subjectiveModelCalls, 2);
 
@@ -712,9 +733,38 @@ test("completes challenge, passkey verification, session lookup and resource sig
     },
   }));
   assert.equal(responseJson(secondSubjectiveResponse).attemptNumber, 2);
+  assert.equal(responseJson(secondSubjectiveResponse).grading.revisedAnswer, null);
   assert.equal(responseJson(secondSubjectiveResponse).highestScore, 8);
   assert.equal(responseJson(secondSubjectiveResponse).scoreDelta, 0);
   assert.equal(subjectiveModelCalls, 3);
+
+  const thirdSubjectiveResponse = await handler(request({
+    method: "POST",
+    path: "/api/private-auth/assessment/grade",
+    cookie: sessionCookie,
+    csrf: verifyBody.csrfToken,
+    body: {
+      submissionType: "subjective",
+      episodeId: "260827-how-do-we-describe-smells",
+      questionId: "comprehension-1",
+      attemptId: "subjective-333333333",
+      answer: "A shared vocabulary gives people common labels, which makes descriptions easier to compare and understand.",
+    },
+    accept: "text/event-stream",
+  }));
+  assert.equal(thirdSubjectiveResponse.headers["content-type"], "text/event-stream; charset=utf-8");
+  let subjectiveStream = "";
+  for await (const chunk of thirdSubjectiveResponse.body) subjectiveStream += chunk;
+  assert.match(subjectiveStream, /event: progress/u);
+  assert.match(subjectiveStream, /event: result/u);
+  assert.match(subjectiveStream, /event: done/u);
+  const streamedResult = JSON.parse(subjectiveStream.match(/event: result\ndata: (.+)\n\n/u)[1]).result;
+  assert.equal(streamedResult.attemptNumber, 3);
+  assert.equal(
+    streamedResult.grading.revisedAnswer,
+    "Shared vocabulary helps people describe smells consistently and understand one another.",
+  );
+  assert.equal(subjectiveModelCalls, 4);
 
   const latestSubjectiveResponse = await handler(request({
     method: "POST",
@@ -723,7 +773,7 @@ test("completes challenge, passkey verification, session lookup and resource sig
     csrf: verifyBody.csrfToken,
     body: { episodeId: "260827-how-do-we-describe-smells", questionId: "comprehension-1" },
   }));
-  assert.equal(responseJson(latestSubjectiveResponse).result.attemptId, "subjective-987654321");
+  assert.equal(responseJson(latestSubjectiveResponse).result.attemptId, "subjective-333333333");
 });
 
 test("accepts direct function access and rejects invalid CSRF and arbitrary episode paths", async () => {

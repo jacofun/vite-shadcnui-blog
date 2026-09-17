@@ -61,6 +61,38 @@ function suggestedWordRange(prompt: string): string | null {
   return match ? `${match[1]}–${match[2]}` : null;
 }
 
+function streamProgress(receivedChars: number): number {
+  if (receivedChars <= 0) return 8;
+  return Math.min(95, Math.round(18 + 77 * (1 - Math.exp(-receivedChars / 900))));
+}
+
+function AiGradingProgress({ receivedChars }: { receivedChars: number }): JSX.Element {
+  const progress = streamProgress(receivedChars);
+  return (
+    <div aria-live="polite" className="mt-4 w-full">
+      <div className="flex items-center justify-between gap-4 text-xs">
+        <span className="text-slate-400">
+          {receivedChars > 0 ? "正在接收并校验批改内容" : "正在等待 AI 开始生成"}
+        </span>
+        <span className="font-mono tabular-nums text-cyan-300">{progress}%</span>
+      </div>
+      <div
+        aria-label="AI 批改进度"
+        aria-valuemax={100}
+        aria-valuemin={0}
+        aria-valuenow={progress}
+        className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.07]"
+        role="progressbar"
+      >
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-cyan-500 via-cyan-300 to-sky-300 shadow-[0_0_14px_rgba(34,211,238,0.35)] transition-[width] duration-150 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function errorMessage(error: unknown): string {
   if (error instanceof PrivateAuthApiError) {
     if (error.code === "ASSESSMENT_NOT_CONFIGURED") return "AI 批改服务尚未配置，请设置百炼环境变量后再提交。";
@@ -150,6 +182,7 @@ function Feedback({ result }: { result: EnglishAssessmentResult }): JSX.Element 
 
 function SubjectiveFeedback({ result }: { result: EnglishSubjectiveAssessmentResult }): JSX.Element {
   const { grading } = result;
+  const referenceAnswer = result.attemptNumber >= 3 ? grading.revisedAnswer : null;
   return (
     <div className="mt-5 border-l border-emerald-300/30 pl-4">
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -162,10 +195,14 @@ function SubjectiveFeedback({ result }: { result: EnglishSubjectiveAssessmentRes
       <p className="mt-2 text-sm leading-6 text-slate-300">{grading.summary}</p>
       {grading.strengths.length > 0 && <p className="mt-3 text-sm leading-6 text-slate-400">做得好：{grading.strengths.join("；")}</p>}
       <p className="mt-2 text-sm leading-6 text-slate-400">改进：{grading.improvements.join("；")}</p>
-      <details className="mt-3">
-        <summary className="cursor-pointer text-sm text-cyan-300">查看参考修改</summary>
-        <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-300">{grading.revisedAnswer}</p>
-      </details>
+      {referenceAnswer ? (
+        <details className="mt-3">
+          <summary className="cursor-pointer text-sm text-cyan-300">查看参考修改</summary>
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-300">{referenceAnswer}</p>
+        </details>
+      ) : (
+        <p className="mt-3 text-xs leading-5 text-cyan-200/70">前两次提交仅提供修改建议，第 3 次起可查看参考修改。</p>
+      )}
     </div>
   );
 }
@@ -183,8 +220,10 @@ export default function EnglishAssessment({ assessment, episodeId, session }: En
   const [subjectiveResults, setSubjectiveResults] = useState<Record<string, EnglishSubjectiveAssessmentResult>>({});
   const [subjectiveAttemptIds, setSubjectiveAttemptIds] = useState<Record<string, string>>({});
   const [subjectiveGrading, setSubjectiveGrading] = useState<Record<string, boolean>>({});
+  const [subjectiveProgress, setSubjectiveProgress] = useState<Record<string, number>>({});
   const [subjectiveErrors, setSubjectiveErrors] = useState<Record<string, string>>({});
   const [grading, setGrading] = useState(false);
+  const [retellingProgress, setRetellingProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const wordCount = useMemo(() => retelling.match(/[A-Za-z]+(?:['’-][A-Za-z]+)*/gu)?.length ?? 0, [retelling]);
   const checkedCount = questions.filter((question) => checkedQuestions[question.id]).length;
@@ -262,6 +301,7 @@ export default function EnglishAssessment({ assessment, episodeId, session }: En
     const questionAttemptId = subjectiveAttemptIds[questionId] ?? newAttemptId();
     setSubjectiveAttemptIds((current) => ({ ...current, [questionId]: questionAttemptId }));
     setSubjectiveGrading((current) => ({ ...current, [questionId]: true }));
+    setSubjectiveProgress((current) => ({ ...current, [questionId]: 0 }));
     setSubjectiveErrors((current) => ({ ...current, [questionId]: "" }));
     try {
       const completed = await gradeEnglishSubjectiveAnswer(session, {
@@ -269,6 +309,8 @@ export default function EnglishAssessment({ assessment, episodeId, session }: En
         questionId,
         attemptId: questionAttemptId,
         answer,
+      }, (receivedChars) => {
+        setSubjectiveProgress((current) => ({ ...current, [questionId]: receivedChars }));
       });
       setSubjectiveResults((current) => ({ ...current, [questionId]: completed }));
       setSubjectiveAttemptIds((current) => ({ ...current, [questionId]: newAttemptId() }));
@@ -282,9 +324,14 @@ export default function EnglishAssessment({ assessment, episodeId, session }: En
   async function submitRetelling(): Promise<void> {
     if (wordCount < 30 || wordCount > 800 || grading) return;
     setGrading(true);
+    setRetellingProgress(0);
     setError(null);
     try {
-      const completed = await gradeEnglishRetelling(session, { episodeId, attemptId, retelling, objectiveAnswers: answers });
+      const completed = await gradeEnglishRetelling(
+        session,
+        { episodeId, attemptId, retelling, objectiveAnswers: answers },
+        setRetellingProgress,
+      );
       setResult(completed);
       setCheckedQuestions(Object.fromEntries(questions.map((question) => [question.id, true])));
       setAttemptId(newAttemptId());
@@ -305,7 +352,9 @@ export default function EnglishAssessment({ assessment, episodeId, session }: En
     setResult(null);
     setSubjectiveResults({});
     setSubjectiveAttemptIds({});
+    setSubjectiveProgress({});
     setSubjectiveErrors({});
+    setRetellingProgress(0);
     setError(null);
     localStorage.removeItem(draftKey);
   }
@@ -427,6 +476,7 @@ export default function EnglishAssessment({ assessment, episodeId, session }: En
                         {isSubmitting ? "正在批改…" : `提交第 ${index + 1} 题`}
                       </button>
                     </div>
+                    {isSubmitting && <AiGradingProgress receivedChars={subjectiveProgress[question.id] ?? 0} />}
                     {subjectiveErrors[question.id] && <p className="mt-4 text-sm text-rose-200">{subjectiveErrors[question.id]}</p>}
                     {subjectiveResults[question.id] && <SubjectiveFeedback result={subjectiveResults[question.id]} />}
                   </div>
@@ -449,6 +499,7 @@ export default function EnglishAssessment({ assessment, episodeId, session }: En
               </button>
             </div>
           </div>
+          {grading && <AiGradingProgress receivedChars={retellingProgress} />}
           {error && <p className="mt-4 rounded-xl border border-rose-300/20 bg-rose-300/[0.06] p-4 text-sm text-rose-100">{error}</p>}
           {result && <Feedback result={result} />}
         </div>
