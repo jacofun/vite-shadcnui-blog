@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-09-18",
+  "episodeId": "250605-how-important-is-politeness",
+  "title": "How important is politeness?",
+  "publishedAt": "2025-06-05",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2025/ep-250605",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/250605_6_minute_english_how_important_is_politeness_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/250605_6_minute_english_how_important_is_politeness_transcript.pdf",
+  "reason": "昨天的课程围绕清单、记忆与决策，今天轮换到日常沟通和团队协作。本集讨论礼貌是否只取决于说话方式，还是也取决于听者如何理解、双方关系和社会规则，适合联系跨团队沟通、需求澄清和工作反馈。练习选取六个常用表达，通过重复识别、受控解释和具体职场场景逐步转化为主动表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "职场沟通",
+    "礼貌",
+    "文化差异",
+    "团队协作",
+    "人际沟通",
+    "渐进输出",
+    "精听"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "have a reputation for",
+        "meaning": "be generally known for a particular quality or behaviour",
+        "usage": "Use it for a widely held view: The team has a reputation for responding quickly to incidents."
+      },
+      {
+        "expression": "in the first place",
+        "meaning": "at the beginning or as the original reason for something",
+        "usage": "Use it when asking about an original reason: Why was this rule introduced in the first place?"
+      },
+      {
+        "expression": "be as much to do with A as B",
+        "meaning": "depend equally on two people, factors or explanations",
+        "usage": "Use it to balance two causes: Good communication is as much to do with listening as speaking."
+      },
+      {
+        "expression": "interpret something as",
+        "meaning": "understand an action or statement in a particular way",
+        "usage": "Use it when meaning depends on perception: A short reply may be interpreted as unfriendly."
+      },
+      {
+        "expression": "be well disposed to someone",
+        "meaning": "like, approve of or feel friendly towards someone",
+        "usage": "Use it for a positive attitude: The reviewers were well disposed to the proposal after the clear demonstration."
+      },
+      {
+        "expression": "make excuses for someone",
+        "meaning": "give reasons intended to explain another person's negative behaviour",
+        "usage": "Use it when defending someone's behaviour: We should understand the delay without making excuses for repeated mistakes."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "britain-reputation",
+        "type": "fill-blank",
+        "prompt": "Complete the opening description: Britain ______ being a polite place.",
+        "targetExpression": "have a reputation for",
+        "answers": [
+          "has a reputation for"
+        ],
+        "explanation": "The transcript says Britain has a reputation for politeness, although real behaviour does not always match it."
+      },
+      {
+        "id": "first-place-reason",
+        "type": "fill-blank",
+        "prompt": "Complete the programme's question: Why do we teach children to be polite ______?",
+        "targetExpression": "in the first place",
+        "answers": [
+          "in the first place"
+        ],
+        "explanation": "In the first place asks for the original reason children are taught the rules of politeness."
+      },
+      {
+        "id": "two-sides-politeness",
+        "type": "single-choice",
+        "prompt": "According to Professor Mullany, politeness is as much to do with which two sides?",
+        "targetExpression": "be as much to do with A as B",
+        "options": [
+          {
+            "id": "a",
+            "text": "The person being spoken to and the person speaking"
+          },
+          {
+            "id": "b",
+            "text": "The speaker's age and the length of the sentence"
+          },
+          {
+            "id": "c",
+            "text": "Formal grammar and the time of day"
+          },
+          {
+            "id": "d",
+            "text": "A person's job title and handwriting"
+          }
+        ],
+        "answer": "a",
+        "explanation": "She argues that politeness depends not only on what a speaker says but also on how the listener perceives it."
+      },
+      {
+        "id": "interpret-non-threatening",
+        "type": "fill-blank",
+        "prompt": "Complete the explanation: Michael did not ______ the boy's informal greeting ______ offensive or aggressive.",
+        "targetExpression": "interpret something as",
+        "answers": [
+          "interpret as"
+        ],
+        "explanation": "Michael understood the greeting as friendly and non-threatening rather than as an insult."
+      },
+      {
+        "id": "well-disposed-meaning",
+        "type": "single-choice",
+        "prompt": "What does it mean that Michael was “well disposed to” the boy?",
+        "targetExpression": "be well disposed to someone",
+        "options": [
+          {
+            "id": "a",
+            "text": "He liked and approved of the boy."
+          },
+          {
+            "id": "b",
+            "text": "He wanted the boy to leave immediately."
+          },
+          {
+            "id": "c",
+            "text": "He could not understand any of the boy's words."
+          },
+          {
+            "id": "d",
+            "text": "He formally corrected the boy's grammar."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Being well disposed to someone means having a friendly, approving attitude towards that person."
+      },
+      {
+        "id": "excuses-for-daughter",
+        "type": "fill-blank",
+        "prompt": "Complete Louise's response: She began to ______ her daughter by saying she was tired or teething.",
+        "targetExpression": "make excuses for someone",
+        "answers": [
+          "make excuses for"
+        ],
+        "explanation": "Louise tried to explain her daughter's refusal to say hello by offering reasons for the behaviour."
+      },
+      {
+        "id": "subjective-politeness",
+        "type": "single-choice",
+        "prompt": "Why does the episode describe politeness as subjective?",
+        "targetExpression": "interpret something as",
+        "options": [
+          {
+            "id": "a",
+            "text": "The same words can be interpreted differently depending on the listener and situation."
+          },
+          {
+            "id": "b",
+            "text": "Only formal greetings can ever be polite."
+          },
+          {
+            "id": "c",
+            "text": "Every culture follows exactly the same politeness rules."
+          },
+          {
+            "id": "d",
+            "text": "Politeness depends only on whether a sentence is grammatically correct."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Michael did not feel insulted by an informal greeting, showing that perceived offence depends on interpretation and context."
+      },
+      {
+        "id": "interpret-workplace-usage",
+        "type": "single-choice",
+        "prompt": "Which sentence uses “interpret something as” naturally in a workplace context?",
+        "targetExpression": "interpret something as",
+        "options": [
+          {
+            "id": "a",
+            "text": "Some colleagues may interpret a very short message as unfriendly."
+          },
+          {
+            "id": "b",
+            "text": "Some colleagues may interpret as a short message unfriendly."
+          },
+          {
+            "id": "c",
+            "text": "The message interpreted the colleague as yesterday."
+          },
+          {
+            "id": "d",
+            "text": "We are interpret the short message as."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The natural pattern is interpret + object + as + meaning or quality."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-michael-reaction",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. Use “interpret something as” and complete this idea: “Michael did not…”",
+        "targetExpression": "interpret something as",
+        "gradingCriteria": "A supported answer should say Michael did not interpret the boy's informal greeting as offensive, aggressive or insulting. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-two-sides",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why politeness depends on both people in a conversation. Use “be as much to do with A as B”. You may start: “Politeness is…”",
+        "targetExpression": "be as much to do with A as B",
+        "gradingCriteria": "A supported answer should explain that politeness is as much to do with the listener's interpretation as the speaker's words or intention. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-excuses",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, paraphrase this idea using “make excuses for someone”: “Louise explained her daughter's behaviour by saying she was tired or growing new teeth.”",
+        "targetExpression": "make excuses for someone",
+        "gradingCriteria": "A successful answer should preserve the idea that Louise defended or explained her daughter's refusal to greet the cook, while using make excuses for naturally. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-short-message",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about a colleague who sends a very short project message. Phrase bank: “interpret something as”, “be well disposed to someone”, “in the first place”. Use at least one phrase and suggest one polite response.",
+        "targetExpression": "interpret something as",
+        "gradingCriteria": "A successful answer should stay within the short-message scenario, recognise that tone can be interpreted in different ways, suggest a concrete polite response, and naturally use at least one supplied phrase. First judge whether the response answers the question, then check whether the requested expression or another phrase from the bank is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      },
+      {
+        "id": "bounded-free-response-politeness",
+        "type": "application",
+        "prompt": "In 40–70 words, give your view: what makes communication polite at work? Mention one behaviour and one role played by context, and naturally use at least one of today's target expressions.",
+        "targetExpression": "be as much to do with A as B",
+        "gradingCriteria": "A successful answer should give a clear view, mention one concrete polite behaviour and explain how context or interpretation matters, while naturally using at least one target expression. First judge whether the response answers the question, then check whether the selected target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish a missing meaning from a correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) topic—why politeness is not always simple; (2) example—Michael Rosen's reaction to the boy; (3) social role—why children are taught polite behaviour. Phrase bank: “in the first place”, “interpret something as”, “make excuses for someone”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "Britain has a reputation for politeness, but real behaviour does not always match the stereotype.",
+      "A boy greeted Michael Rosen very informally and could not remember his name.",
+      "Michael did not interpret the greeting as insulting or aggressive because he saw the boy as friendly and non-threatening.",
+      "Politeness is connected both to the speaker and to how the listener perceives the interaction.",
+      "Children are taught politeness partly so they can follow social rules and be accepted by others.",
+      "Louise felt embarrassed when her daughter refused to greet the nursery cook and made excuses for her behaviour."
+    ]
+  }
+}
