@@ -126,7 +126,7 @@ export default function NoteDetail(): JSX.Element {
 
       <main className="min-h-screen bg-[#070a12] text-slate-100">
         <div className="mx-auto grid max-w-6xl gap-14 px-6 pb-24 pt-12 sm:px-8 lg:grid-cols-[minmax(0,760px)_220px] lg:px-10">
-          <article>
+          <article className="min-w-0">
             <Link className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-cyan-300" to="/notes">
               <ArrowLeft className="size-4" />
               返回全部笔记
@@ -140,7 +140,7 @@ export default function NoteDetail(): JSX.Element {
                 <span>{note.readingMinutes} 分钟阅读</span>
                 {note.series && <span>{note.series} · {seriesIndex + 1}/{seriesNotes.length}</span>}
               </div>
-              <h1 className="mt-5 text-3xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">{note.title}</h1>
+              <h1 className="mt-5 break-words text-3xl font-semibold leading-tight tracking-tight text-white [overflow-wrap:anywhere] sm:text-5xl">{note.title}</h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400">{note.summary}</p>
               <div className="mt-6 flex flex-wrap gap-2">
                 {note.tags.map((tag) => (
