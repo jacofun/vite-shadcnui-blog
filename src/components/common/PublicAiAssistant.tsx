@@ -6,6 +6,7 @@ import {
   type FormEvent,
   type JSX,
   type KeyboardEvent,
+  type ReactNode,
 } from "react";
 
 import {
@@ -16,6 +17,12 @@ import AssistantMessage from "@/components/common/AssistantMessage";
 
 interface Props {
   pagePath: string;
+  launcher?: (controls: AssistantLauncherControls) => ReactNode;
+}
+
+export interface AssistantLauncherControls {
+  ask: (question: string) => void;
+  open: () => void;
 }
 
 interface ChatMessage {
@@ -76,7 +83,7 @@ function errorMessage(error: unknown): string {
   return "AI 问答暂时不可用，请稍后再试。";
 }
 
-export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
+export default function PublicAiAssistant({ pagePath, launcher }: Props): JSX.Element {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -162,6 +169,11 @@ export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
     setOpen(true);
   }
 
+  function askFromLauncher(question: string): void {
+    setOpen(true);
+    void sendQuestion(question);
+  }
+
   async function copyAnswer(message: ChatMessage): Promise<void> {
     await navigator.clipboard.writeText(message.content);
     setCopiedMessageId(message.id);
@@ -185,6 +197,7 @@ export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
   return (
     <>
       <style>{assistantCss}</style>
+      {launcher?.({ ask: askFromLauncher, open: openAssistant })}
       {open ? (
         <aside
           aria-label="当前页面 AI 问答"
@@ -321,7 +334,7 @@ export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
             </div>
           </form>
         </aside>
-      ) : (
+      ) : !launcher ? (
         <button
           aria-label="打开 AI 阅读助手"
           className="ai-orbit-border fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[120] inline-flex h-12 items-center gap-2 rounded-full px-4 text-sm font-medium text-cyan-200 backdrop-blur-xl sm:right-6"
@@ -330,7 +343,7 @@ export default function PublicAiAssistant({ pagePath }: Props): JSX.Element {
         >
           <Bot className="size-4" />问 AI
         </button>
-      )}
+      ) : null}
     </>
   );
 }

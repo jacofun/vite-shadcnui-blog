@@ -14,7 +14,7 @@ function App() {
   const isWedding = pathname.startsWith("/wedding");
   const showHeader = !isWedding;
   const showAiDisclaimer =
-    showHeader && (pathname === "/" || pathname.startsWith("/notes"));
+    showHeader && pathname.startsWith("/notes");
   const showFooter =
     !pathname.startsWith("/auth") && !pathname.startsWith("/resources");
   const showReadingProgress = /^\/notes\/[^/]+\/?$/.test(pathname);
