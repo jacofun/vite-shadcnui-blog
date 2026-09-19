@@ -3,9 +3,18 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 const components: Components = {
-  a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-cyan-300 underline underline-offset-2 hover:text-cyan-100">{children}</a>
-  ),
+  a: ({ href = "", children }) => {
+    const internal = href.startsWith("/") || href.startsWith("#");
+    return (
+      <a
+        href={href}
+        {...(internal ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+        className="text-cyan-300 underline underline-offset-2 hover:text-cyan-100"
+      >
+        {children}
+      </a>
+    );
+  },
   // Keep externally generated media from making requests while text is revealed.
   img: ({ alt }) => <span>{alt}</span>,
   table: ({ children }) => (

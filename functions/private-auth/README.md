@@ -307,11 +307,11 @@ change the assistant's scope or request secrets. Assistant questions do not cons
 
 `POST /public/assistant/ask` is available to site visitors without a login cookie or CSRF token.
 It accepts only `pagePath` and one question of at most 140 characters; conversation history is
-rejected and nothing is persisted. The function loads the trusted current-page material from
+rejected and nothing is persisted. The function loads the trusted current-page or notes-index material from
 `/ai-assistant-context.json`, asks `PUBLIC_ASSISTANT_MODEL` for a concise Simplified Chinese answer,
 and supports the same streamed and JSON response modes.
-Opening the assistant automatically asks it to summarize the current page; visitors can then enter
-follow-up questions. The system prompt confines answers to the homepage, current note or wedding
+Opening the assistant presents page-specific starter questions without sending a request. The system
+prompt confines answers to the homepage, notes index, current note or wedding
 memorial page, treats page and visitor text as
 untrusted, and caps each model response at 500 tokens. The route requires an allowed browser
 Origin.

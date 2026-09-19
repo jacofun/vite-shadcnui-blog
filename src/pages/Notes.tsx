@@ -8,6 +8,7 @@ import { ArrowRight, Search, X } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams } from "react-router-dom";
 
+import PublicAiAssistant from "@/components/common/PublicAiAssistant";
 import {
   formatNoteDate,
   noteCategories,
@@ -193,6 +194,7 @@ export default function Notes(): JSX.Element {
           )}
         </div>
       </main>
+      <PublicAiAssistant pagePath="/notes" />
     </>
   );
 }

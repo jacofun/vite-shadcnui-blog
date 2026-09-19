@@ -62,6 +62,26 @@ function canonicalRoute(route) {
   return `${route.replace(/\/+$/, "")}/`;
 }
 
+function headingId(text) {
+  return text
+    .replace(/[*_`]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w\u3400-\u9fff\s-]/g, "")
+    .replace(/\s+/g, "-");
+}
+
+function noteHeadings(content) {
+  return content
+    .split("\n")
+    .map((line) => line.match(/^(#{2,3})\s+(.+)$/))
+    .filter(Boolean)
+    .map((match) => {
+      const text = match[2].replace(/[*_`]/g, "");
+      return `- [${text}](#${headingId(text)})`;
+    });
+}
+
 await mkdir(publicDir, { recursive: true });
 await mkdir(generatedDir, { recursive: true });
 
@@ -118,6 +138,16 @@ const assistantContext = {
         `- ${note.title}（${note.updated || note.date}，${note.tags.join("、") || "未分类"}）：${note.summary}`),
     ].join("\n"),
   },
+  notesIndex: {
+    path: "/notes",
+    title: "全部笔记",
+    summary: "按自然语言查找和浏览 yanxiao.me 的公开笔记。",
+    content: [
+      "以下是本站全部公开笔记。回答推荐或检索问题时，只能依据这份列表，并保留列表中的站内链接。",
+      ...notes.map((note) =>
+        `- [${note.title}](/notes/${note.slug})（${note.updated || note.date}；${note.tags.join("、") || "未分类"}）：${note.summary}`),
+    ].join("\n"),
+  },
   wedding: {
     path: "/wedding",
     title: "吴彦骁 & 焦芮的婚礼纪念页",
@@ -134,7 +164,12 @@ const assistantContext = {
     path: `/notes/${note.slug}`,
     title: note.title,
     summary: note.summary,
-    content: note.content,
+    content: [
+      "回答引用文章依据时，可以使用以下章节链接：",
+      ...noteHeadings(note.content),
+      "\n文章正文：",
+      note.content,
+    ].join("\n"),
   })),
 };
 

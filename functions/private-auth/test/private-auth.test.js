@@ -169,6 +169,12 @@ test("answers public page questions without authentication using the dedicated m
           return JSON.stringify({
             schemaVersion: 1,
             home: { path: "/", title: "彦骁的笔记", summary: "首页", content: "首页最近发布了几篇文章。" },
+            notesIndex: {
+              path: "/notes",
+              title: "全部笔记",
+              summary: "公开笔记索引",
+              content: "- [AI 如何协助内容处理](/notes/how-ai-helps-me-learn-english)：介绍 AI 辅助工作流。",
+            },
             wedding: {
               path: "/wedding",
               title: "吴彦骁 & 焦芮的婚礼纪念页",
@@ -195,6 +201,12 @@ test("answers public page questions without authentication using the dedicated m
         assert.match(requestBody.messages[1].content, /2025年10月19日/u);
         return { ok: true, async json() {
           return { choices: [{ message: { content: "这是吴彦骁和焦芮的婚礼纪念页，记录了婚礼照片、日期和地点。" } }] };
+        } };
+      }
+      if (question === "推荐 AI 相关文章") {
+        assert.match(requestBody.messages[1].content, /\[AI 如何协助内容处理\]\(\/notes\/how-ai-helps-me-learn-english\)/u);
+        return { ok: true, async json() {
+          return { choices: [{ message: { content: "可以阅读[AI 如何协助内容处理](/notes/how-ai-helps-me-learn-english)。" } }] };
         } };
       }
       assert.match(requestBody.messages[1].content, /AI 生成练习并批改英语复述/u);
@@ -249,6 +261,15 @@ test("answers public page questions without authentication using the dedicated m
   assert.equal(weddingResponse.statusCode, 200, weddingResponse.body);
   assert.match(responseJson(weddingResponse).answer, /婚礼纪念页/u);
   assert.equal(calls.length, 5);
+
+  const notesIndexResponse = await handler(request({
+    method: "POST",
+    path: "/api/private-auth/public/assistant/ask",
+    body: { pagePath: "/notes", question: "推荐 AI 相关文章" },
+  }));
+  assert.equal(notesIndexResponse.statusCode, 200, notesIndexResponse.body);
+  assert.match(responseJson(notesIndexResponse).answer, /\/notes\/how-ai-helps-me-learn-english/u);
+  assert.equal(calls.length, 7);
 });
 
 test("streams public assistant responses when requested by the browser", async () => {
