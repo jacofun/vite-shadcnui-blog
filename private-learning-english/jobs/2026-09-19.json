@@ -1,0 +1,252 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-09-19",
+  "episodeId": "230223-the-health-benefits-of-apples",
+  "title": "The health benefits of apples",
+  "publishedAt": "2023-02-23",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2023/ep-230223",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230223_6min_english_apple_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230223_6min_english_apple.pdf",
+  "reason": "近期课程连续覆盖了人工智能、通胀、未来工作、效率工具和沟通礼貌，今天轮换到日常饮食与健康。本集围绕苹果皮中的营养成分、健康益处和多种食用方式展开，内容轻松但因果链清晰。练习反复调用 pass something down、reach for、be packed with、be linked to 等高频表达，便于从理解逐步过渡到描述个人习惯和健康选择。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "日常生活",
+    "健康饮食",
+    "生活习惯",
+    "因果表达",
+    "主动输出",
+    "精听"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "pass something down through generations",
+        "meaning": "teach or give an idea, tradition or object to younger people over time",
+        "usage": "Use it for traditions or knowledge: This troubleshooting habit was passed down through generations of engineers."
+      },
+      {
+        "expression": "reach for something",
+        "meaning": "choose or try to take something, often because it is convenient or wanted",
+        "usage": "Use it for an immediate choice: When I need a quick snack, I reach for an apple."
+      },
+      {
+        "expression": "be packed with",
+        "meaning": "contain a large amount of something useful or interesting",
+        "usage": "Use it to emphasise rich content: The report is packed with practical examples."
+      },
+      {
+        "expression": "be linked to",
+        "meaning": "be connected with or associated with something",
+        "usage": "Use it for evidence-based connections: Regular breaks are linked to better concentration."
+      },
+      {
+        "expression": "keep something in good shape",
+        "meaning": "help something remain healthy or in good condition",
+        "usage": "Use it for health or maintenance: Regular checks keep the service in good shape."
+      },
+      {
+        "expression": "what's more",
+        "meaning": "used to add another important or surprising point",
+        "usage": "Use it to strengthen an explanation: The change saves time; what's more, it reduces errors."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "proverbs-passed-down",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript idea: Proverbs are often ______ through the generations to teach children lessons in life.",
+        "targetExpression": "pass something down through generations",
+        "answers": [
+          "passed down",
+          "passed down through the generations"
+        ],
+        "explanation": "The programme says proverbs are passed down through generations, meaning older people transmit them to younger people."
+      },
+      {
+        "id": "reach-for-meaning",
+        "type": "single-choice",
+        "prompt": "When Dr Mosley was slightly hungry, he “reached for an apple”. What does this mean in context?",
+        "targetExpression": "reach for something",
+        "options": [
+          {
+            "id": "a",
+            "text": "He chose an apple as his snack."
+          },
+          {
+            "id": "b",
+            "text": "He planted an apple tree."
+          },
+          {
+            "id": "c",
+            "text": "He compared an apple with a doctor."
+          },
+          {
+            "id": "d",
+            "text": "He refused to eat anything."
+          }
+        ],
+        "answer": "a",
+        "explanation": "In this context, reach for means choosing or taking the apple when he wanted a snack."
+      },
+      {
+        "id": "skins-packed-with",
+        "type": "fill-blank",
+        "prompt": "Complete the description: Apple skins are ______ fibre, vitamins and flavonoids.",
+        "targetExpression": "be packed with",
+        "answers": [
+          "packed with",
+          "full of"
+        ],
+        "explanation": "The transcript says apple skins are full of good substances; be packed with expresses the same idea strongly."
+      },
+      {
+        "id": "linked-to-life",
+        "type": "single-choice",
+        "prompt": "Which statement correctly reflects how “be linked to” is used in the programme?",
+        "targetExpression": "be linked to",
+        "options": [
+          {
+            "id": "a",
+            "text": "Flavonoids have been linked to a longer life."
+          },
+          {
+            "id": "b",
+            "text": "Flavonoids have linked a longer life to eat."
+          },
+          {
+            "id": "c",
+            "text": "A longer life is linking flavonoids yesterday."
+          },
+          {
+            "id": "d",
+            "text": "Flavonoids linked to without any connection."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The natural passive pattern is be linked to + noun, and the transcript associates flavonoids with longer life."
+      },
+      {
+        "id": "heart-in-shape",
+        "type": "fill-blank",
+        "prompt": "Complete Dr Mosley's claim: An apple a day may keep your heart, gut and waistline ______.",
+        "targetExpression": "keep something in good shape",
+        "answers": [
+          "in good shape"
+        ],
+        "explanation": "In good shape means healthy or in good condition, which is how the expression is used in the transcript."
+      },
+      {
+        "id": "versatile-reason",
+        "type": "single-choice",
+        "prompt": "Why does Dr Mosley describe apples as versatile?",
+        "targetExpression": "what's more",
+        "options": [
+          {
+            "id": "a",
+            "text": "They can be eaten as a snack, grated into porridge, served with yoghurt or baked."
+          },
+          {
+            "id": "b",
+            "text": "They can only be eaten raw and whole."
+          },
+          {
+            "id": "c",
+            "text": "They are always imported from distant countries."
+          },
+          {
+            "id": "d",
+            "text": "Cooking them removes every useful substance."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript gives several different ways to prepare apples, showing that they can be used in many ways."
+      },
+      {
+        "id": "whats-more-connector",
+        "type": "fill-blank",
+        "prompt": "Add the transcript connector: Apples can be prepared in many ways. ______, cooking them does not damage the healthy flavonoids.",
+        "targetExpression": "what's more",
+        "answers": [
+          "What's more",
+          "What’s more",
+          "what's more",
+          "what’s more"
+        ],
+        "explanation": "What's more introduces an additional point that strengthens the argument about the benefits and usefulness of apples."
+      },
+      {
+        "id": "packed-with-transfer",
+        "type": "single-choice",
+        "prompt": "Which sentence uses “be packed with” naturally outside the food context?",
+        "targetExpression": "be packed with",
+        "options": [
+          {
+            "id": "a",
+            "text": "The training session is packed with useful examples."
+          },
+          {
+            "id": "b",
+            "text": "The training session packed useful examples with."
+          },
+          {
+            "id": "c",
+            "text": "Useful examples are pack the session yesterday."
+          },
+          {
+            "id": "d",
+            "text": "The session is packed to useful examples."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Be packed with can describe anything containing many useful things, including a session rich in examples."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-apple-skins",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. Use “be packed with” and complete this idea: “Apple skins…”",
+        "targetExpression": "be packed with",
+        "gradingCriteria": "A supported answer should say apple skins are packed with fibre, vitamins and/or flavonoids. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase is needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-snack-choice",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why Dr Mosley reaches for an apple instead of an exotic superfood. Use “reach for something”. You may start: “He reaches for…”",
+        "targetExpression": "reach for something",
+        "gradingCriteria": "A supported answer should explain that he chooses an apple because it is a simple snack with several health benefits. First judge whether the response answers the question, then check whether reach for is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-longer-life",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, paraphrase this idea using “be linked to”: “Research connects the flavonoids in apple skin with living longer.”",
+        "targetExpression": "be linked to",
+        "gradingCriteria": "A successful answer should preserve the connection between flavonoids in apple skin and a longer life while using be linked to naturally. First judge whether the response answers the question, then check the target expression. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-work-snack",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about choosing a snack during a busy workday. Phrase bank: “reach for something”, “be packed with”, “keep something in good shape”. Use at least one phrase and give one reason for your choice.",
+        "targetExpression": "reach for something",
+        "gradingCriteria": "A successful answer should stay in the busy-workday snack scenario, name a specific choice, give one clear reason and naturally use at least one phrase from the bank. First judge whether the response answers the question, then check expression use. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. Suggest at most one alternative from today's expressions or transcript. Distinguish missing meaning from correct but less natural wording."
+      },
+      {
+        "id": "bounded-free-response-small-habit",
+        "type": "application",
+        "prompt": "In 40–70 words, describe one small food habit that could support your health. Explain why it is practical and naturally use at least one of today's target expressions.",
+        "targetExpression": "keep something in good shape",
+        "gradingCriteria": "A successful answer should describe one realistic food habit, explain why it is practical and use at least one target expression naturally. First judge whether the response answers the question, then check expression use. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) topic—the proverb about eating an apple a day; (2) two reasons apples may be healthy; (3) examples of how apples can be eaten. Phrase bank: “be packed with”, “be linked to”, “keep something in good shape”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "The programme examines whether the proverb ‘an apple a day keeps the doctor away’ has scientific support.",
+      "Apple skins contain fibre, vitamins and flavonoids.",
+      "Flavonoids are associated with lower blood pressure and better brain and heart health.",
+      "Dr Mosley chooses an ordinary apple rather than an exotic superfood when he wants a snack.",
+      "Apples are versatile: they can be eaten as snacks, grated into porridge, served with yoghurt or baked.",
+      "Cooking apples does not destroy the healthy flavonoids discussed in the programme."
+    ]
+  }
+}
