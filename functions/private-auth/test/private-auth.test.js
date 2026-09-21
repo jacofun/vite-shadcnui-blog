@@ -67,10 +67,11 @@ test("Just Write keeps multiple daily entries private and separates AI advice fr
     fetchImpl: async (_url, options) => {
       const payload = JSON.parse(options.body);
       assert.match(payload.messages[1].content, /Today I go to the park/u);
+      assert.match(payload.messages[0].content, /English only/u);
       return { ok: true, async json() { return { choices: [{ message: { content: JSON.stringify({
-        improvements: [{ original: "I go", suggestion: "I went", reason: "过去发生的事用过去式。" }],
+        improvements: [{ original: "I go", suggestion: "I went", reason: "Use the past tense for a past event." }],
         lightRevision: "Today I went to the park.",
-        expressions: [{ phrase: "take a walk", meaning: "散步", example: "I took a walk after lunch." }],
+        expressions: [{ phrase: "take a walk", meaning: "To go for a relaxed walk.", example: "I took a walk after lunch." }],
       }) } }] }; } };
     },
   };
@@ -84,12 +85,50 @@ test("Just Write keeps multiple daily entries private and separates AI advice fr
   const updated = (await call("save", { id: first.id, date: first.date, text: first.text, review })).entry;
   assert.equal(updated.text, first.text);
   assert.equal(updated.review.expressions[0].phrase, "take a walk");
+  const markdown = "## Small improvements\n- **I go** → **I went**: Past tense.\n\n## A lightly polished version\nToday I went to the park.\n\n## Expressions to keep\n- **Take a walk** — to walk for pleasure.";
+  await call("save", { id: first.id, date: first.date, text: first.text, review: { markdown } });
+  assert.equal((await call("list")).entries.find((item) => item.id === first.id).review.markdown, markdown);
+  await assert.rejects(call("save", { id: first.id, date: first.date, text: first.text, review: { markdown: "中文反馈" } }), { code: "INVALID_REVIEW" });
   await call("save", { id: first.id, date: first.date, text: "Today I went to the park." });
   assert.equal(document.entries[0].review, undefined);
   assert.equal((await call("list")).entries.length, 2);
   await assert.rejects(call("save", { date: "2026-02-30", text: "Invalid date" }), { code: "INVALID_DATE" });
   await call("delete", { id: second.id });
   assert.equal((await call("list")).entries.length, 1);
+});
+
+test("Just Write streams English Markdown deltas and rejects non-English feedback", async () => {
+  const encoder = new TextEncoder();
+  const modelResponse = (chunks) => ({ ok: true, body: new ReadableStream({
+    start(controller) {
+      for (const content of chunks) controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`));
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  }) });
+  let modelRequest;
+  const args = {
+    route: "just-write/teach", body: { text: "Today I go to the park." },
+    user: { role: "owner" }, stream: true,
+    env: createEnv({ DASHSCOPE_API_KEY: "test-key", DASHSCOPE_BASE_URL: "https://dashscope.example/v1" }),
+    fetchImpl: async (_url, options) => {
+      modelRequest = JSON.parse(options.body);
+      return modelResponse(["## Small improvements\n", "- **I go** → **I went**.\n", "## Expressions to keep\n- Take a walk."]);
+    },
+  };
+  const stream = await __test.handleJustWrite(args);
+  let output = "";
+  for await (const event of stream) output += event;
+  assert.equal(modelRequest.stream, true);
+  assert.equal(modelRequest.response_format, undefined);
+  assert.match(modelRequest.messages[0].content, /entire reply in English using Markdown/u);
+  assert.match(output, /event: meta/u);
+  assert.match(output, /event: delta\ndata: \{"content":"## Small improvements/u);
+  assert.match(output, /event: done/u);
+  const invalid = await __test.handleJustWrite({ ...args, fetchImpl: async () => modelResponse(["## Small improvements\n", "中文反馈"]) });
+  await assert.rejects(async () => {
+    for await (const _event of invalid) { /* Read the full response, including validation errors. */ }
+  }, { code: "INVALID_JUST_WRITE_REVIEW" });
 });
 
 test("foreground health checks skip dependencies and allow trusted HTTPS subdomains", async () => {
@@ -1055,7 +1094,13 @@ test("owner creates a file collection and publishes a verified FLV upload", asyn
     },
   };
   const handler = createHandler({
-    env: createEnv(), contentStore, now: () => NOW,
+    env: createEnv({ DASHSCOPE_API_KEY: "test-key", DASHSCOPE_BASE_URL: "https://dashscope.example/v1" }), contentStore, now: () => NOW,
+    fetchImpl: async () => ({ ok: true, body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"## Small improvements\\nA private day."}}]}\n\ndata: [DONE]\n\n'));
+        controller.close();
+      },
+    }) }),
     randomBytesImpl: (size) => Buffer.alloc(size, 12),
     generateAuthenticationOptionsImpl: async () => ({ challenge: "collection-challenge" }),
     verifyAuthenticationResponseImpl: async () => ({
@@ -1118,6 +1163,16 @@ test("owner creates a file collection and publishes a verified FLV upload", asyn
   assert.equal(writingWithoutCsrf.statusCode, 403);
   const loadedWriting = await handler(request({ method: "POST", path: "/just-write/list", cookie, csrf, body: {} }));
   assert.equal(responseJson(loadedWriting).entries[0].id, writingId);
+  const streamedWriting = await handler(request({
+    method: "POST", path: "/just-write/teach", cookie, csrf, accept: "text/event-stream",
+    body: { text: "A private day." },
+  }));
+  assert.equal(streamedWriting.statusCode, 200, streamedWriting.body);
+  assert.match(streamedWriting.headers["content-type"], /text\/event-stream/u);
+  let streamedEvents = "";
+  for await (const event of streamedWriting.body) streamedEvents += event;
+  assert.match(streamedEvents, /event: delta/u);
+  assert.match(streamedEvents, /event: done/u);
 
   const deletedFile = await handler(request({
     method: "POST", path: "/files/delete", cookie, csrf,

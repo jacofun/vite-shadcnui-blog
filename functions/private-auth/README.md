@@ -256,7 +256,7 @@ All paths are relative to `/api/private-auth/`.
 | `POST clipboard/get` | Read the private OSS-backed text clipboard |
 | `POST clipboard/save` / `POST clipboard/delete` | Add or remove clipboard entries; owner or write grant only |
 | `POST just-write/list` / `POST just-write/save` / `POST just-write/delete` | List, create, revise and delete personal English writing; owner only |
-| `POST just-write/teach` | Return optional AI feedback without changing the original; owner only |
+| `POST just-write/teach` | Stream English Markdown advice with `Accept: text/event-stream`; owner only |
 | `POST assessment/grade` | Independently grade and persist a retelling or one AI short-answer question |
 | `POST assessment/result` | Return the latest retelling result, or a question result when `questionId` is supplied |
 | `POST assessment/ask` | Answer a question about the current episode through the shared assessment model |
@@ -265,7 +265,7 @@ All paths are relative to `/api/private-auth/`.
 | `POST uploads/complete` | Verify every uploaded object, write metadata and publish the collection index |
 | `POST logout` | Revoke the current persistent session |
 
-Just Write entries and optional AI feedback live in `fc/just-write/owner/entries.json`, outside the signed private resource catalog. The service checks the owner role for every Just Write operation. `teach` sends the submitted text to the configured assessment model and returns advice without saving the draft.
+Just Write entries and optional AI feedback live in `fc/just-write/owner/entries.json`, outside the signed private resource catalog. The service checks the owner role for every Just Write operation. `teach` sends the submitted text to the configured assessment model and streams English Markdown advice without saving the draft. Without the stream accept header, it returns the older structured JSON response in English for existing clients. Previously saved structured feedback remains readable.
 
 Recent authentication lasts five minutes. WebAuthn verification requires user verification, the
 configured origin and RP ID. Persistent fixed-window limits allow 120 authentication attempts per

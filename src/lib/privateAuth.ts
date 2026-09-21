@@ -18,11 +18,13 @@ export interface PrivateAuthSession {
   user: PrivateAuthUser;
 }
 
-export interface JustWriteReview {
+export interface LegacyJustWriteReview {
   improvements: Array<{ original: string; suggestion: string; reason: string }>;
   lightRevision: string;
   expressions: Array<{ phrase: string; meaning: string; example: string }>;
 }
+
+export type JustWriteReview = LegacyJustWriteReview | { markdown: string };
 
 export interface JustWriteEntry {
   id: string;
@@ -48,8 +50,30 @@ export function deleteJustWrite(session: PrivateAuthSession, id: string): Promis
   return request("just-write/delete", { body: { id }, csrfToken: session.csrfToken });
 }
 
-export function teachJustWrite(session: PrivateAuthSession, text: string): Promise<{ review: JustWriteReview }> {
-  return request("just-write/teach", { body: { text }, csrfToken: session.csrfToken });
+export async function teachJustWrite(
+  session: PrivateAuthSession,
+  text: string,
+  onDelta: (content: string) => void,
+  signal?: AbortSignal,
+): Promise<{ model: string }> {
+  const response = await fetch(`${API_BASE}/just-write/teach`, {
+    method: "POST",
+    headers: {
+      Accept: "text/event-stream",
+      "Content-Type": "application/json",
+      "X-CSRF-Token": session.csrfToken,
+    },
+    body: JSON.stringify({ text }),
+    credentials: "include",
+    cache: "no-store",
+    signal,
+  });
+  if (response.status === 401) notifyPrivateAuthInvalidated();
+  return readAssistantEventStream(
+    response,
+    onDelta,
+    (status, code, message) => new PrivateAuthApiError(status, code, message),
+  );
 }
 
 export interface SignedPrivateResources {

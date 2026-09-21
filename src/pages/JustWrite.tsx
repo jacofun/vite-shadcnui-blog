@@ -1,9 +1,10 @@
 import { ArrowLeft, ArrowRight, BookOpen, LoaderCircle, PenLine, Plus, Sparkles, Trash2 } from "lucide-react";
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
+import AssistantMessage from "@/components/common/AssistantMessage";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
 import { deleteJustWrite, listJustWrite, saveJustWrite, teachJustWrite, type JustWriteEntry, type JustWriteReview, type PrivateAuthSession } from "@/lib/privateAuth";
 
@@ -101,6 +102,8 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
   const [date, setDate] = useState(today);
   const [text, setText] = useState("");
   const [review, setReview] = useState<JustWriteReview | null>(null);
+  const [streamingReview, setStreamingReview] = useState("");
+  const teachAbortRef = useRef<AbortController | null>(null);
   const [reviewedText, setReviewedText] = useState("");
   const [loading, setLoading] = useState(Boolean(entryId));
   const [busy, setBusy] = useState<"done" | "teach" | null>(null);
@@ -113,6 +116,8 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
+
+  useEffect(() => () => teachAbortRef.current?.abort(), []);
 
   useEffect(() => {
     if (!entryId) return;
@@ -147,14 +152,31 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
   async function teach(): Promise<void> {
     if (!text.trim() || busy) return;
     setBusy("teach"); setError("");
+    const previousReview = review;
+    const previousReviewedText = reviewedText;
+    setReview(null);
+    setStreamingReview("");
+    const controller = new AbortController();
+    teachAbortRef.current = controller;
+    const snapshot = text;
+    setReviewedText(snapshot);
     try {
-      const snapshot = text;
-      const result = await teachJustWrite(session, snapshot);
-      setReview(result.review);
-      setReviewedText(snapshot);
+      let markdown = "";
+      await teachJustWrite(session, snapshot, (delta) => {
+        if (controller.signal.aborted) return;
+        markdown += delta;
+        setStreamingReview(markdown);
+      }, controller.signal);
+      if (!controller.signal.aborted) setReview({ markdown });
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "AI 建议获取失败，请稍后重试");
+      setStreamingReview("");
+      if (!controller.signal.aborted) {
+        setReview(previousReview);
+        setReviewedText(previousReviewedText);
+        setError(failure instanceof Error ? failure.message : "AI feedback is unavailable. Please try again.");
+      }
     } finally {
+      if (teachAbortRef.current === controller) teachAbortRef.current = null;
       setBusy(null);
     }
   }
@@ -166,13 +188,16 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
       <label className="block text-xs text-slate-400" htmlFor="just-write-date">日期</label>
       <input className="mt-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-slate-100 [color-scheme:dark]" id="just-write-date" max="9999-12-31" onChange={(event) => setDate(event.target.value)} type="date" value={date} />
       <label className="mt-6 block text-xs text-slate-400" htmlFor="just-write-text">今天想写什么？</label>
-      <textarea autoFocus className="mt-2 min-h-[45svh] w-full resize-y rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-base leading-8 text-slate-100 outline-none placeholder:text-slate-600 focus:border-emerald-300/40" id="just-write-text" maxLength={8000} onChange={(event) => { setText(event.target.value); setReview(null); setReviewedText(""); }} placeholder="Today, I..." value={text} />
+      <textarea autoFocus className="mt-2 min-h-[45svh] w-full resize-y rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-base leading-8 text-slate-100 outline-none placeholder:text-slate-600 focus:border-emerald-300/40" id="just-write-text" maxLength={8000} onChange={(event) => { teachAbortRef.current?.abort(); setText(event.target.value); setReview(null); setStreamingReview(""); setReviewedText(""); }} placeholder="Today, I..." value={text} />
       <p className="mt-2 text-right text-xs text-slate-600">{text.length} / 8000</p>
-      {review && reviewedText === text && <section aria-label="AI 写作建议" className="mt-8 space-y-6 rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.045] p-5 sm:p-7">
-        <div><h2 className="flex items-center gap-2 text-lg font-medium text-emerald-200"><Sparkles className="size-5" />Teach me</h2><p className="mt-2 text-xs text-slate-400">这些只是建议，原文仍由你决定。</p></div>
-        {review.improvements.length > 0 ? <div><h3 className="text-sm font-medium text-white">可以这样说</h3><div className="mt-3 space-y-4">{review.improvements.map((item, index) => <div className="rounded-xl bg-black/20 p-4 text-sm leading-7" key={index}><p className="break-words text-slate-500 line-through">{item.original}</p><p className="break-words text-emerald-200">{item.suggestion}</p><p className="mt-1 break-words text-slate-400">{item.reason}</p></div>)}</div></div> : <p className="text-sm text-slate-300">这段表达已经很自然，可以保持原样。</p>}
-        <div><h3 className="text-sm font-medium text-white">轻微润色</h3><p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-slate-300">{review.lightRevision}</p></div>
-        <div><h3 className="text-sm font-medium text-white">值得带走的表达</h3><div className="mt-3 space-y-3">{review.expressions.map((item, index) => <div className="rounded-xl bg-black/20 p-4 text-sm leading-7" key={index}><p className="font-medium text-emerald-200">{item.phrase}</p><p className="text-slate-300">{item.meaning}</p><p className="break-words text-slate-500">{item.example}</p></div>)}</div></div>
+      {(review || busy === "teach") && reviewedText === text && <section aria-label="AI writing feedback" aria-live="polite" className="mt-8 space-y-6 rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.045] p-5 sm:p-7">
+        <div><h2 className="flex items-center gap-2 text-lg font-medium text-emerald-200"><Sparkles className="size-5" />Teach me</h2><p className="mt-2 text-xs text-slate-400">Suggestions only. Your original writing stays yours.</p></div>
+        {(review && "markdown" in review) || streamingReview ? <AssistantMessage content={review && "markdown" in review ? review.markdown : streamingReview} /> : busy === "teach" ? <p className="flex items-center gap-2 text-sm text-slate-400"><LoaderCircle className="size-4 animate-spin" />Thinking about your writing…</p> : null}
+        {review && "improvements" in review && <>
+          {review.improvements.length > 0 ? <div><h3 className="text-sm font-medium text-white">Small improvements</h3><div className="mt-3 space-y-4">{review.improvements.map((item, index) => <div className="rounded-xl bg-black/20 p-4 text-sm leading-7" key={index}><p className="break-words text-slate-500 line-through">{item.original}</p><p className="break-words text-emerald-200">{item.suggestion}</p><p className="mt-1 break-words text-slate-400">{item.reason}</p></div>)}</div></div> : <p className="text-sm text-slate-300">This already reads naturally.</p>}
+          <div><h3 className="text-sm font-medium text-white">A lightly polished version</h3><p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-slate-300">{review.lightRevision}</p></div>
+          <div><h3 className="text-sm font-medium text-white">Expressions to keep</h3><div className="mt-3 space-y-3">{review.expressions.map((item, index) => <div className="rounded-xl bg-black/20 p-4 text-sm leading-7" key={index}><p className="font-medium text-emerald-200">{item.phrase}</p><p className="text-slate-300">{item.meaning}</p><p className="break-words text-slate-500">{item.example}</p></div>)}</div></div>
+        </>}
       </section>}
       <div className="sticky bottom-0 -mx-5 mt-8 flex flex-wrap justify-end gap-3 border-t border-white/10 bg-[#070a12]/95 px-5 py-4 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0">
         <button className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/25 px-5 py-3 text-sm font-medium text-emerald-200 transition hover:bg-emerald-300/10 disabled:opacity-40" disabled={!text.trim() || Boolean(busy)} onClick={() => void teach()} type="button">{busy === "teach" ? <LoaderCircle className="size-4 animate-spin" /> : <Sparkles className="size-4" />}teach me</button>
