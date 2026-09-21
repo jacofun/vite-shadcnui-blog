@@ -1,4 +1,4 @@
-import { ArrowRight, Clipboard, FolderLock, FolderPlus, Headphones, LogOut, Play, RefreshCw, ShieldCheck, UploadCloud, Video } from "lucide-react";
+import { ArrowRight, Clipboard, FolderLock, FolderPlus, Headphones, LogOut, PenLine, Play, RefreshCw, ShieldCheck, UploadCloud, Video } from "lucide-react";
 import { useEffect, useRef, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
@@ -146,6 +146,16 @@ export default function PrivateResources(): JSX.Element {
               </aside>
             )}
           </div>
+
+          {access.session?.user.role === "owner" && (
+            <Link className="group mt-9 flex max-w-3xl items-center justify-between gap-4 rounded-2xl border border-emerald-300/25 bg-gradient-to-r from-emerald-300/[0.13] to-cyan-300/[0.04] p-5 transition hover:border-emerald-300/45 hover:bg-emerald-300/[0.14] sm:p-6" to="/resources/just-write">
+              <span className="flex min-w-0 items-center gap-4">
+                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-emerald-300/15 text-emerald-200"><PenLine className="size-5" /></span>
+                <span className="min-w-0"><span className="block text-xl font-semibold tracking-tight text-white">Just Write</span><span className="mt-1 block text-sm text-slate-400">用英语记下今天，随时续写。</span></span>
+              </span>
+              <ArrowRight className="size-5 shrink-0 text-emerald-200 transition group-hover:translate-x-1" />
+            </Link>
+          )}
 
           {continueEntry && (
             <section aria-label="继续播放" className="mt-12 max-w-3xl">

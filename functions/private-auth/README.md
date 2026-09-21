@@ -255,6 +255,8 @@ All paths are relative to `/api/private-auth/`.
 | `POST files/delete` | Remove an indexed file and its metadata; owner or write grant only |
 | `POST clipboard/get` | Read the private OSS-backed text clipboard |
 | `POST clipboard/save` / `POST clipboard/delete` | Add or remove clipboard entries; owner or write grant only |
+| `POST just-write/list` / `POST just-write/save` / `POST just-write/delete` | List, create, revise and delete personal English writing; owner only |
+| `POST just-write/teach` | Return optional AI feedback without changing the original; owner only |
 | `POST assessment/grade` | Independently grade and persist a retelling or one AI short-answer question |
 | `POST assessment/result` | Return the latest retelling result, or a question result when `questionId` is supplied |
 | `POST assessment/ask` | Answer a question about the current episode through the shared assessment model |
@@ -262,6 +264,8 @@ All paths are relative to `/api/private-auth/`.
 | `POST uploads/init` | Validate metadata and return short-lived, path-bound OSS PUT URLs; owner or write grant only |
 | `POST uploads/complete` | Verify every uploaded object, write metadata and publish the collection index |
 | `POST logout` | Revoke the current persistent session |
+
+Just Write entries and optional AI feedback live in `fc/just-write/owner/entries.json`, outside the signed private resource catalog. The service checks the owner role for every Just Write operation. `teach` sends the submitted text to the configured assessment model and returns advice without saving the draft.
 
 Recent authentication lasts five minutes. WebAuthn verification requires user verification, the
 configured origin and RP ID. Persistent fixed-window limits allow 120 authentication attempts per

@@ -18,6 +18,40 @@ export interface PrivateAuthSession {
   user: PrivateAuthUser;
 }
 
+export interface JustWriteReview {
+  improvements: Array<{ original: string; suggestion: string; reason: string }>;
+  lightRevision: string;
+  expressions: Array<{ phrase: string; meaning: string; example: string }>;
+}
+
+export interface JustWriteEntry {
+  id: string;
+  date: string;
+  text: string;
+  createdAt: string;
+  updatedAt: string;
+  review?: JustWriteReview;
+}
+
+export function listJustWrite(session: PrivateAuthSession, signal?: AbortSignal): Promise<{ entries: JustWriteEntry[] }> {
+  return request("just-write/list", { body: {}, csrfToken: session.csrfToken, signal });
+}
+
+export function saveJustWrite(
+  session: PrivateAuthSession,
+  entry: { id?: string; date: string; text: string; review?: JustWriteReview | null },
+): Promise<{ entry: JustWriteEntry }> {
+  return request("just-write/save", { body: entry, csrfToken: session.csrfToken });
+}
+
+export function deleteJustWrite(session: PrivateAuthSession, id: string): Promise<{ deleted: true }> {
+  return request("just-write/delete", { body: { id }, csrfToken: session.csrfToken });
+}
+
+export function teachJustWrite(session: PrivateAuthSession, text: string): Promise<{ review: JustWriteReview }> {
+  return request("just-write/teach", { body: { text }, csrfToken: session.csrfToken });
+}
+
 export interface SignedPrivateResources {
   expiresAt: number;
   resources: Record<string, string>;

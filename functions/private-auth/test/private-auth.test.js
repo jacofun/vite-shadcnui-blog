@@ -45,6 +45,53 @@ function cookiePair(setCookie) {
   return setCookie.split(";", 1)[0];
 }
 
+test("Just Write keeps multiple daily entries private and separates AI advice from the original", async () => {
+  let document = { schemaVersion: 1, entries: [] };
+  const store = {
+    async readJson(path) {
+      assert.equal(path, "fc/just-write/owner/entries.json");
+      return structuredClone(document);
+    },
+    async updateJson(path, options, change) {
+      assert.equal(path, "fc/just-write/owner/entries.json");
+      assert.equal(options.validate(document), true);
+      document = change(structuredClone(document));
+      return structuredClone(document);
+    },
+  };
+  let serial = 0;
+  const shared = {
+    user: { role: "owner" }, contentStore: store, nowSeconds: NOW,
+    randomBytesImpl: () => Buffer.from(String(++serial).padStart(12, "0")),
+    env: createEnv({ DASHSCOPE_API_KEY: "test-key", DASHSCOPE_BASE_URL: "https://dashscope.example/v1" }),
+    fetchImpl: async (_url, options) => {
+      const payload = JSON.parse(options.body);
+      assert.match(payload.messages[1].content, /Today I go to the park/u);
+      return { ok: true, async json() { return { choices: [{ message: { content: JSON.stringify({
+        improvements: [{ original: "I go", suggestion: "I went", reason: "过去发生的事用过去式。" }],
+        lightRevision: "Today I went to the park.",
+        expressions: [{ phrase: "take a walk", meaning: "散步", example: "I took a walk after lunch." }],
+      }) } }] }; } };
+    },
+  };
+  const call = (route, body = {}, overrides = {}) => __test.handleJustWrite({ route: `just-write/${route}`, body, ...shared, ...overrides });
+  await assert.rejects(call("list", {}, { user: { role: "member", permissions: ["private-resources-write"] } }), { code: "MISSING_PERMISSION" });
+  const first = (await call("save", { date: "2026-09-21", text: "Today I go to the park." })).entry;
+  const second = (await call("save", { date: "2026-09-21", text: "Later I had tea." })).entry;
+  assert.notEqual(first.id, second.id);
+  const { review } = await call("teach", { text: first.text });
+  assert.equal(document.entries[0].review, undefined);
+  const updated = (await call("save", { id: first.id, date: first.date, text: first.text, review })).entry;
+  assert.equal(updated.text, first.text);
+  assert.equal(updated.review.expressions[0].phrase, "take a walk");
+  await call("save", { id: first.id, date: first.date, text: "Today I went to the park." });
+  assert.equal(document.entries[0].review, undefined);
+  assert.equal((await call("list")).entries.length, 2);
+  await assert.rejects(call("save", { date: "2026-02-30", text: "Invalid date" }), { code: "INVALID_DATE" });
+  await call("delete", { id: second.id });
+  assert.equal((await call("list")).entries.length, 1);
+});
+
 test("foreground health checks skip dependencies and allow trusted HTTPS subdomains", async () => {
   for (const mode of ["environment", "oss"]) {
     const unexpectedCall = () => { throw new Error("Health must not access dependencies"); };
@@ -1060,6 +1107,17 @@ test("owner creates a file collection and publishes a verified FLV upload", asyn
     method: "POST", path: "/clipboard/delete", cookie, csrf, body: { id: clipboardEntry.id },
   }));
   assert.equal(deletedClipboard.statusCode, 200, deletedClipboard.body);
+
+  const savedWriting = await handler(request({
+    method: "POST", path: "/just-write/save", cookie, csrf,
+    body: { date: "2026-09-21", text: "A private day." },
+  }));
+  assert.equal(savedWriting.statusCode, 200, savedWriting.body);
+  const writingId = responseJson(savedWriting).entry.id;
+  const writingWithoutCsrf = await handler(request({ method: "POST", path: "/just-write/list", cookie, body: {} }));
+  assert.equal(writingWithoutCsrf.statusCode, 403);
+  const loadedWriting = await handler(request({ method: "POST", path: "/just-write/list", cookie, csrf, body: {} }));
+  assert.equal(responseJson(loadedWriting).entries[0].id, writingId);
 
   const deletedFile = await handler(request({
     method: "POST", path: "/files/delete", cookie, csrf,

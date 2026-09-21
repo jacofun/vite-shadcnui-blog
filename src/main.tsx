@@ -45,6 +45,8 @@ const PrivateRouteBoundary = lazy(
 );
 const PrivateAuth = lazy(() => import("./pages/PrivateAuth.tsx"));
 const PrivateClipboard = lazy(() => import("./pages/PrivateClipboard.tsx"));
+const JustWrite = lazy(() => import("./pages/JustWrite.tsx"));
+const JustWriteEditor = lazy(() => import("./pages/JustWrite.tsx").then((module) => ({ default: module.JustWriteEditor })));
 const PrivateResources = lazy(() => import("./pages/PrivateResources.tsx"));
 const PrivateResourceCollection = lazy(() => import("./pages/PrivateResourceCollection.tsx"));
 const PrivateResourceItem = lazy(() => import("./pages/PrivateResourceItem.tsx"));
@@ -76,6 +78,9 @@ const router = createBrowserRouter([
           { path: "auth", element: lazyPage(<PrivateAuth />) },
           { path: "resources", element: lazyPage(<PrivateResources />) },
           { path: "resources/clipboard", element: lazyPage(<PrivateClipboard />) },
+          { path: "resources/just-write", element: lazyPage(<JustWrite />) },
+          { path: "resources/just-write/write", element: lazyPage(<JustWriteEditor />) },
+          { path: "resources/just-write/:entryId", element: lazyPage(<JustWriteEditor />) },
           { path: "resources/new", element: lazyPage(<PrivateResourceCreateCollection />) },
           { path: "resources/upload", element: lazyPage(<PrivateResourceUpload />) },
           { path: "resources/:collectionId", element: lazyPage(<PrivateResourceCollection />) },
