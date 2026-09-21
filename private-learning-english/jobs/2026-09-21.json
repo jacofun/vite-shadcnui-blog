@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-09-21",
+  "episodeId": "240711-the-school-that-puts-the-kids-in-charge",
+  "title": "The school that puts the kids in charge",
+  "publishedAt": "2024-07-11",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2024/ep-240711",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/240711_6_minute_english_the_school_that_puts_the_kids_in_charge_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/240711_6_minute_english_the_school_that_puts_the_kids_in_charge.pdf",
+  "reason": "近期课程覆盖了工作、效率、沟通礼貌和日常健康，今天轮换到项目管理与团队协作。本集介绍一所让学生参与采购、账目管理和日常运营的学校，适合联系责任分工、授权、实践学习与领导力培养。练习会反复调用 call the shots、be responsible for、hands-on experience 等高频表达，帮助把理解过的词组转化为工作场景中的主动表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "项目管理",
+    "团队协作",
+    "责任分工",
+    "领导力",
+    "实践学习",
+    "主动输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "call the shots",
+        "meaning": "have the power to make the important decisions in a situation",
+        "usage": "Use it when someone has decision-making authority: The product owner calls the shots on feature priorities."
+      },
+      {
+        "expression": "be responsible for",
+        "meaning": "have a duty to manage, complete or take care of something",
+        "usage": "Use it to describe ownership: The platform team is responsible for service reliability."
+      },
+      {
+        "expression": "hands-on experience",
+        "meaning": "practical experience gained by actively doing something",
+        "usage": "Use it for learning through practice: Running the test environment gave her hands-on experience."
+      },
+      {
+        "expression": "real-world experience",
+        "meaning": "experience of how things work in actual situations outside theory or the classroom",
+        "usage": "Use it to contrast practice with theory: The migration project gave the team real-world experience."
+      },
+      {
+        "expression": "be in charge of",
+        "meaning": "have control of or responsibility for a person, activity or area",
+        "usage": "Use it for a defined area of authority: She is in charge of the release process."
+      },
+      {
+        "expression": "in return",
+        "meaning": "as an exchange or response for something received or done",
+        "usage": "Use it for an exchange: The team received extra time and, in return, delivered clearer documentation."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "call-the-shots-meaning",
+        "type": "single-choice",
+        "prompt": "At the Bamboo School, the children “call the shots”. What does this mean?",
+        "targetExpression": "call the shots",
+        "options": [
+          {
+            "id": "a",
+            "text": "They make the important decisions."
+          },
+          {
+            "id": "b",
+            "text": "They take photographs for the school."
+          },
+          {
+            "id": "c",
+            "text": "They avoid all responsibility."
+          },
+          {
+            "id": "d",
+            "text": "They only follow instructions from adults."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme defines call the shots as having the power to make important decisions."
+      },
+      {
+        "id": "responsible-for-running",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript idea: The children are ______ every part of running the school.",
+        "targetExpression": "be responsible for",
+        "answers": [
+          "responsible for"
+        ],
+        "explanation": "The transcript says the children are responsible for many parts of school operations, including food purchases and staff decisions."
+      },
+      {
+        "id": "hands-on-definition",
+        "type": "single-choice",
+        "prompt": "Which situation is the best example of hands-on experience?",
+        "targetExpression": "hands-on experience",
+        "options": [
+          {
+            "id": "a",
+            "text": "Students buy food and check the school's actual spending."
+          },
+          {
+            "id": "b",
+            "text": "Students only read a definition of accounting."
+          },
+          {
+            "id": "c",
+            "text": "Students watch someone else work without taking part."
+          },
+          {
+            "id": "d",
+            "text": "Students imagine a task but never try it."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Hands-on experience means being actively involved in practical work rather than only discussing or observing it."
+      },
+      {
+        "id": "real-world-experience",
+        "type": "fill-blank",
+        "prompt": "Complete Nooneem's contrast: At her old school she only attended classes, but at the Bamboo School she gains ______ experience.",
+        "targetExpression": "real-world experience",
+        "answers": [
+          "real-world",
+          "real world",
+          "real-world experience",
+          "real world experience"
+        ],
+        "explanation": "She learns through genuine tasks such as managing food accounts, which the programme describes as real-world experience."
+      },
+      {
+        "id": "in-charge-contrast",
+        "type": "single-choice",
+        "prompt": "Which statement correctly describes who is in charge at the Bamboo School?",
+        "targetExpression": "be in charge of",
+        "options": [
+          {
+            "id": "a",
+            "text": "Adults are in charge in classrooms, while students run many activities outside them."
+          },
+          {
+            "id": "b",
+            "text": "Students teach every lesson and adults have no role."
+          },
+          {
+            "id": "c",
+            "text": "Adults control every activity inside and outside classrooms."
+          },
+          {
+            "id": "d",
+            "text": "No one is responsible for school operations."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript says grown-ups remain in charge in classrooms, but students run activities outside them."
+      },
+      {
+        "id": "in-return-pattern",
+        "type": "fill-blank",
+        "prompt": "Complete the exchange pattern: The children receive free education and do practical work ______.",
+        "targetExpression": "in return",
+        "answers": [
+          "in return"
+        ],
+        "explanation": "In return introduces what someone gives or does as part of an exchange. The programme uses it when discussing free education and students' contribution."
+      },
+      {
+        "id": "responsibility-purpose",
+        "type": "single-choice",
+        "prompt": "Why does the school let children help run its daily operations?",
+        "targetExpression": "be responsible for",
+        "options": [
+          {
+            "id": "a",
+            "text": "To teach responsibility through real tasks."
+          },
+          {
+            "id": "b",
+            "text": "To remove every adult from the school."
+          },
+          {
+            "id": "c",
+            "text": "To replace education with unpaid work."
+          },
+          {
+            "id": "d",
+            "text": "To stop children from trying new activities."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme states that the idea is to teach children responsibility by letting them run their own school."
+      },
+      {
+        "id": "call-shots-transfer",
+        "type": "fill-blank",
+        "prompt": "Complete the project sentence with a target expression: The steering committee ______ on budget priorities.",
+        "targetExpression": "call the shots",
+        "answers": [
+          "calls the shots",
+          "call the shots"
+        ],
+        "explanation": "Call the shots is natural when a person or group has authority to make important decisions."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-student-role",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. Use “be responsible for” and name one task done by students at the Bamboo School. You may start: “Students are responsible for…”",
+        "targetExpression": "be responsible for",
+        "gradingCriteria": "A supported answer should name one transcript task, such as buying food, checking prices, managing accounts, cleaning, gardening or helping run the school. First judge whether the response answers the question, then check whether be responsible for is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-practice",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why managing food accounts gives Nooneem useful learning. Use “hands-on experience”. You may use: “actual spending” or “practical task”.",
+        "targetExpression": "hands-on experience",
+        "gradingCriteria": "A supported answer should explain that Nooneem learns accounting by doing a real task and seeing actual spending and purchases. First judge whether the response answers the question, then check whether hands-on experience is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's expressions or transcript. Distinguish missing meaning from correct but less natural wording."
+      },
+      {
+        "id": "guided-paraphrase-authority",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, rewrite this idea using “call the shots”: “The children have the power to make important decisions outside the classroom.”",
+        "targetExpression": "call the shots",
+        "gradingCriteria": "A successful answer should preserve the children's decision-making authority outside the classroom and use call the shots naturally. First judge whether the response answers the question, then check the target expression. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-project-role",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about assigning ownership in a software project. Phrase bank: “be responsible for”, “be in charge of”, “hands-on experience”. Use at least one phrase and name one concrete responsibility.",
+        "targetExpression": "be in charge of",
+        "gradingCriteria": "A successful answer should stay in the software-project scenario, assign one concrete responsibility and naturally use at least one phrase from the bank. First judge whether the response answers the question, then check expression use. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. Suggest at most one alternative from today's expressions or transcript. Distinguish missing meaning from correct but less natural wording."
+      },
+      {
+        "id": "bounded-free-response-delegation",
+        "type": "application",
+        "prompt": "In 40–70 words, describe one work task that a manager could delegate to help a team member grow. Explain the benefit and naturally use at least one of today's target expressions.",
+        "targetExpression": "real-world experience",
+        "gradingCriteria": "A successful answer should identify one realistic delegated task, explain how it helps development and use at least one target expression naturally. First judge whether the response answers the question, then check expression use. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) how the Bamboo School shares responsibility; (2) two examples of practical work done by students; (3) what students learn from this model. Phrase bank: “call the shots”, “hands-on experience”, “be responsible for”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "At the Bamboo School in Thailand, students help make rules and run many parts of school life.",
+      "The model aims to teach responsibility by giving children real duties.",
+      "Students buy food at the market, check prices and manage food accounts.",
+      "These practical tasks provide hands-on and real-world experience as well as leadership practice.",
+      "Adults remain in charge in classrooms, while students run many activities outside them.",
+      "Students respond positively to being trusted and also complete regular community service."
+    ]
+  }
+}
