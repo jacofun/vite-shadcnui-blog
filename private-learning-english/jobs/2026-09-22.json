@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-09-22",
+  "episodeId": "180531-taking-risks",
+  "title": "Taking risks",
+  "publishedAt": "2018-05-31",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english/ep-180531",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/180531_6_minute_english_risk_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/180531_6_minute_english_risk.pdf",
+  "reason": "本集从不同人的风险偏好谈到金融顾问如何评估客户对风险的接受程度，贴近金融科技业务、投资决策和项目风险讨论。练习会反复调用 risk-averse、risk-tolerant、assess risk 和 put money away 等原文表达，先借助上下文辨认，再用简短句子解释和迁移到熟悉场景。",
+  "difficulty": "B1-B2",
+  "tags": ["金融经济", "风险偏好", "决策", "个人理财", "职场表达", "主动输出"],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "risk-averse",
+        "meaning": "unwilling to take risks or uncomfortable with them",
+        "usage": "Use it to describe a cautious person or team: Our risk-averse team prefers a small pilot before a full release."
+      },
+      {
+        "expression": "risk-tolerant",
+        "meaning": "willing to accept a degree of risk without being worried by it",
+        "usage": "Use it to describe an attitude, not a guarantee of success: A risk-tolerant client may accept some uncertainty."
+      },
+      {
+        "expression": "risk-seeking",
+        "meaning": "actively looking for decisions or experiences that involve risk",
+        "usage": "Use it for a deliberate preference for risk: A risk-seeking investor may choose a more volatile product."
+      },
+      {
+        "expression": "assess risk",
+        "meaning": "judge risk based on information before making a decision",
+        "usage": "Use it when evaluating a choice: We assess risk before moving a payment service to a new platform."
+      },
+      {
+        "expression": "put money away",
+        "meaning": "save money for a later purpose instead of spending it now",
+        "usage": "Use it for saving: She puts money away each month for retirement."
+      },
+      {
+        "expression": "tolerance for taking risk",
+        "meaning": "the degree of risk a person is willing to accept",
+        "usage": "Use it to discuss suitability: A financial adviser asks about a customer's tolerance for taking risk."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "risk-averse-context",
+        "type": "single-choice",
+        "prompt": "The programme describes someone who avoids decisions involving risk as which kind of person?",
+        "targetExpression": "risk-averse",
+        "options": [
+          {"id": "a", "text": "Risk-averse"},
+          {"id": "b", "text": "Risk-tolerant"},
+          {"id": "c", "text": "Risk-seeking"},
+          {"id": "d", "text": "Risk-free"}
+        ],
+        "answer": "a",
+        "explanation": "The speaker says risk-averse people do not want to take decisions involving risk; tolerant people accept it and seekers actively look for it."
+      },
+      {
+        "id": "risk-tolerant-blank",
+        "type": "fill-blank",
+        "prompt": "Complete the contrast using the programme's expression: Someone who does not mind an element of risk is risk-_____.",
+        "targetExpression": "risk-tolerant",
+        "answers": ["tolerant"],
+        "explanation": "The transcript defines risk-tolerant as accepting or not minding an element of risk."
+      },
+      {
+        "id": "risk-seeking-context",
+        "type": "single-choice",
+        "prompt": "Which sentence best reflects the meaning of risk-seeking in the expert's explanation?",
+        "targetExpression": "risk-seeking",
+        "options": [
+          {"id": "a", "text": "They actively look for choices that involve risk."},
+          {"id": "b", "text": "They accept risk only when it cannot be avoided."},
+          {"id": "c", "text": "They refuse every decision with any risk."},
+          {"id": "d", "text": "They can predict exactly what will happen."}
+        ],
+        "answer": "a",
+        "explanation": "Risk-seeking means actively looking for decisions with an aspect of risk, unlike merely tolerating or avoiding risk."
+      },
+      {
+        "id": "assess-risk-blank",
+        "type": "fill-blank",
+        "prompt": "Complete the reusable collocation: A financial adviser needs to _____ risk before recommending what to do with a client's savings.",
+        "targetExpression": "assess risk",
+        "answers": ["assess", "evaluate"],
+        "explanation": "To assess is to make a judgement based on information; the programme applies this to financial advisers' decisions."
+      },
+      {
+        "id": "retirement-saving",
+        "type": "single-choice",
+        "prompt": "A person says, 'I want to put my money away for retirement.' What do they mean?",
+        "targetExpression": "put money away",
+        "options": [
+          {"id": "a", "text": "Save money to use later."},
+          {"id": "b", "text": "Spend their money immediately."},
+          {"id": "c", "text": "Hide money from a financial adviser."},
+          {"id": "d", "text": "Stop planning for retirement."}
+        ],
+        "answer": "a",
+        "explanation": "The transcript explicitly explains put money away as saving rather than spending the money now."
+      },
+      {
+        "id": "tolerance-blank",
+        "type": "fill-blank",
+        "prompt": "Complete the expert's question: What is your _____ for taking risk?",
+        "targetExpression": "tolerance for taking risk",
+        "answers": ["tolerance"],
+        "explanation": "The expert says advisers want to understand a customer's tolerance for taking risk."
+      },
+      {
+        "id": "why-assess-preference",
+        "type": "single-choice",
+        "prompt": "Why does the expert think understanding risk attitudes could help financial advisers?",
+        "targetExpression": "assess risk",
+        "options": [
+          {"id": "a", "text": "It helps them assess which financial choices suit a person's willingness to take risk."},
+          {"id": "b", "text": "It proves that every customer should choose the same investment."},
+          {"id": "c", "text": "It removes all uncertainty from retirement planning."},
+          {"id": "d", "text": "It lets them decide without learning anything about the customer."}
+        ],
+        "answer": "a",
+        "explanation": "The expert connects better assessment of risk attitudes with financial planning; he does not claim risk disappears or everyone should choose the same product."
+      },
+      {
+        "id": "risk-averse-transfer",
+        "type": "fill-blank",
+        "prompt": "Complete the project sentence with the programme's expression: Our team is risk-_____ about a big release, so we will test it with a small group first.",
+        "targetExpression": "risk-averse",
+        "answers": ["averse"],
+        "explanation": "Risk-averse naturally describes a cautious team; a small pilot is consistent with avoiding a large untested risk."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-risk-averse",
+        "type": "comprehension",
+        "prompt": "Write one sentence of about 10–25 words: What decisions do risk-averse people avoid? Start with 'Risk-averse people...'.",
+        "targetExpression": "risk-averse",
+        "gradingCriteria": "First judge whether the answer says these people avoid decisions involving risk, then check natural use of risk-averse. Give only one or two useful improvements. Accept simple, accurate English without demanding advanced vocabulary or complex grammar. If an alternative helps, give only one expression from today's target list or transcript. Distinguish a missing idea from an idea expressed correctly but less naturally."
+      },
+      {
+        "id": "guided-comprehension-adviser",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why a financial adviser asks about a client's tolerance for taking risk. You may start: 'The adviser needs to know...'.",
+        "targetExpression": "tolerance for taking risk",
+        "gradingCriteria": "First check whether the answer connects the client's risk tolerance to assessing suitable choices about money, especially retirement savings; then check natural use of tolerance for taking risk. Mention only one or two high-value improvements. Do not deduct for simple but correct English. Offer at most one alternative expression from today's targets or transcript. Separate missing meaning from correct meaning with awkward wording."
+      },
+      {
+        "id": "paraphrase-saving",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, rewrite this idea with 'put money away' without changing its meaning: 'I am saving part of my income for my retirement instead of spending it now.'",
+        "targetExpression": "put money away",
+        "gradingCriteria": "First check that the answer preserves saving money for retirement rather than spending it now; then check the form put money away (including natural tense or object placement). Suggest only one or two key improvements. Do not penalise simple, accurate English for lack of sophistication. Offer at most one transcript or target-expression alternative. Distinguish a lost meaning from a correct but slightly unnatural sentence."
+      },
+      {
+        "id": "supported-application-release",
+        "type": "application",
+        "prompt": "In two sentences of about 30–60 words, describe how a team should decide whether to release an untested software feature. Phrase bank: 'assess risk', 'risk-averse', 'risk-tolerant'. Use at least one and name one concrete check or precaution.",
+        "targetExpression": "assess risk",
+        "gradingCriteria": "First check that the answer addresses a software release and includes a concrete check or precaution such as a pilot, test, rollback plan or monitoring; then check natural use of at least one phrase-bank expression. Point out only one or two improvements. Simple accurate English is fully acceptable. Suggest at most one alternative from today's targets or transcript. Treat correct meaning with imperfect phrasing differently from an answer that misses the task."
+      },
+      {
+        "id": "bounded-free-response-risk-choice",
+        "type": "application",
+        "prompt": "In two or three sentences of about 40–70 words, say whether you would be cautious or comfortable with some risk when saving for a long-term goal. Give one reason and use at least one of today's target expressions naturally.",
+        "targetExpression": "risk-tolerant",
+        "gradingCriteria": "First check for a clear personal attitude to risk when saving for a long-term goal and one reason; any sensible cautious or tolerant view is acceptable. Then check natural use of at least one target expression, not necessarily risk-tolerant if another fits better. Give only one or two useful improvements. Do not demand advanced wording or complex sentences. Suggest at most one alternative from today's targets or transcript. Distinguish missing content from correct content worded less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in about 80–120 words. Follow three cues: (1) how people's attitudes to risk differ; (2) what the research found and one practical use; (3) the retirement-saving example. Phrase bank: 'risk-averse', 'assess risk', 'put money away'. Use at least two naturally. Clear, simple sentences are enough.",
+    "referencePoints": [
+      "People can be risk-averse, risk-tolerant or risk-seeking, and the categories reflect how they react to risk.",
+      "Risk-seeking people actively look for choices that include risk, while risk-averse people avoid them.",
+      "The research described differences in brain structure and how parts of the brain work together across risk-attitude groups.",
+      "The expert suggests better assessment of people's willingness to take risks as a practical application.",
+      "Financial advisers want to know a customer's risk tolerance before advising what to do with money.",
+      "The retirement example uses put money away to mean saving money for later."
+    ]
+  }
+}
