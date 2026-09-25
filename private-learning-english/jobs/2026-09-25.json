@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-09-25",
+  "episodeId": "211021-where-do-your-tips-go",
+  "title": "Where do your tips go?",
+  "publishedAt": "2021-10-21",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english/ep-211021",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/211021_6min_english_tipping_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/211021_6min_eng_tipping.pdf",
+  "reason": "昨天的课程围绕记忆与学习方法，今天轮换到金融消费和数字支付。本集讨论餐厅小费如何收集、分配和计税，以及现金支付转向银行卡支付后出现的透明度与公平问题，适合联系金融科技中的资金流向、规则设计和利益分配。练习优先选择可迁移到项目治理、制度说明和工作沟通的高频表达，并通过重复调用逐步进入主动输出。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "金融经济与消费",
+    "数字支付",
+    "资金分配",
+    "规则透明度",
+    "职场沟通",
+    "渐进输出",
+    "精听"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "not always the case",
+        "meaning": "not true in every situation, even if people often expect it to be true",
+        "usage": "Use it to correct a common assumption: Faster delivery usually costs more, but that is not always the case."
+      },
+      {
+        "expression": "have a system in place",
+        "meaning": "have an established process or arrangement ready to operate",
+        "usage": "Use it for existing procedures: We have a system in place for reviewing production changes."
+      },
+      {
+        "expression": "to the benefit of",
+        "meaning": "in a way that helps or gives an advantage to someone",
+        "usage": "Use it when discussing who gains from a decision: The new process should work to the benefit of both users and support staff."
+      },
+      {
+        "expression": "be imposed on someone",
+        "meaning": "be forced on someone without giving them a real choice",
+        "usage": "Use it for unwanted rules or duties: Extra reporting requirements were imposed on the team."
+      },
+      {
+        "expression": "move towards",
+        "meaning": "gradually change or develop in a particular direction",
+        "usage": "Use it for an ongoing transition: The department is moving towards automated deployment."
+      },
+      {
+        "expression": "pool tips and service charges",
+        "meaning": "collect tips and service charges together before distributing them",
+        "usage": "Use it for a shared collection: The restaurant pools tips and service charges before paying staff."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "waiter-receives-tip",
+        "type": "fill-blank",
+        "prompt": "Complete the contrast: Customers may think the waiter who brought the food receives the tip, but that is ______.",
+        "targetExpression": "not always the case",
+        "answers": [
+          "not always the case"
+        ],
+        "explanation": "The transcript directly challenges the assumption that the person serving the food always keeps the money."
+      },
+      {
+        "id": "different-systems",
+        "type": "fill-blank",
+        "prompt": "Complete the description: Different restaurants ______ for handling tips.",
+        "targetExpression": "have a system in place",
+        "answers": [
+          "have a system in place",
+          "have systems in place"
+        ],
+        "explanation": "The programme says restaurants and businesses have different systems in place across the country."
+      },
+      {
+        "id": "staff-benefit",
+        "type": "fill-blank",
+        "prompt": "Complete the programme's concern: The different arrangements are not always ______ all waiting staff.",
+        "targetExpression": "to the benefit of",
+        "answers": [
+          "to the benefit of"
+        ],
+        "explanation": "The waiter describes receiving only a small share of the tips he contributed, showing that some systems do not benefit all staff fairly."
+      },
+      {
+        "id": "imposed-meaning",
+        "type": "single-choice",
+        "prompt": "What does it mean if a rule is “imposed on” a worker?",
+        "targetExpression": "be imposed on someone",
+        "options": [
+          {
+            "id": "a",
+            "text": "The worker is forced to accept it."
+          },
+          {
+            "id": "b",
+            "text": "The worker freely designs it alone."
+          },
+          {
+            "id": "c",
+            "text": "The rule applies only when the worker requests it."
+          },
+          {
+            "id": "d",
+            "text": "The rule has been permanently cancelled."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript defines imposed as forced upon someone rather than freely chosen."
+      },
+      {
+        "id": "cashless-direction",
+        "type": "fill-blank",
+        "prompt": "Complete Kate Nicholls's description: Society is ______ cashless payments, with greater use of credit cards.",
+        "targetExpression": "move towards",
+        "answers": [
+          "moving towards"
+        ],
+        "explanation": "The speaker says society is moving towards cashless payment, especially after increased card use during the pandemic."
+      },
+      {
+        "id": "pool-tips-meaning",
+        "type": "single-choice",
+        "prompt": "What happens when a business pools tips and service charges?",
+        "targetExpression": "pool tips and service charges",
+        "options": [
+          {
+            "id": "a",
+            "text": "It collects them together before distributing the money."
+          },
+          {
+            "id": "b",
+            "text": "It immediately returns every payment to the customer."
+          },
+          {
+            "id": "c",
+            "text": "It converts all tips into restaurant vouchers."
+          },
+          {
+            "id": "d",
+            "text": "It prevents kitchen staff from receiving any share."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Pool means collect together or group; the tronc arrangement then distributes the shared amount."
+      },
+      {
+        "id": "tronc-purpose",
+        "type": "single-choice",
+        "prompt": "Why can a tronc arrangement improve the handling of card-based tips?",
+        "targetExpression": "pool tips and service charges",
+        "options": [
+          {
+            "id": "a",
+            "text": "It uses a separate arrangement to collect the money, apply the correct tax treatment and distribute it fairly."
+          },
+          {
+            "id": "b",
+            "text": "It makes every customer legally required to leave a tip."
+          },
+          {
+            "id": "c",
+            "text": "It guarantees that only managers receive the money."
+          },
+          {
+            "id": "d",
+            "text": "It removes all records of digital payments."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript explains that a tronc keeps tips in a separate account, avoids the wrong tax rate and supports fair distribution."
+      },
+      {
+        "id": "system-workplace-use",
+        "type": "single-choice",
+        "prompt": "Which sentence uses “have a system in place” naturally in a project context?",
+        "targetExpression": "have a system in place",
+        "options": [
+          {
+            "id": "a",
+            "text": "We have a system in place for approving emergency changes."
+          },
+          {
+            "id": "b",
+            "text": "We system in place the emergency changes."
+          },
+          {
+            "id": "c",
+            "text": "The approval has in a system place."
+          },
+          {
+            "id": "d",
+            "text": "We are a system in place yesterday."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The natural pattern is have a system in place for + noun or -ing form."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-tip-recipient",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. Use “not always the case” and start: “Customers may think the waiter keeps the tip, but…”",
+        "targetExpression": "not always the case",
+        "gradingCriteria": "A supported answer should say that the waiter who serves the customer does not always keep the tip because businesses may collect and redistribute it. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-fairness",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why some tipping systems may not work to the benefit of waiting staff. Use “to the benefit of”. You may start: “Some systems…”",
+        "targetExpression": "to the benefit of",
+        "gradingCriteria": "A supported answer should explain that tips may be collected and split unfairly, so a worker can receive much less than the amount they contributed. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-tronc",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, paraphrase this idea using “pool tips and service charges”: “A tronc collects the payments together and then shares them among staff.”",
+        "targetExpression": "pool tips and service charges",
+        "gradingCriteria": "A successful answer should preserve the ideas of collecting the payments together and distributing them among staff, while using pool tips and service charges naturally. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-project-rules",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about allocating a shared project budget or support workload. Phrase bank: “have a system in place”, “to the benefit of”, “be imposed on someone”. Use at least one phrase and state one fair rule.",
+        "targetExpression": "have a system in place",
+        "gradingCriteria": "A successful answer should stay within the shared-budget or workload scenario, state one concrete fair rule, and naturally use at least one supplied phrase. First judge whether the response answers the question, then check whether the requested expression or another phrase from the bank is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "bounded-free-response-cashless-tipping",
+        "type": "application",
+        "prompt": "In 40–70 words, give your view on tipping as payments move towards a cashless society. Mention one advantage and one concern, and naturally use at least one of today's target expressions.",
+        "targetExpression": "move towards",
+        "gradingCriteria": "A successful answer should give one clear advantage and one concern about cashless tipping, while naturally using at least one target expression. First judge whether the response answers the question, then check whether the selected target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) assumption—who customers think receives a tip; (2) problem—different systems and possible unfairness; (3) solution and change—how a tronc works as society becomes cashless. Phrase bank: “not always the case”, “have a system in place”, “pool tips and service charges”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "Tipping is discretionary in the UK, but it is often expected in restaurants.",
+      "The person who serves the food does not necessarily keep the tip.",
+      "Restaurants use different systems, and workers may feel that some methods divide tips unfairly.",
+      "A tronc is a special arrangement that keeps collected tips in a separate account and applies the correct tax treatment.",
+      "A tronc can pool tips and service charges and distribute them among staff according to the business's protocol.",
+      "The growth of card payments and a cashless society means more tips now pass through digital payment systems."
+    ]
+  }
+}
