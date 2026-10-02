@@ -1,0 +1,264 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-10-02",
+  "episodeId": "260611-how-advertisers-make-us-spend-money",
+  "title": "How advertisers make us spend money",
+  "publishedAt": "2026-06-11",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260611",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260611_6_minute_english_how_advertisers_make_us_spend_money_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260611_6_minute_english_how_advertisers_make_us_spend_money_transcript.pdf",
+  "reason": "昨天的课程聚焦团队协作，今天轮换到金融经济与消费决策。本集分析名人代言、自助点餐屏和电视节目如何借助行为规律影响选择，适合联系金融科技产品设计、用户决策和营销机制。练习重点不是记忆生僻术语，而是反复调用能用于解释原因、判断倾向和提出方案的高频表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "金融经济与消费",
+    "数字生活",
+    "行为设计",
+    "主动表达",
+    "渐进输出",
+    "精听"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "follow the lead of",
+        "meaning": "copy or be guided by someone whose judgement you trust",
+        "usage": "Use it when another person influences a choice: Customers may follow the lead of an expert they trust."
+      },
+      {
+        "expression": "a mental shortcut",
+        "meaning": "a simple way to make a decision quickly without analysing everything",
+        "usage": "Use it to explain fast decisions: A familiar brand can become a mental shortcut when we are in a hurry."
+      },
+      {
+        "expression": "make sense of",
+        "meaning": "understand something that may be complex or uncertain",
+        "usage": "Use it when explaining understanding: Reviews help customers make sense of several similar products."
+      },
+      {
+        "expression": "feel judged",
+        "meaning": "worry that other people are forming a negative opinion about you",
+        "usage": "Use it for social pressure: Some customers feel judged when they change an order."
+      },
+      {
+        "expression": "be more inclined to",
+        "meaning": "be more likely or willing to do something",
+        "usage": "Use it to describe a tendency: People may be more inclined to buy when they have time to compare options."
+      },
+      {
+        "expression": "think outside the box",
+        "meaning": "think creatively and consider a different kind of solution",
+        "usage": "Use it when a normal approach is not working: The product team needs to think outside the box."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "follow-lead-endorsement",
+        "type": "fill-blank",
+        "prompt": "Complete Ben Jones's point: When people are unsure, it is easy to ______ those they consider credible or knowledgeable.",
+        "targetExpression": "follow the lead of",
+        "answers": [
+          "follow the lead of"
+        ],
+        "explanation": "Ben says that when people do not know what to do, they may follow the lead of people they see as credible or knowledgeable."
+      },
+      {
+        "id": "mental-shortcut-meaning",
+        "type": "single-choice",
+        "prompt": "Why can an endorsement work as “a mental shortcut”?",
+        "targetExpression": "a mental shortcut",
+        "options": [
+          {
+            "id": "a",
+            "text": "It helps someone make a quick choice without analysing every option."
+          },
+          {
+            "id": "b",
+            "text": "It guarantees that the cheapest product is always selected."
+          },
+          {
+            "id": "c",
+            "text": "It prevents businesses from advertising their products."
+          },
+          {
+            "id": "d",
+            "text": "It gives customers more time to speak to a salesperson."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript defines a mental shortcut as something that helps us make a decision quickly, especially when we trust the person giving the endorsement."
+      },
+      {
+        "id": "make-sense-world",
+        "type": "fill-blank",
+        "prompt": "Complete the phrase about trusted adults: Parents and teachers help children learn and ______ the world.",
+        "targetExpression": "make sense of",
+        "answers": [
+          "make sense of"
+        ],
+        "explanation": "Ben says parents and teachers help people learn and make sense of the world from an early age."
+      },
+      {
+        "id": "feel-judged-screen",
+        "type": "single-choice",
+        "prompt": "According to the programme, why might a touchscreen make some customers order extra food?",
+        "targetExpression": "feel judged",
+        "options": [
+          {
+            "id": "a",
+            "text": "They can consider extra items without feeling judged by another person."
+          },
+          {
+            "id": "b",
+            "text": "The screen prevents them from seeing the available products."
+          },
+          {
+            "id": "c",
+            "text": "The screen removes all opportunities to buy larger portions."
+          },
+          {
+            "id": "d",
+            "text": "They must finish the order in less than one second."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Dean explains that customers have more time to look and are not being judged by a person, so they may accept more upsell suggestions."
+      },
+      {
+        "id": "inclined-to-say-yes",
+        "type": "fill-blank",
+        "prompt": "Complete Dean's explanation: With more time and no social pressure, customers are ______ say yes to extra items.",
+        "targetExpression": "be more inclined to",
+        "answers": [
+          "more inclined to",
+          "much more inclined to"
+        ],
+        "explanation": "Dean says customers are much more inclined to say yes when they have more time and do not feel judged."
+      },
+      {
+        "id": "outside-box-purpose",
+        "type": "single-choice",
+        "prompt": "What did “think outside the box” mean in the World Food Programme example?",
+        "targetExpression": "think outside the box",
+        "options": [
+          {
+            "id": "a",
+            "text": "Find a creative, different way to influence behaviour."
+          },
+          {
+            "id": "b",
+            "text": "Avoid showing people any stories about daily life."
+          },
+          {
+            "id": "c",
+            "text": "Use only the most familiar solution available."
+          },
+          {
+            "id": "d",
+            "text": "Place restaurant food inside a physical box."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The organisation created a restaurant-based TV series as a creative and different way to encourage people to eat together."
+      },
+      {
+        "id": "basket-spend-fact",
+        "type": "single-choice",
+        "prompt": "What increase in basket spend did Dean Ward say touchscreens were typically producing?",
+        "targetExpression": "be more inclined to",
+        "options": [
+          {
+            "id": "a",
+            "text": "5–10%"
+          },
+          {
+            "id": "b",
+            "text": "15–20%"
+          },
+          {
+            "id": "c",
+            "text": "25–30%"
+          },
+          {
+            "id": "d",
+            "text": "50–60%"
+          }
+        ],
+        "answer": "c",
+        "explanation": "Dean reports that the touchscreen design is typically associated with a 25–30% increase in basket spend."
+      },
+      {
+        "id": "mental-shortcut-natural-use",
+        "type": "single-choice",
+        "prompt": "Which sentence uses “a mental shortcut” naturally?",
+        "targetExpression": "a mental shortcut",
+        "options": [
+          {
+            "id": "a",
+            "text": "A trusted review can act as a mental shortcut when I compare many similar products."
+          },
+          {
+            "id": "b",
+            "text": "I mental shortcut the products before I buy them."
+          },
+          {
+            "id": "c",
+            "text": "The shop made me shortcut mentally of the price."
+          },
+          {
+            "id": "d",
+            "text": "A trusted review is mentally a short product."
+          }
+        ],
+        "answer": "a",
+        "explanation": "A mental shortcut is a noun phrase and naturally describes something that helps a person decide quickly."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-inclined",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. Why may touchscreen users accept extra food? Start: “They may be more inclined to say yes because…”",
+        "targetExpression": "be more inclined to",
+        "gradingCriteria": "A supported answer should mention having more time to look, seeing related products, or not feeling judged by a person. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-shortcut",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why a celebrity or expert endorsement can become “a mental shortcut”. You may use: “trust” or “quick choice”.",
+        "targetExpression": "a mental shortcut",
+        "gradingCriteria": "A supported answer should explain that people may trust a credible or knowledgeable person and therefore decide quickly without examining every option. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-judged",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, rewrite this idea using “feel judged”: “Some customers refuse extra fries because they worry what the employee will think of them.”",
+        "targetExpression": "feel judged",
+        "gradingCriteria": "A successful answer should keep the idea that concern about an employee's opinion may cause customers to refuse extra food, and it must use feel judged naturally. First judge whether the response answers the task, then check the target expression. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-product-choice",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about choosing between two software tools for a project. Phrase bank: “follow the lead of”, “a mental shortcut”, “make sense of”. Use at least one phrase and name one piece of evidence you would check before deciding.",
+        "targetExpression": "make sense of",
+        "gradingCriteria": "A successful answer should stay within the software-choice scenario, name one relevant piece of evidence, and naturally use at least one supplied phrase. First judge whether the response answers the question, then check whether the requested expression or another phrase from the bank is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "bounded-free-response-advertising",
+        "type": "application",
+        "prompt": "In 40–70 words, give your view on using behavioural science to increase customer spending. Mention one benefit or legitimate use and one possible concern, and naturally use at least one of today's target expressions.",
+        "targetExpression": "think outside the box",
+        "gradingCriteria": "A successful answer should give a clear view, mention one benefit or legitimate use and one concern, and naturally use at least one target expression. First judge whether the response answers the question, then check whether the selected expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) topic—how behavioural science can influence buying decisions; (2) two examples—endorsements and fast-food touchscreens; (3) wider use—the restaurant TV series and your conclusion. Phrase bank: “a mental shortcut”, “be more inclined to”, “think outside the box”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "People often follow credible or knowledgeable figures when they are unsure, so endorsements can act as mental shortcuts.",
+      "Parents and teachers help children learn and make sense of the world, and businesses can draw on this tendency through endorsements.",
+      "Fast-food touchscreens give customers more time to view products and related extras without feeling judged by another person.",
+      "The touchscreen example was associated with a typical 25–30% increase in basket spend through upselling.",
+      "The World Food Programme used a restaurant-based TV series in Tunisia to encourage people to eat together more often.",
+      "The programme explains that people can change by observing and modelling other people's behaviour, while nudge theory uses small prompts to influence choices."
+    ]
+  }
+}
