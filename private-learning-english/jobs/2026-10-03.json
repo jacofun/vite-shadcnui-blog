@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-10-03",
+  "episodeId": "261001-why-does-heartbreak-hurt-so-much",
+  "title": "Why does heartbreak hurt so much?",
+  "publishedAt": "2026-10-01",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-261001",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/261001_6_minute_english_why_does_heartbreak_hurt_so_much_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/261001_6_minute_english_why_does_heartbreak_hurt_so_much_transcript.pdf",
+  "reason": "昨天的课程聚焦消费决策，今天轮换到日常生活与人际沟通。本集以脑科学解释亲密关系、社会联结和失恋带来的真实感受，既贴近日常经验，也适合练习用清楚、常用的表达说明因果关系与健康影响。练习通过重复调用高频词组，逐步把被动理解转化为主动输出。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "日常生活与人际沟通",
+    "心理与健康",
+    "社会联结",
+    "主动表达",
+    "渐进输出",
+    "精听"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "think back to",
+        "meaning": "remember and consider a time or event in the past",
+        "usage": "Use it to introduce a past example: Think back to a time when a friend supported you."
+      },
+      {
+        "expression": "fall in love",
+        "meaning": "begin to feel romantic love for someone",
+        "usage": "Use it for the start of a romantic relationship: The programme examines what happens in the brain when people fall in love."
+      },
+      {
+        "expression": "be addicted to",
+        "meaning": "depend strongly on someone or something and want more of them or it",
+        "usage": "It can be literal or metaphorical: The expert says humans are biologically driven to be addicted to each other."
+      },
+      {
+        "expression": "be oriented towards",
+        "meaning": "have someone or something as your main focus",
+        "usage": "Use it to describe attention or priorities: A person in love may be oriented towards their partner."
+      },
+      {
+        "expression": "social bonds",
+        "meaning": "close relationships with family, friends or romantic partners",
+        "usage": "Use it to discuss supportive relationships: Strong social bonds can help people manage stress."
+      },
+      {
+        "expression": "increase your likelihood of",
+        "meaning": "make an outcome more probable for you",
+        "usage": "Use it to explain a positive or negative effect: Regular practice can increase your likelihood of remembering new expressions."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "think-back-opening",
+        "type": "fill-blank",
+        "prompt": "Complete Neil's opening request: “I want you to ______ the last time you had your heart broken.”",
+        "targetExpression": "think back to",
+        "answers": [
+          "think back to"
+        ],
+        "explanation": "Neil uses “think back to” to ask Georgie to remember a past experience."
+      },
+      {
+        "id": "fall-in-love-brain",
+        "type": "single-choice",
+        "prompt": "What did scientists find when they scanned the brains of people looking at a romantic partner?",
+        "targetExpression": "fall in love",
+        "options": [
+          {
+            "id": "a",
+            "text": "A brain area linked to basic needs such as eating and drinking became active."
+          },
+          {
+            "id": "b",
+            "text": "Every part of the brain stopped responding to physical needs."
+          },
+          {
+            "id": "c",
+            "text": "Only the areas used for solving mathematical problems became active."
+          },
+          {
+            "id": "d",
+            "text": "The brain treated the partner as a completely unknown person."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript says that looking at someone you are in love with activates a brain area that also reminds us to eat and drink."
+      },
+      {
+        "id": "addicted-to-each-other",
+        "type": "fill-blank",
+        "prompt": "Complete Dr Lucy Brown's explanation: Nature gave humans systems to ______ each other for reproduction and protection.",
+        "targetExpression": "be addicted to",
+        "answers": [
+          "be addicted to"
+        ],
+        "explanation": "Dr Brown describes romantic love as a survival system that makes humans “be addicted to each other”."
+      },
+      {
+        "id": "oriented-towards-meaning",
+        "type": "single-choice",
+        "prompt": "In the programme, what does it mean to “be oriented towards” another person?",
+        "targetExpression": "be oriented towards",
+        "options": [
+          {
+            "id": "a",
+            "text": "Make that person a main focus and think of them before others."
+          },
+          {
+            "id": "b",
+            "text": "Avoid thinking about that person in any situation."
+          },
+          {
+            "id": "c",
+            "text": "Compete with that person for food and water."
+          },
+          {
+            "id": "d",
+            "text": "Study the geographical direction in which the person is travelling."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The vocabulary recap defines oriented or orientated towards as having someone or something as your main focus."
+      },
+      {
+        "id": "social-bonds-definition",
+        "type": "single-choice",
+        "prompt": "Which example best matches the programme's meaning of “social bonds”?",
+        "targetExpression": "social bonds",
+        "options": [
+          {
+            "id": "a",
+            "text": "Close, supportive relationships with family, friends or partners."
+          },
+          {
+            "id": "b",
+            "text": "Short-term financial products sold by a bank."
+          },
+          {
+            "id": "c",
+            "text": "A list of strangers seen once on public transport."
+          },
+          {
+            "id": "d",
+            "text": "Rules that prevent people from speaking to each other."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme defines social bonds as close relationships with family, friends and romantic partners."
+      },
+      {
+        "id": "increase-likelihood-survival",
+        "type": "fill-blank",
+        "prompt": "Complete Professor Donaldson's point: Strong social bonds ______ surviving many different difficulties.",
+        "targetExpression": "increase your likelihood of",
+        "answers": [
+          "increase your likelihood of",
+          "increase the likelihood of"
+        ],
+        "explanation": "Professor Donaldson says strong social bonds increase the likelihood that a person will survive many kinds of difficulty. The version with “your” directly practises today's target expression."
+      },
+      {
+        "id": "attachment-theory-fact",
+        "type": "single-choice",
+        "prompt": "What is the theory connecting children's early bonds with parents to their adult romantic relationships?",
+        "targetExpression": "social bonds",
+        "options": [
+          {
+            "id": "a",
+            "text": "Attachment theory"
+          },
+          {
+            "id": "b",
+            "text": "Contraction theory"
+          },
+          {
+            "id": "c",
+            "text": "Superstition theory"
+          }
+        ],
+        "answer": "a",
+        "explanation": "The quiz answer is attachment theory, developed from observations about early parent-child bonds and later relationships."
+      },
+      {
+        "id": "think-back-natural-use",
+        "type": "single-choice",
+        "prompt": "Which sentence uses “think back to” naturally?",
+        "targetExpression": "think back to",
+        "options": [
+          {
+            "id": "a",
+            "text": "Think back to a time when a close friend helped you through a difficult week."
+          },
+          {
+            "id": "b",
+            "text": "I think back the report to my manager tomorrow."
+          },
+          {
+            "id": "c",
+            "text": "She thinks the meeting back to finish early."
+          },
+          {
+            "id": "d",
+            "text": "We are think back to the new server every day."
+          }
+        ],
+        "answer": "a",
+        "explanation": "“Think back to” is followed by a past time, event or experience that someone is asked to remember."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-oriented",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. According to Dr Brown, how does romantic love direct a person's attention? Start: “They may be oriented towards…”",
+        "targetExpression": "be oriented towards",
+        "gradingCriteria": "A supported answer should say that the romantic partner becomes the person's main focus or is considered before other people. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-bonds",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain one way “social bonds” may support health. You may use: “manage stress”, “immune system”, or “survival”.",
+        "targetExpression": "social bonds",
+        "gradingCriteria": "A supported answer should explain that good social connections may help manage stress, support the immune system, or improve the chance of survival. First judge whether the response answers the question, then check whether the requested target expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-likelihood",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, rewrite this idea using “increase your likelihood of”: “Strong relationships can make it more likely that you survive serious difficulties.”",
+        "targetExpression": "increase your likelihood of",
+        "gradingCriteria": "A successful answer should keep the original meaning that strong relationships make survival through serious difficulties more likely, and it must use increase your likelihood of naturally. First judge whether the response answers the task, then check the target expression. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-project-support",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about supporting a colleague during a stressful project. Phrase bank: “social bonds”, “be oriented towards”, “think back to”. Use at least one phrase and name one specific supportive action.",
+        "targetExpression": "social bonds",
+        "gradingCriteria": "A successful answer should stay within the project scenario, name one practical supportive action, and naturally use at least one supplied phrase. First judge whether the response answers the question, then check whether the requested expression or another phrase from the bank is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "bounded-free-response-relationships",
+        "type": "application",
+        "prompt": "In 40–70 words, give your view on why close relationships matter for wellbeing. Mention one benefit and one challenge of maintaining them, and naturally use at least one of today's target expressions.",
+        "targetExpression": "social bonds",
+        "gradingCriteria": "A successful answer should give a clear view, mention one benefit and one challenge of maintaining close relationships, and naturally use at least one target expression. First judge whether the response answers the question, then check whether the selected expression is used naturally. Point out only one or two high-value improvements. Do not penalise simple but correct English for not being advanced. If needed, suggest only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) what happens in the brain when people fall in love; (2) two benefits of strong relationships; (3) why heartbreak can feel like physical pain. Phrase bank: “fall in love”, “social bonds”, “increase your likelihood of”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "Brain scans show that seeing a romantic partner activates a brain area also connected with basic needs such as eating and drinking.",
+      "Dr Lucy Brown describes romantic love as a survival system linked to reproduction and protection.",
+      "People in love may make their partner a main focus, and brain activity can treat statements about the partner similarly to statements about the self.",
+      "Good social connections may help manage stress and support the immune system.",
+      "Strong social bonds are associated with a greater chance of survival and are a major predictor of longevity.",
+      "Looking at an ex can activate brain regions associated with danger and physical pain, helping explain why heartbreak can hurt physically."
+    ]
+  }
+}
