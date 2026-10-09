@@ -1,0 +1,247 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-10-09",
+  "episodeId": "230209-doomscrolling-why-do-we-do-it",
+  "title": "Doomscrolling: Why do we do it?",
+  "publishedAt": "2023-01-27",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2023/ep-230209",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230209_6_minute_english_doomscrolling_DOWNLOAD.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230209_6_minute_english_doomscrolling.pdf",
+  "reason": "昨天关注职场道歉与责任沟通，今天轮换到软件和数字生活。本集解释人们为什么会持续浏览负面新闻，并从信息随时可得、进化形成的风险关注和负面偏向三个角度展开，适合联系移动产品设计、信息流机制与个人注意力管理。练习反复调用高频动词搭配和让步表达，帮助把理解转化为简洁、可复用的主动表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "软件与数字生活",
+    "注意力管理",
+    "信息流",
+    "用户行为",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "hate to admit it",
+        "meaning": "be unwilling or embarrassed to accept that something is true",
+        "usage": "Use it before an honest admission: I hate to admit it, but I check notifications during meetings."
+      },
+      {
+        "expression": "regardless of",
+        "meaning": "without being affected by a particular condition or difference",
+        "usage": "Use it before a noun: The warning appears regardless of the device type."
+      },
+      {
+        "expression": "feel compelled to",
+        "meaning": "feel a strong need or pressure to do something",
+        "usage": "Follow it with a base verb: Users may feel compelled to check every update."
+      },
+      {
+        "expression": "seek out",
+        "meaning": "actively look for someone or something",
+        "usage": "Use it with an object: People sometimes seek out information that confirms their fears."
+      },
+      {
+        "expression": "on tap",
+        "meaning": "easily available whenever and in whatever amount you want",
+        "usage": "Use it after be or have: News is on tap through mobile apps."
+      },
+      {
+        "expression": "make up for",
+        "meaning": "compensate for something bad or missing with something good",
+        "usage": "Use it before a noun phrase: One positive story may not make up for hours of bad news."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "admit-doomscrolling",
+        "type": "fill-blank",
+        "prompt": "Complete Neil's admission: “I ______, but I do sometimes doomscroll.”",
+        "targetExpression": "hate to admit it",
+        "answers": [
+          "hate to admit it"
+        ],
+        "explanation": "Neil uses “I hate to admit it” because he is honestly accepting a habit he does not feel proud of."
+      },
+      {
+        "id": "regardless-culture",
+        "type": "fill-blank",
+        "prompt": "Complete the research finding: People all over the world doomscroll, ______ culture.",
+        "targetExpression": "regardless of",
+        "answers": [
+          "regardless of"
+        ],
+        "explanation": "The transcript says people around the world doomscroll regardless of culture, meaning cultural differences do not remove the behaviour."
+      },
+      {
+        "id": "compelled-meaning",
+        "type": "single-choice",
+        "prompt": "If people “feel compelled to” look at bad news, what does the phrase suggest?",
+        "targetExpression": "feel compelled to",
+        "options": [
+          {
+            "id": "a",
+            "text": "They feel a strong need or pressure to look."
+          },
+          {
+            "id": "b",
+            "text": "They are completely unable to see the news."
+          },
+          {
+            "id": "c",
+            "text": "They look only when another person pays them."
+          },
+          {
+            "id": "d",
+            "text": "They have forgotten that news exists."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme investigates why people feel compelled to look at bad news: the phrase describes a powerful urge rather than a casual choice."
+      },
+      {
+        "id": "seek-out-choice",
+        "type": "single-choice",
+        "prompt": "Which action best matches “seek out bad news” in the transcript?",
+        "targetExpression": "seek out",
+        "options": [
+          {
+            "id": "a",
+            "text": "Actively search for bad news."
+          },
+          {
+            "id": "b",
+            "text": "Accidentally close a news page."
+          },
+          {
+            "id": "c",
+            "text": "Rewrite a story to make it shorter."
+          },
+          {
+            "id": "d",
+            "text": "Avoid every source of information."
+          }
+        ],
+        "answer": "a",
+        "explanation": "“Seek out” means actively look for something; the transcript says people may deliberately search for negative stories."
+      },
+      {
+        "id": "news-on-tap",
+        "type": "fill-blank",
+        "prompt": "Complete the contrast: Unlike people in the past, we now have news ______ on our phones.",
+        "targetExpression": "on tap",
+        "answers": [
+          "on tap"
+        ],
+        "explanation": "Ella and Sam describe modern news as “on tap”: easily available through phones whenever people want it."
+      },
+      {
+        "id": "make-up-for-good-news",
+        "type": "fill-blank",
+        "prompt": "Complete the programme's idea: A little good news may not ______ all the depressing news.",
+        "targetExpression": "make up for",
+        "answers": [
+          "make up for"
+        ],
+        "explanation": "Ella says the good news does not make up for the bad news; it does not compensate for the much larger amount of negative information."
+      },
+      {
+        "id": "evolutionary-reason",
+        "type": "single-choice",
+        "prompt": "Why might humans naturally pay attention to negative information, according to the programme?",
+        "targetExpression": "feel compelled to",
+        "options": [
+          {
+            "id": "a",
+            "text": "Noticing dangers was important for human survival."
+          },
+          {
+            "id": "b",
+            "text": "Early humans had mobile news applications."
+          },
+          {
+            "id": "c",
+            "text": "Positive information was illegal in the past."
+          },
+          {
+            "id": "d",
+            "text": "People could receive news from every country while living in caves."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript connects negativity bias with survival: noticing threats such as animals or dangerous food helped early humans avoid harm."
+      },
+      {
+        "id": "local-versus-global",
+        "type": "single-choice",
+        "prompt": "What contrast does Ella make between the past and today?",
+        "targetExpression": "on tap",
+        "options": [
+          {
+            "id": "a",
+            "text": "People once knew mainly local dangers, but now receive bad news from around the world."
+          },
+          {
+            "id": "b",
+            "text": "People once had more global news than people have today."
+          },
+          {
+            "id": "c",
+            "text": "People today can access only news from their immediate neighbours."
+          },
+          {
+            "id": "d",
+            "text": "There were no dangers for humans in the past."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Ella contrasts limited local knowledge in the past with today's constant access to negative events happening anywhere in the world."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-news-access",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. Why is doomscrolling easier today? Start: “It is easier because…” and use “on tap”.",
+        "targetExpression": "on tap",
+        "gradingCriteria": "A supported answer should say that news is easily available on phones or online. First judge whether the content answers the question, then check whether “on tap” is used naturally. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-negativity-bias",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why humans may “feel compelled to” notice bad news. You may use: danger / survival / negativity bias.",
+        "targetExpression": "feel compelled to",
+        "gradingCriteria": "A supported answer should connect the urge to notice negative information with recognising danger and surviving. First judge whether the content answers the question, then check natural use of the target expression. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-good-news",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, rewrite this idea using “make up for”: “The small amount of good news cannot compensate for all the depressing stories.” Keep the meaning unchanged.",
+        "targetExpression": "make up for",
+        "gradingCriteria": "A successful answer should keep the contrast between limited good news and a larger amount of depressing news, and use “make up for” naturally. First judge whether the paraphrase preserves the meaning, then check the target expression. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-notification-design",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about changing a news app to reduce compulsive checking. Phrase bank: “feel compelled to”, “seek out”, “on tap”. Use at least one phrase, name one product change, and explain its likely effect.",
+        "targetExpression": "feel compelled to",
+        "gradingCriteria": "A successful answer should stay within the news-app scenario, name one concrete product change, explain its likely effect and naturally use at least one supplied phrase. First judge whether the content answers the task, then check expression use. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "bounded-free-response-doomscrolling",
+        "type": "application",
+        "prompt": "In 40–70 words, give your view on whether doomscrolling is mainly caused by technology or human nature. Give one reason, acknowledge the other side, and naturally use at least one of today's target expressions.",
+        "targetExpression": "regardless of",
+        "gradingCriteria": "A successful answer should choose or balance the two causes, give one clear reason, acknowledge the other side and naturally use at least one target expression. First judge whether the content answers the question, then check expression use. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) behaviour—what doomscrolling is; (2) two explanations—news availability and human survival instincts; (3) effect or conclusion—why good news may not balance the bad. Phrase bank: “feel compelled to”, “on tap”, “make up for”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "Doomscrolling means spending a lot of time reading negative news on a phone or computer.",
+      "Research mentioned in the programme found that people doomscroll around the world regardless of culture.",
+      "The continuous news cycle and internet make negative news easily available on tap.",
+      "An evolutionary explanation says attention to dangers helped early humans survive and created a negativity bias.",
+      "People in the past mainly knew local dangers, while modern users receive bad news from around the world.",
+      "A small amount of good news may not make up for the volume of depressing information."
+    ]
+  }
+}
