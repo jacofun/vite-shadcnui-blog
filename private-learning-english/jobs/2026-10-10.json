@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-10-10",
+  "episodeId": "230921-how-fans-talk-about-their-passions",
+  "title": "How fans talk about their passions",
+  "publishedAt": "2023-09-21",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2023/ep-230921",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230921_6_minute_english_how_fans_talk_about_their_passions_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230921_6_minute_english_how_fans_talk_about_their_passions.pdf",
+  "reason": "昨天关注数字生活中的负面信息与注意力，今天轮换到日常兴趣和人际沟通。本集讨论网络如何让兴趣相投的人形成社群，以及人们在群体成功或失败时如何调整自己的表达和身份认同，适合迁移到技术社区、团队归属和跨团队协作场景。练习重复调用常见动词搭配与因果表达，帮助把能理解的语言逐步转化为可主动使用的简洁表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "日常生活与人际沟通",
+    "兴趣社群",
+    "团队归属",
+    "身份表达",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "share their passion",
+        "meaning": "communicate and enjoy a strong interest with other people",
+        "usage": "Use it with a subject and object: Fans meet online to share their passion for a sport or hobby."
+      },
+      {
+        "expression": "lead to",
+        "meaning": "cause a particular result or development",
+        "usage": "Follow it with a noun phrase: Regular discussion can lead to better decisions."
+      },
+      {
+        "expression": "tap into",
+        "meaning": "connect with and make use of an existing feeling, need or resource",
+        "usage": "Use it before a noun phrase: The community taps into people's need to belong."
+      },
+      {
+        "expression": "like-minded people",
+        "meaning": "people who share similar opinions, ideas or interests",
+        "usage": "Use it for a group with a shared outlook: The forum helps like-minded people exchange ideas."
+      },
+      {
+        "expression": "a piece of the action",
+        "meaning": "a chance to take part in an exciting or successful group activity",
+        "usage": "Commonly follows want or get: When the project succeeded, everyone wanted a piece of the action."
+      },
+      {
+        "expression": "distance yourself from",
+        "meaning": "show that you are no longer closely connected with someone or something",
+        "usage": "Use it before a noun phrase: Some supporters distance themselves from the team after a loss."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "share-passion-online",
+        "type": "fill-blank",
+        "prompt": "Complete the programme's idea: Fans from around the world can meet online to ______.",
+        "targetExpression": "share their passion",
+        "answers": [
+          "share their passion"
+        ],
+        "explanation": "The transcript says the internet lets fans meet online to share their passion, meaning they enjoy and discuss the same strong interest together."
+      },
+      {
+        "id": "lead-to-relationship",
+        "type": "single-choice",
+        "prompt": "In “online meetings have led to a new word: fandom”, what relationship does “lead to” express?",
+        "targetExpression": "lead to",
+        "options": [
+          {
+            "id": "a",
+            "text": "A cause produces a result."
+          },
+          {
+            "id": "b",
+            "text": "Two events have no connection."
+          },
+          {
+            "id": "c",
+            "text": "A result happens before its cause."
+          },
+          {
+            "id": "d",
+            "text": "Someone refuses to name a result."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme presents worldwide online contact between fans as a cause of the development of the word and culture of fandom."
+      },
+      {
+        "id": "tap-into-impulse",
+        "type": "fill-blank",
+        "prompt": "Complete Michael Bond's point: Fandom ______ the ancient human impulse to belong to a group.",
+        "targetExpression": "tap into",
+        "answers": [
+          "taps into"
+        ],
+        "explanation": "Michael Bond says fandom “taps into” the human impulse to belong, meaning it connects with and uses that existing need."
+      },
+      {
+        "id": "like-minded-meaning",
+        "type": "single-choice",
+        "prompt": "Which group is best described as “like-minded people”?",
+        "targetExpression": "like-minded people",
+        "options": [
+          {
+            "id": "a",
+            "text": "People who share similar ideas or interests."
+          },
+          {
+            "id": "b",
+            "text": "People who have never expressed an opinion."
+          },
+          {
+            "id": "c",
+            "text": "People selected only because they live nearby."
+          },
+          {
+            "id": "d",
+            "text": "People who disagree about every subject."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript defines like-minded people as those who share similar opinions, ideas or interests."
+      },
+      {
+        "id": "piece-of-action-win",
+        "type": "fill-blank",
+        "prompt": "Complete the description of BIRGing: When their team wins, fans want ______ and join the celebrations.",
+        "targetExpression": "a piece of the action",
+        "answers": [
+          "a piece of the action",
+          "a slice of the action"
+        ],
+        "explanation": "The programme uses both “a piece of the action” and “a slice of the action” for taking part in an exciting collective success."
+      },
+      {
+        "id": "distance-from-loss",
+        "type": "fill-blank",
+        "prompt": "Complete the CORFing idea: After a loss, some fans ______ the team they support.",
+        "targetExpression": "distance yourself from",
+        "answers": [
+          "distance themselves from"
+        ],
+        "explanation": "CORFing means distancing yourself from a team after it loses, so the subject “some fans” requires “distance themselves from”."
+      },
+      {
+        "id": "lead-to-work-use",
+        "type": "single-choice",
+        "prompt": "Which sentence uses “lead to” naturally and keeps the cause–result meaning from the programme?",
+        "targetExpression": "lead to",
+        "options": [
+          {
+            "id": "a",
+            "text": "Clear ownership can lead to faster incident response."
+          },
+          {
+            "id": "b",
+            "text": "Clear ownership can lead at faster incident response."
+          },
+          {
+            "id": "c",
+            "text": "Clear ownership can lead from faster incident response."
+          },
+          {
+            "id": "d",
+            "text": "Clear ownership can lead faster incident response to."
+          }
+        ],
+        "answer": "a",
+        "explanation": "“Lead to” is followed by a noun phrase naming the result; “faster incident response” is a natural result of clear ownership."
+      },
+      {
+        "id": "fandom-language-purpose",
+        "type": "single-choice",
+        "prompt": "According to the transcript, why have fans developed new words and phrases?",
+        "targetExpression": "like-minded people",
+        "options": [
+          {
+            "id": "a",
+            "text": "To show that they belong to a particular fandom."
+          },
+          {
+            "id": "b",
+            "text": "To prevent fans from meeting online."
+          },
+          {
+            "id": "c",
+            "text": "To hide every shared interest from other members."
+          },
+          {
+            "id": "d",
+            "text": "To make all fandoms use exactly the same language."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript says fans use new language to show they belong to a particular fandom, a community of people with a shared interest."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-online-fans",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. What can fans do online? Start: “They can meet online to…” and use “share their passion”.",
+        "targetExpression": "share their passion",
+        "gradingCriteria": "A supported answer should say that fans can meet online and share a strong common interest. First judge whether the content answers the question, then check whether “share their passion” is used naturally. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-belonging",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why joining a fandom can make an unusual hobby easier to enjoy in public. Use “like-minded people”. You may use: belong / together / less alone.",
+        "targetExpression": "like-minded people",
+        "gradingCriteria": "A supported answer should explain that a community provides people with similar interests, so a fan can participate with others and feel less alone or exposed. First judge whether the content answers the question, then check natural use of “like-minded people”. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's targets or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-losing-team",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, rewrite this idea using “distance yourself from”: “After a loss, some supporters try to show that they are not closely connected with the team.” Keep the meaning unchanged.",
+        "targetExpression": "distance yourself from",
+        "gradingCriteria": "A successful answer should preserve the idea that supporters reduce their visible connection after the team loses and use the target expression with suitable pronoun agreement, such as “distance themselves from”. First judge meaning, then natural expression use. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's targets or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-tech-community",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about starting an internal developer community for one tool or practice. Phrase bank: “lead to”, “tap into”, “like-minded people”. Use at least one phrase, name the shared topic, and explain one likely benefit.",
+        "targetExpression": "lead to",
+        "gradingCriteria": "A successful answer should stay in the internal developer-community scenario, name a concrete shared topic, explain one likely benefit and naturally use at least one supplied phrase. First judge whether the content completes the task, then check expression use. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's targets or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "bounded-free-response-fandom",
+        "type": "application",
+        "prompt": "In 40–70 words, say whether online fandoms are mostly helpful or harmful. Give one reason and one possible limitation, and naturally use at least one of today's target expressions.",
+        "targetExpression": "tap into",
+        "gradingCriteria": "A successful answer should take a clear or balanced view, give one relevant reason and one limitation, remain within the topic of online fandoms and naturally use at least one target expression. First judge whether the content answers the question, then check expression use. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's targets or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) topic—how internet fandom lets people connect; (2) two behaviours—how fans react to a team's success and failure; (3) conclusion—what these reactions show about belonging. Phrase bank: “share their passion”, “a piece of the action”, “distance yourself from”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "The internet lets fans around the world meet online and share their passion.",
+      "A fandom is a culture created by a community around love of the same thing.",
+      "Fandom taps into the human impulse to belong to a group of like-minded people.",
+      "BIRGing means feeling good about yourself when the team you support wins.",
+      "Winning fans may want a piece of the action and treat the team's success as their own.",
+      "CORFing means distancing yourself from the team when it loses or fails."
+    ]
+  }
+}
