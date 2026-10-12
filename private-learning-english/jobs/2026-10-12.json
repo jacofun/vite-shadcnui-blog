@@ -1,0 +1,247 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-10-12",
+  "episodeId": "230615-the-benefits-of-doing-nothing",
+  "title": "The benefits of doing nothing",
+  "publishedAt": "2023-06-15",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2023/ep-230615",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230615_6min_english_nothing_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230615_6min_english_nothing.pdf",
+  "reason": "上一期关注兴趣社群和群体归属，今天轮换到工作生活平衡与恢复精力。本集从蚂蚁的备用力量、人类的无聊与创新，以及持续刺激让人难以放松三个角度讨论“什么都不做”的价值，适合迁移到项目节奏、值班安排和团队可持续产出。练习反复调用常见状态、时间和替补表达，帮助把能听懂的短语转化为工作沟通中可主动使用的语言。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "工作生活平衡",
+    "生产力",
+    "恢复精力",
+    "团队韧性",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "kick back",
+        "meaning": "stop doing things and relax completely",
+        "usage": "Use it informally without an object: After the release, the team can kick back for an evening."
+      },
+      {
+        "expression": "as busy as a bee",
+        "meaning": "very busy and active",
+        "usage": "Use it after be or seem: She has been as busy as a bee preparing the project launch."
+      },
+      {
+        "expression": "on the move",
+        "meaning": "active and moving from place to place",
+        "usage": "Use it after be: Operations staff are often on the move during an incident."
+      },
+      {
+        "expression": "at any given time",
+        "meaning": "at any particular moment that could be considered",
+        "usage": "Use it to describe a changing situation: At any given time, one engineer monitors the service."
+      },
+      {
+        "expression": "ready to step in",
+        "meaning": "prepared to take over or help when needed",
+        "usage": "Use it before an if-clause or situation: A backup engineer is ready to step in if the primary responder is unavailable."
+      },
+      {
+        "expression": "switch off",
+        "meaning": "stop worrying or thinking about something and relax",
+        "usage": "Use it alone or after find it hard to: I find it difficult to switch off after a late meeting."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "kick-back-opening",
+        "type": "fill-blank",
+        "prompt": "Complete Beth's description of relaxing: She was sitting around, doing nothing and ______.",
+        "targetExpression": "kick back",
+        "answers": [
+          "kicking back"
+        ],
+        "explanation": "Beth says she was “relaxing and kicking back”; the -ing form matches the surrounding verbs."
+      },
+      {
+        "id": "busy-bee-meaning",
+        "type": "single-choice",
+        "prompt": "What does Beth mean when she says she is “as busy as a bee”?",
+        "targetExpression": "as busy as a bee",
+        "options": [
+          {
+            "id": "a",
+            "text": "She is very busy and active."
+          },
+          {
+            "id": "b",
+            "text": "She is frightened of insects."
+          },
+          {
+            "id": "c",
+            "text": "She has permanently stopped working."
+          },
+          {
+            "id": "d",
+            "text": "She is moving more slowly than a sloth."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The comparison with a worker bee expresses being extremely busy, even though Beth appears to be doing nothing."
+      },
+      {
+        "id": "animals-on-move",
+        "type": "fill-blank",
+        "prompt": "Complete the initial assumption: Nature documentaries can make us think animals are always ______.",
+        "targetExpression": "on the move",
+        "answers": [
+          "on the move"
+        ],
+        "explanation": "The transcript says viewers may think animals are always on the move, before contrasting this with long periods of inactivity."
+      },
+      {
+        "id": "inactive-given-time",
+        "type": "fill-blank",
+        "prompt": "Complete the research finding: Roughly half of the ant colony is inactive ______.",
+        "targetExpression": "at any given time",
+        "answers": [
+          "at any given time"
+        ],
+        "explanation": "Professor Charbonneau says roughly half the colony is inactive at any given time, meaning at any particular moment."
+      },
+      {
+        "id": "reserve-ants-role",
+        "type": "single-choice",
+        "prompt": "Why might some inactive ants be “ready to step in”?",
+        "targetExpression": "ready to step in",
+        "options": [
+          {
+            "id": "a",
+            "text": "They may replace active ants if disease or disaster strikes."
+          },
+          {
+            "id": "b",
+            "text": "They want to leave the colony permanently."
+          },
+          {
+            "id": "c",
+            "text": "They are waiting to become a different species."
+          },
+          {
+            "id": "d",
+            "text": "They can work only when people film them."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme suggests inactive ants may form a reserve that can take over when disease or disaster affects the active ants."
+      },
+      {
+        "id": "switch-off-meaning",
+        "type": "single-choice",
+        "prompt": "In this episode, what does it mean to “switch off”?",
+        "targetExpression": "switch off",
+        "options": [
+          {
+            "id": "a",
+            "text": "Stop worrying or thinking about something and relax."
+          },
+          {
+            "id": "b",
+            "text": "Turn every electrical device off at the wall."
+          },
+          {
+            "id": "c",
+            "text": "Forget all useful knowledge permanently."
+          },
+          {
+            "id": "d",
+            "text": "Begin several difficult tasks at once."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme defines “switch off” as stopping worry or thought about something so that you can relax."
+      },
+      {
+        "id": "step-in-work-use",
+        "type": "fill-blank",
+        "prompt": "Complete the work sentence with the episode's expression: If the incident commander loses connection, the deputy is ______.",
+        "targetExpression": "ready to step in",
+        "answers": [
+          "ready to step in"
+        ],
+        "explanation": "“Ready to step in” naturally describes a deputy who is prepared to take over when the main person becomes unavailable."
+      },
+      {
+        "id": "boredom-invention",
+        "type": "single-choice",
+        "prompt": "Why does Dr Sandi Mann connect boredom with invention?",
+        "targetExpression": "switch off",
+        "options": [
+          {
+            "id": "a",
+            "text": "Boredom can create curiosity and space to try new combinations."
+          },
+          {
+            "id": "b",
+            "text": "People can invent only while watching short videos."
+          },
+          {
+            "id": "c",
+            "text": "All inventions require animals to remain active."
+          },
+          {
+            "id": "d",
+            "text": "Productivity always increases when stimulation never stops."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Dr Mann suggests that boredom gives people room to wonder what might happen if they combine or try things, supporting invention."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-reserve-ants",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. Why might some ants remain inactive? Start: “They may be…” and use “ready to step in”.",
+        "targetExpression": "ready to step in",
+        "gradingCriteria": "A supported answer should say that inactive ants may serve as reserves for disease or disaster. First judge whether the content answers the question, then check whether “ready to step in” is used naturally. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-stimulation",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why constant stimulation can make it difficult to “switch off”. You may use: swiping / scrolling / next new thing.",
+        "targetExpression": "switch off",
+        "gradingCriteria": "A supported answer should explain that constant swiping, scrolling and searching for something new keeps the mind stimulated and makes relaxation harder. First judge whether the content answers the question, then check natural use of “switch off”. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's targets or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-animal-activity",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, rewrite this idea using “on the move”: “Documentaries may suggest that animals are continuously active, but many spend long periods doing nothing.” Keep the contrast unchanged.",
+        "targetExpression": "on the move",
+        "gradingCriteria": "A successful answer should preserve the contrast between the impression of constant activity and the reality of substantial inactivity, while using “on the move” naturally. First judge meaning, then expression use. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's targets or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-on-call",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about designing an on-call rota for a production service. Phrase bank: “at any given time”, “ready to step in”, “as busy as a bee”. Use at least one phrase, name the primary role, and explain how backup coverage reduces risk.",
+        "targetExpression": "at any given time",
+        "gradingCriteria": "A successful answer should stay in the on-call scenario, identify a primary role, explain how backup coverage reduces risk and naturally use at least one supplied phrase. First judge whether the content completes the task, then check expression use. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's targets or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "bounded-free-response-downtime",
+        "type": "application",
+        "prompt": "In 40–70 words, say whether planned periods of doing nothing should be part of a normal workday. Give one benefit and one practical limitation, and naturally use at least one of today's target expressions.",
+        "targetExpression": "kick back",
+        "gradingCriteria": "A successful answer should give a clear or balanced view, include one relevant benefit and one practical limitation, remain within the workday topic and naturally use at least one target expression. First judge whether the content answers the question, then check expression use. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's targets or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) observation—many animals are less active than they appear; (2) two explanations or benefits—reserve ants and boredom helping invention; (3) conclusion—why humans may need to relax. Phrase bank: “at any given time”, “ready to step in”, “switch off”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "Nature documentaries can make animals appear always active, although many spend much of their time doing nothing.",
+      "Roughly half of a rock-ant colony may be inactive at any given time.",
+      "One explanation is that inactive ants form a reserve ready to step in if disease or disaster strikes.",
+      "Dr Sandi Mann argues that productivity is overrated and boredom can support curiosity and invention.",
+      "Constant stimulation, swiping and scrolling make it harder for people to switch off.",
+      "Allowing more boredom, slowing down and relaxing may help people gain its benefits."
+    ]
+  }
+}
