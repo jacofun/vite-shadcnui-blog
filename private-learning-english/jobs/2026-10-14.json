@@ -1,0 +1,247 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-10-14",
+  "episodeId": "260205-rethinking-dyslexia",
+  "title": "Rethinking dyslexia",
+  "publishedAt": "2026-02-05",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260205",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260205_6_minute_english_rethinking_dyslexia_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260205_6_minute_english_rethinking_dyslexia_transcript.pdf",
+  "reason": "上一课关注 AI 输出与证据判断，今天轮换到团队协作与职场优势。本集讨论如何跳出单一能力标准，识别不同成员在信息处理、问题解决和沟通方面的长处，适合迁移到工程团队分工、人才培养和项目协作。练习反复调用描述困难、突出优势、提升认知和重视贡献的高频表达，帮助把理解转化为管理与协作场景中的主动输出。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "团队协作",
+    "职场沟通",
+    "能力优势",
+    "多元人才",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "struggle to",
+        "meaning": "find it difficult to do something",
+        "usage": "Follow it with a base verb: Some users struggle to understand a complex error message."
+      },
+      {
+        "expression": "excel in",
+        "meaning": "be especially good at an activity or subject",
+        "usage": "Follow it with a noun or an -ing form: She excels in solving complex technical problems."
+      },
+      {
+        "expression": "raise awareness about",
+        "meaning": "increase people's knowledge or understanding of an issue",
+        "usage": "Use it before a topic: The workshop raised awareness about accessible design."
+      },
+      {
+        "expression": "far from being",
+        "meaning": "used to show that the real situation is very different from an initial description",
+        "usage": "Follow it with a noun or adjective phrase: Far from being a weakness, the difference helped the team."
+      },
+      {
+        "expression": "read people",
+        "meaning": "understand people's intentions through their behaviour and body language",
+        "usage": "Use it after can, be able to or be good at: A good interviewer needs to read people carefully."
+      },
+      {
+        "expression": "value someone's contribution",
+        "meaning": "consider what someone adds to a group to be important",
+        "usage": "Change the possessive as needed: Strong teams value each member's contribution."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "reading-struggle",
+        "type": "fill-blank",
+        "prompt": "Complete the programme's idea: Some people with dyslexia may ______ read, write or spell.",
+        "targetExpression": "struggle to",
+        "answers": [
+          "struggle to"
+        ],
+        "explanation": "The transcript says dyslexia can make reading, writing and spelling hard, and later says dyslexic people may struggle to read or spell."
+      },
+      {
+        "id": "excel-workplace",
+        "type": "single-choice",
+        "prompt": "What does it mean that people with dyslexia can “excel in” creative thinking and problem-solving?",
+        "targetExpression": "excel in",
+        "options": [
+          {
+            "id": "a",
+            "text": "They can be especially good at these activities."
+          },
+          {
+            "id": "b",
+            "text": "They must avoid these activities at work."
+          },
+          {
+            "id": "c",
+            "text": "They can do these activities only at school."
+          },
+          {
+            "id": "d",
+            "text": "They find every creative task equally difficult."
+          }
+        ],
+        "answer": "a",
+        "explanation": "In this context, “excel in” means having enhanced ability and performing especially well in an area."
+      },
+      {
+        "id": "awareness-charity",
+        "type": "fill-blank",
+        "prompt": "Complete the charity's aim: Made By Dyslexia works with schools and teachers to ______ the condition.",
+        "targetExpression": "raise awareness about",
+        "answers": [
+          "raise awareness about"
+        ],
+        "explanation": "The transcript says the charity works with schools and teachers to raise awareness about dyslexia."
+      },
+      {
+        "id": "far-from-pattern",
+        "type": "single-choice",
+        "prompt": "Which sentence uses “far from being” naturally?",
+        "targetExpression": "far from being",
+        "options": [
+          {
+            "id": "a",
+            "text": "Far from being only a disability, dyslexia can come with valuable skills."
+          },
+          {
+            "id": "b",
+            "text": "Far from be only a disability, dyslexia can come with valuable skills."
+          },
+          {
+            "id": "c",
+            "text": "Far being from only a disability, dyslexia can come with valuable skills."
+          },
+          {
+            "id": "d",
+            "text": "Far to being only a disability, dyslexia can come with valuable skills."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript uses “far from being a disability”; the fixed pattern is “far from being” followed by a noun or adjective phrase."
+      },
+      {
+        "id": "value-team-contribution",
+        "type": "fill-blank",
+        "prompt": "Complete the team principle with today's expression: Effective project leaders ______ each member's contribution.",
+        "targetExpression": "value someone's contribution",
+        "answers": [
+          "value"
+        ],
+        "explanation": "The programme says that valuing everyone's contribution helps business and science teams use different skills successfully."
+      },
+      {
+        "id": "read-people-meaning",
+        "type": "single-choice",
+        "prompt": "In the episode, what does it mean to “read people”?",
+        "targetExpression": "read people",
+        "options": [
+          {
+            "id": "a",
+            "text": "Understand their real intentions through behaviour and body language."
+          },
+          {
+            "id": "b",
+            "text": "Read every document they have written."
+          },
+          {
+            "id": "c",
+            "text": "Correct their spelling without speaking to them."
+          },
+          {
+            "id": "d",
+            "text": "Secretly collect information about their government."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript defines reading people as understanding their true intentions through body language and behaviour rather than words."
+      },
+      {
+        "id": "excel-transfer",
+        "type": "fill-blank",
+        "prompt": "Complete the work sentence: An engineer who spots complex patterns quickly may ______ incident analysis.",
+        "targetExpression": "excel in",
+        "answers": [
+          "excel in"
+        ],
+        "explanation": "“Excel in” naturally describes being especially good at incident analysis, applying the episode's point about pattern recognition to engineering work."
+      },
+      {
+        "id": "teamwork-main-idea",
+        "type": "single-choice",
+        "prompt": "According to Dr Maggie Aderin-Pocock, what helps project teams achieve difficult goals?",
+        "targetExpression": "value someone's contribution",
+        "options": [
+          {
+            "id": "a",
+            "text": "Recognising differences and valuing the skills people contribute."
+          },
+          {
+            "id": "b",
+            "text": "Giving every team member exactly the same type of task."
+          },
+          {
+            "id": "c",
+            "text": "Focusing only on reading and writing speed."
+          },
+          {
+            "id": "d",
+            "text": "Removing people who process information differently."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Maggie connects teamwork and collaboration with knowing people's skills and valuing all those skills."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-school-focus",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. Why can school be difficult for some dyslexic children? Start: “They may struggle to...” and mention the school's focus.",
+        "targetExpression": "struggle to",
+        "gradingCriteria": "A supported answer should say that dyslexic children may struggle to read or write while school focuses strongly on those skills. First judge whether the content answers the question, then check whether “struggle to” is used naturally. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-work-strengths",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain how dyslexic workers may contribute at work. Use “excel in”. You may use: creative thinking / problem-solving / communication.",
+        "targetExpression": "excel in",
+        "gradingCriteria": "A supported answer should explain that dyslexic workers may be strong in one or more areas such as creative thinking, problem-solving or communication. First judge whether the content answers the question, then check whether “excel in” is used naturally. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-difference",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, rewrite this idea using “far from being”: “Dyslexia is not simply a disability; it can also bring useful ways of thinking.” Keep the contrast unchanged.",
+        "targetExpression": "far from being",
+        "gradingCriteria": "A successful answer should preserve the contrast between difficulty and useful abilities while using “far from being” naturally. First judge whether the meaning is preserved, then check the specified expression. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-project-roles",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about assigning work in a software project where one person notices patterns and another communicates well with users. Phrase bank: “excel in”, “read people”, “value someone's contribution”. Use at least one phrase and give each person a suitable task.",
+        "targetExpression": "value someone's contribution",
+        "gradingCriteria": "A successful answer should stay in the software-project scenario, give both people suitable tasks based on their strengths and naturally use at least one supplied phrase. First judge whether the content completes the task, then check expression use. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "bounded-free-response-inclusive-workplace",
+        "type": "application",
+        "prompt": "In 40–70 words, say whether employers should change recruitment or daily work to make better use of different thinking styles. Give one practical change and one possible benefit, and naturally use at least one of today's target expressions.",
+        "targetExpression": "raise awareness about",
+        "gradingCriteria": "A successful answer should give a clear view, propose one practical workplace change, state one relevant benefit and naturally use at least one target expression. First judge whether the content answers the question, then check expression use. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) challenge—why dyslexic children may find school difficult; (2) two strengths or examples—workplace abilities and reading people or project teamwork; (3) conclusion—why teams should recognise different skills. Phrase bank: “struggle to”, “excel in”, “value someone's contribution”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "Dyslexia is a learning difficulty that can make reading, writing or spelling hard.",
+      "Around one in ten people in the UK are thought to be dyslexic, and school often focuses on reading and writing.",
+      "Dyslexic people may have enhanced abilities in creative thinking, problem-solving and inventiveness.",
+      "Kate Griggs says fast pattern recognition, problem-solving and reading people can be useful skills for spies.",
+      "Dr Maggie Aderin-Pocock links scientific success with teamwork, collaboration and recognising different skills.",
+      "Valuing everyone's contribution helps business and science teams work towards difficult goals."
+    ]
+  }
+}
