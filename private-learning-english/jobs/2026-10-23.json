@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-10-23",
+  "episodeId": "200806-no-more-bosses",
+  "title": "No more bosses",
+  "publishedAt": "2020-08-06",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english/ep-200806",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/200806_6min_english_no_more_bosses_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/200806_6min_english_no_more_bosses.pdf",
+  "reason": "上一课讨论屏幕时间与数字习惯，今天轮换到项目管理和团队协作。本集通过无主管企业讨论授权、承诺、责任和成员适应差异，适合联系平台团队自治、任务分工、代码评审和故障复盘。练习从原文搭配的识别与补全开始，再逐步过渡到原因解释、改写和受限工作场景输出，帮助学习者主动调用简洁而常用的团队沟通表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "项目管理",
+    "团队协作",
+    "自主管理",
+    "责任与授权",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "get on with someone",
+        "meaning": "have a friendly or workable relationship with someone",
+        "usage": "Change someone to the person concerned: I get on with my project manager even when we disagree."
+      },
+      {
+        "expression": "feel listened to",
+        "meaning": "feel that other people pay attention to and respect what you say",
+        "usage": "Use it when describing inclusive communication: Team members feel listened to when their concerns receive a clear response."
+      },
+      {
+        "expression": "keep the commitments you make",
+        "meaning": "do what you have promised or firmly agreed to do",
+        "usage": "Use it for reliable follow-through: In a self-managing team, you must keep the commitments you make."
+      },
+      {
+        "expression": "take full advantage of",
+        "meaning": "make the best possible use of an opportunity or situation",
+        "usage": "Follow it with a noun: We should take full advantage of the new testing environment."
+      },
+      {
+        "expression": "get left behind",
+        "meaning": "fail to progress as quickly as other people",
+        "usage": "Use it when someone needs support to keep up: New team members may get left behind without clear guidance."
+      },
+      {
+        "expression": "be held accountable for",
+        "meaning": "be required to accept responsibility for an action or result",
+        "usage": "Follow it with a noun or -ing form: Each developer is held accountable for the quality of their changes."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "get-on-collocation",
+        "type": "fill-blank",
+        "prompt": "Complete Georgina's description of a bad boss: someone you just cannot ______, no matter how hard you try.",
+        "targetExpression": "get on with someone",
+        "answers": [
+          "get on with",
+          "get along with"
+        ],
+        "explanation": "Georgina describes a bad boss as someone you cannot “get on with”; “get along with” is an equivalent accepted form."
+      },
+      {
+        "id": "listened-to-meaning",
+        "type": "single-choice",
+        "prompt": "What does it mean when self-managing workers “feel listened to”?",
+        "targetExpression": "feel listened to",
+        "options": [
+          {
+            "id": "a",
+            "text": "They believe their ideas and concerns receive attention and respect."
+          },
+          {
+            "id": "b",
+            "text": "They are required to remain silent during decisions."
+          },
+          {
+            "id": "c",
+            "text": "They hear every conversation taking place in the company."
+          },
+          {
+            "id": "d",
+            "text": "They can avoid responding to requests from colleagues."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript links feeling listened to with having a voice in how the company is run and having proposals respected."
+      },
+      {
+        "id": "keep-commitments",
+        "type": "fill-blank",
+        "prompt": "Complete Morning Star's second principle: people should ______ to each other.",
+        "targetExpression": "keep the commitments you make",
+        "answers": [
+          "keep the commitments they make",
+          "keep their commitments"
+        ],
+        "explanation": "Doug Kirkpatrick says people should keep the commitments they make to each other; the programme defines commitments as promises or firm decisions."
+      },
+      {
+        "id": "full-advantage-meaning",
+        "type": "single-choice",
+        "prompt": "If workers “take full advantage of” a self-managing environment, what do they do?",
+        "targetExpression": "take full advantage of",
+        "options": [
+          {
+            "id": "a",
+            "text": "They make good use of the opportunity to improve and achieve goals."
+          },
+          {
+            "id": "b",
+            "text": "They refuse all responsibility and wait for instructions."
+          },
+          {
+            "id": "c",
+            "text": "They take control of every other employee's work."
+          },
+          {
+            "id": "d",
+            "text": "They remove every rule from the organisation."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme directly defines “take full advantage of” as making good use of an opportunity to progress or achieve a goal."
+      },
+      {
+        "id": "left-behind",
+        "type": "fill-blank",
+        "prompt": "Complete the risk described in the programme: workers who are slower to adapt may ______.",
+        "targetExpression": "get left behind",
+        "answers": [
+          "get left behind",
+          "be left behind"
+        ],
+        "explanation": "The transcript says some workers may be left behind because they are not as quick to develop and adapt."
+      },
+      {
+        "id": "accountable-meaning",
+        "type": "single-choice",
+        "prompt": "What does it mean for workers to “be held accountable for” their performance?",
+        "targetExpression": "be held accountable for",
+        "options": [
+          {
+            "id": "a",
+            "text": "They must accept responsibility for the consequences of their work."
+          },
+          {
+            "id": "b",
+            "text": "They can pass every difficult decision to a manager."
+          },
+          {
+            "id": "c",
+            "text": "They are guaranteed credit whenever a project succeeds."
+          },
+          {
+            "id": "d",
+            "text": "They are judged only by how many meetings they attend."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme explains that accountable workers accept responsibility for their performance and the consequences of their actions."
+      },
+      {
+        "id": "self-management-balance",
+        "type": "single-choice",
+        "prompt": "Which statement best summarises the programme's contrast about self-management?",
+        "targetExpression": "feel listened to",
+        "options": [
+          {
+            "id": "a",
+            "text": "Some workers feel listened to and empowered, while others may struggle with the extra responsibility."
+          },
+          {
+            "id": "b",
+            "text": "Every worker performs better as soon as all managers disappear."
+          },
+          {
+            "id": "c",
+            "text": "Self-management works only because employees no longer make commitments."
+          },
+          {
+            "id": "d",
+            "text": "The only benefit of self-management is holding more meetings."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript presents both sides: some employees feel listened to and empowered, but others may find the responsibility stressful or be left behind."
+      },
+      {
+        "id": "accountable-transfer",
+        "type": "fill-blank",
+        "prompt": "Use today's expression in a new engineering context: service owners should ______ reliability after deployment.",
+        "targetExpression": "be held accountable for",
+        "answers": [
+          "be held accountable for",
+          "be accountable for"
+        ],
+        "explanation": "The expression naturally transfers to engineering ownership: service owners accept responsibility for reliability after deployment."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "guided-recall-voice",
+        "type": "comprehension",
+        "prompt": "Write one sentence of 10–25 words. Why do some Morning Star employees like self-management? Start: “They may...” Use “feel listened to”.",
+        "targetExpression": "feel listened to",
+        "gradingCriteria": "A supported answer should say that workers like having a respected voice in how the company is run, and it should naturally use “feel listened to”. First judge whether the content answers the question, then check whether the specified expression is used naturally. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-comprehension-differences",
+        "type": "comprehension",
+        "prompt": "In 20–40 words, explain why self-management can help some workers but challenge others. Use “take full advantage of”. You may use: extra responsibility / slower to adapt.",
+        "targetExpression": "take full advantage of",
+        "gradingCriteria": "A supported answer should contrast workers who use the opportunity to progress with workers who may struggle with extra responsibility or adapt more slowly, and naturally use “take full advantage of”. First judge whether the content answers the question, then check the specified expression. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "guided-paraphrase-accountability",
+        "type": "paraphrase",
+        "prompt": "In 20–40 words, rewrite this idea using “be held accountable for”: “Even without a boss, workers must accept responsibility for their performance and decisions.” Keep the meaning unchanged.",
+        "targetExpression": "be held accountable for",
+        "gradingCriteria": "A successful answer should preserve the idea that workers remain responsible for their performance and decisions even without a boss, and naturally use “be held accountable for”. First judge whether the meaning is preserved, then check the specified expression. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "supported-application-platform-team",
+        "type": "application",
+        "prompt": "Write two sentences of 30–60 words about a platform team trying more self-management during an incident-response improvement project. State one rule and one benefit. Phrase bank: “keep the commitments you make”, “feel listened to”, “be held accountable for”. Use at least one phrase, changing its form if needed.",
+        "targetExpression": "keep the commitments you make",
+        "gradingCriteria": "A successful answer should stay in the platform-team scenario, state one practical rule and one likely benefit, and naturally use at least one supplied phrase. First judge whether the content completes the task, then check expression use. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      },
+      {
+        "id": "bounded-free-no-bosses",
+        "type": "application",
+        "prompt": "In 40–70 words, give your view on whether a software team could work well without a traditional boss. Include one concrete condition for success and naturally use at least one of today's target expressions.",
+        "targetExpression": "be held accountable for",
+        "gradingCriteria": "A successful answer should remain within the episode's self-management theme, give a clear view, include one concrete condition, and naturally use at least one target expression; “be held accountable for” is suggested but another listed target is acceptable. First judge whether the content answers the question, then check expression use. Point out only one or two important improvements. Do not penalise simple but correct English for not being advanced. If useful, give only one alternative from today's target expressions or transcript. Distinguish missing meaning from correct meaning expressed less naturally."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80–120 words using this structure: (1) topic—why some companies remove bosses; (2) two key ideas—employee voice and commitments; (3) balance—opportunities, risks and responsibility. Phrase bank: “feel listened to”, “take full advantage of”, “be held accountable for”. Use at least two phrases naturally. Simple, accurate sentences are enough.",
+    "referencePoints": [
+      "Traditional companies are often organised as hierarchies, and workers may feel managers do not listen to them.",
+      "Morning Star is presented as a self-managing company where decisions are made without force or coercion.",
+      "Employees are expected to keep the commitments they make to one another.",
+      "Some workers feel listened to, have a voice and take full advantage of the opportunity to improve.",
+      "Other workers may struggle with the extra responsibility or get left behind because they adapt more slowly.",
+      "All workers can be held accountable for their performance and the consequences of their actions."
+    ]
+  }
+}
