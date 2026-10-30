@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-10-30",
+  "episodeId": "260108-is-social-media-dead",
+  "title": "Is social media dead?",
+  "publishedAt": "2026-01-08",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260108",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260108_6_minute_english_is_social_media_dead_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260108_6_minute_english_is_social_media_dead_transcript_.pdf",
+  "reason": "从金融风险与睡眠管理轮换到软件、AI 与数字生活。节目讨论生成式 AI 如何改变社交媒体，以及用户为何可能转向更小、更有个人连接的网络空间；这些内容适合迁移到平台产品评估、内容质量判断、技术趋势讨论和团队决策。练习以高频动词搭配和可复用句型为核心，通过重复调用与逐步撤除支架，把被动理解推进到主动表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "科技与AI",
+    "软件与数字生活",
+    "社交媒体",
+    "内容质量",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "with the rise of",
+        "meaning": "as something becomes more common, important or powerful",
+        "usage": "With the rise of AI, it is harder to tell which online content was made by people."
+      },
+      {
+        "expression": "turn someone away from",
+        "meaning": "make someone lose interest in or stop using something",
+        "usage": "Low-quality automated posts can turn users away from a platform."
+      },
+      {
+        "expression": "shatter the illusion",
+        "meaning": "destroy a false but comforting belief by revealing an unpleasant truth",
+        "usage": "The angry debate shattered the illusion that the internet was only a place for fun."
+      },
+      {
+        "expression": "lean into",
+        "meaning": "actively accept, use or develop a particular approach",
+        "usage": "Some large technology companies are leaning into generated content."
+      },
+      {
+        "expression": "drift away from",
+        "meaning": "gradually lose interest in or move away from something",
+        "usage": "Users may drift away from content that feels impersonal."
+      },
+      {
+        "expression": "gravitate towards",
+        "meaning": "be naturally drawn or attracted to something or someone",
+        "usage": "People may gravitate towards smaller communities and individual creators."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "single-choice",
+        "prompt": "Which sentence best explains why the programme says social media now feels different?",
+        "targetExpression": "with the rise of",
+        "options": [
+          {
+            "id": "a",
+            "text": "With the rise of AI, it can be hard to know whether content was created by humans."
+          },
+          {
+            "id": "b",
+            "text": "With the rise of telegraphs, people stopped sharing photos online."
+          },
+          {
+            "id": "c",
+            "text": "With the rise of smaller communities, all large platforms disappeared."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript says AI use has evolved so much that it is hard to know what was created by humans and what was not."
+      },
+      {
+        "id": "obj-02",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript-based sentence: The introduction of AI has ______ social media.",
+        "targetExpression": "turn someone away from",
+        "answers": [
+          "turned some users away from"
+        ],
+        "explanation": "The transcript states that the introduction of AI has turned some users away from social media."
+      },
+      {
+        "id": "obj-03",
+        "type": "single-choice",
+        "prompt": "When political debate 'shattered the illusion' that the internet was fun, what happened?",
+        "targetExpression": "shatter the illusion",
+        "options": [
+          {
+            "id": "a",
+            "text": "A pleasant but false belief was destroyed."
+          },
+          {
+            "id": "b",
+            "text": "A new social platform was created."
+          },
+          {
+            "id": "c",
+            "text": "People became more excited about online debate."
+          }
+        ],
+        "answer": "a",
+        "explanation": "In the programme, to shatter an illusion means to destroy a false belief and make someone realise an unpleasant truth."
+      },
+      {
+        "id": "obj-04",
+        "type": "fill-blank",
+        "prompt": "Complete the phrase used for the tech companies' strategy: The large social networks are ______ generated content.",
+        "targetExpression": "lean into",
+        "answers": [
+          "leaning into"
+        ],
+        "explanation": "Kyle says the large social networks and tech behemoths are 'leaning into generated content'."
+      },
+      {
+        "id": "obj-05",
+        "type": "single-choice",
+        "prompt": "What does Kyle expect people to do if AI-generated content remains only a novelty?",
+        "targetExpression": "drift away from",
+        "options": [
+          {
+            "id": "a",
+            "text": "They will gradually drift away from it."
+          },
+          {
+            "id": "b",
+            "text": "They will immediately trust every generated post."
+          },
+          {
+            "id": "c",
+            "text": "They will make large networks more personal by posting more."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Kyle calls generated content a novelty for now and predicts that people will drift away from it."
+      },
+      {
+        "id": "obj-06",
+        "type": "fill-blank",
+        "prompt": "Complete Kyle's prediction: People are ______ smaller online spaces.",
+        "targetExpression": "gravitate towards",
+        "answers": [
+          "gravitating towards",
+          "gravitating toward"
+        ],
+        "explanation": "The transcript says people are gravitating towards smaller online spaces and connecting more closely with individual voices."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "Which option best captures the contrast in Kyle's prediction?",
+        "targetExpression": "lean into",
+        "options": [
+          {
+            "id": "a",
+            "text": "Large networks lean into generated content, but many users want personal and meaningful content."
+          },
+          {
+            "id": "b",
+            "text": "Large networks avoid generated content, while users demand more of it."
+          },
+          {
+            "id": "c",
+            "text": "Both companies and users want exactly the same kind of content."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme contrasts tech companies pushing generated content with users wanting content that is more personal and meaningful."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete the collocation for a gradual change in interest: Users may ______ content that feels impersonal.",
+        "targetExpression": "drift away from",
+        "answers": [
+          "drift away from"
+        ],
+        "explanation": "'Drift away from' fits a gradual loss of interest and repeats Kyle's prediction about generated content."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words). Why have some people stopped enjoying social media? Use 'turn someone away from'. Start: 'AI-generated content may...'",
+        "targetExpression": "turn someone away from",
+        "gradingCriteria": "First decide whether the answer addresses why some people stopped enjoying social media. Then check whether 'turn someone away from' is used naturally and keeps the transcript's meaning. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words). Explain the contrast between large tech companies and many users. Use 'lean into'. You may use: 'companies / generated content' and 'users / personal and meaningful content'.",
+        "targetExpression": "lean into",
+        "gradingCriteria": "First decide whether the answer explains both sides of the contrast. Then check whether 'lean into' is used naturally for the companies' strategy. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words). Rewrite without changing the main meaning: 'People are becoming less interested in large platforms and are naturally choosing smaller online communities.' Use 'gravitate towards'.",
+        "targetExpression": "gravitate towards",
+        "gradingCriteria": "First decide whether the answer preserves the ideas of reduced interest in large platforms and attraction to smaller communities. Then check whether 'gravitate towards' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). Your platform team is considering adding a lot of AI-generated text to an internal product. State one possible benefit and one risk. Use one phrase from this bank: 'lean into', 'turn someone away from', 'gravitate towards'.",
+        "targetExpression": "lean into",
+        "gradingCriteria": "First decide whether the answer gives one relevant benefit and one risk in the stated platform-team scenario. Then check whether at least one phrase from the given bank is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences). Within the programme's topic, say what kind of online space you would prefer as AI-generated content grows, and give one reason. Naturally use at least one of today's target expressions.",
+        "targetExpression": "gravitate towards",
+        "gradingCriteria": "First decide whether the answer states a preferred online space and a relevant reason within the programme's topic. Then check whether at least one target expression is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Retell the episode in 80-120 words without looking at the full transcript. Use this structure: (1) topic — how AI is changing social media; (2) two key ideas — why some users are less interested and what large companies are doing; (3) conclusion/example — where users may go next. Phrase bank: 'with the rise of', 'lean into', 'gravitate towards'. Use at least two phrases naturally. Simple, clear English is enough; advanced vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "Social media changed the internet, but the rise of AI has made online content feel stranger and less clearly human.",
+      "A report mentioned in the programme found that social media activity peaked in 2022 and has declined since then.",
+      "Angry political debate in 2015 and 2016 shattered Kyle Chayka's illusion that the internet was mainly a fun social space.",
+      "Large social networks and powerful tech companies are leaning into generated content.",
+      "Kyle thinks many users want more personal and meaningful content and may drift away from AI content after its novelty fades.",
+      "People may gravitate towards smaller online communities, individual creators and less frequent posting."
+    ]
+  }
+}
