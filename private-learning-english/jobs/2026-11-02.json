@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-02",
+  "episodeId": "220818-women-in-the-workplace",
+  "title": "Women in the workplace",
+  "publishedAt": "2022-08-18",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2022/ep-220818",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/220818_6min_english_women_in_the_workplace_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/220818_6min_english_women_in_the_workplace.pdf",
+  "reason": "从城市环境与工作生活平衡轮换到项目管理、团队协作和职场沟通。节目讨论团队中不显眼却耗时的任务如何分配，以及这种分配对职业发展和工作负担的影响，适合迁移到会议记录、活动组织、项目支持和工程团队责任分配。练习围绕六个高频动词搭配和句型反复调用，从原文支撑逐步过渡到工作场景表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "项目管理",
+    "团队协作",
+    "职场沟通",
+    "任务分配",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "advance your career",
+        "meaning": "make progress in your professional life",
+        "usage": "Leading an important project can help you advance your career."
+      },
+      {
+        "expression": "improve your chances of",
+        "meaning": "make a particular result more likely",
+        "usage": "Clear evidence of your impact can improve your chances of promotion."
+      },
+      {
+        "expression": "take on a task",
+        "meaning": "accept responsibility for doing a piece of work",
+        "usage": "Before you take on a task, check whether you have enough time to finish it well."
+      },
+      {
+        "expression": "be tasked with",
+        "meaning": "be given responsibility for doing something",
+        "usage": "She was tasked with coordinating the release across three teams."
+      },
+      {
+        "expression": "be expected to",
+        "meaning": "be required or assumed to do something",
+        "usage": "Team members should not always be expected to handle extra administrative work."
+      },
+      {
+        "expression": "be based on",
+        "meaning": "use something as the main reason or principle for a decision",
+        "usage": "Project roles should be based on skills, availability and development goals."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "single-choice",
+        "prompt": "Why are some workplace duties described as non-promotable tasks?",
+        "targetExpression": "advance your career",
+        "options": [
+          {
+            "id": "a",
+            "text": "They help the organisation but do little to advance your career."
+          },
+          {
+            "id": "b",
+            "text": "They always lead directly to a better-paid position."
+          },
+          {
+            "id": "c",
+            "text": "They require no time or effort from the person doing them."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript defines non-promotable tasks as time-consuming jobs that help an organisation but do little to boost or advance a worker's career."
+      },
+      {
+        "id": "obj-02",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript-based phrase: Some office jobs do not ______ promotion.",
+        "targetExpression": "improve your chances of",
+        "answers": [
+          "improve your chances of"
+        ],
+        "explanation": "The opening example says these jobs do nothing to improve a woman's chances of promotion."
+      },
+      {
+        "id": "obj-03",
+        "type": "single-choice",
+        "prompt": "What does the programme say women disproportionately do at work?",
+        "targetExpression": "take on a task",
+        "options": [
+          {
+            "id": "a",
+            "text": "They take on more unimportant, less visible tasks."
+          },
+          {
+            "id": "b",
+            "text": "They refuse to take on any team responsibilities."
+          },
+          {
+            "id": "c",
+            "text": "They take on only tasks that guarantee promotion."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Professor Vesterlund's research concerns women disproportionately taking on unimportant, less visible workplace tasks."
+      },
+      {
+        "id": "obj-04",
+        "type": "fill-blank",
+        "prompt": "Complete Natalie's example: She was ______ being the team party organiser.",
+        "targetExpression": "be tasked with",
+        "answers": [
+          "tasked with"
+        ],
+        "explanation": "Natalie says, 'I was tasked with being the team party organiser.'"
+      },
+      {
+        "id": "obj-05",
+        "type": "single-choice",
+        "prompt": "Which statement matches Natalie's view of workplace expectations?",
+        "targetExpression": "be expected to",
+        "options": [
+          {
+            "id": "a",
+            "text": "Many women are expected to be good at multitasking."
+          },
+          {
+            "id": "b",
+            "text": "Every worker is expected to organise the same number of parties."
+          },
+          {
+            "id": "c",
+            "text": "Trainees are expected to speak throughout every meeting."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript says Natalie thinks many women in the workplace are expected to be good at multitasking."
+      },
+      {
+        "id": "obj-06",
+        "type": "fill-blank",
+        "prompt": "Complete the programme's positive example: In some companies, promotion is ______ ability, not gender.",
+        "targetExpression": "be based on",
+        "answers": [
+          "based on"
+        ],
+        "explanation": "The programme says companies benefit when promotion is based on ability rather than gender."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "Which task is most likely to advance your career, based on the programme's contrast?",
+        "targetExpression": "advance your career",
+        "options": [
+          {
+            "id": "a",
+            "text": "Leading work that clearly contributes to important business results."
+          },
+          {
+            "id": "b",
+            "text": "Always arranging cards, cakes and social events for the team."
+          },
+          {
+            "id": "c",
+            "text": "Taking notes in every meeting without being allowed to speak."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript contrasts career-building work with support duties that consume time but do little to increase profits or boost a career."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete the transferable collocation: Before you ______, ask how it supports the team and your development.",
+        "targetExpression": "take on a task",
+        "answers": [
+          "take on a task",
+          "take on the task"
+        ],
+        "explanation": "'Take on a task' means accept responsibility for it, matching the transcript's description of workers accepting less visible duties."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words). Why are note-taking and organising social events called non-promotable tasks? Use 'advance your career'. Start: 'They help the organisation, but...'",
+        "targetExpression": "advance your career",
+        "gradingCriteria": "First decide whether the answer says these tasks help the organisation but do little for career progress. Then check whether 'advance your career' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words). Explain how an unequal share of less visible work can affect women. Use 'take on a task'. You may use: 'time and effort', 'burn-out' and 'career progress'.",
+        "targetExpression": "take on a task",
+        "gradingCriteria": "First decide whether the answer explains at least one effect of women taking on more less-visible work, such as burn-out, dissatisfaction or slower career progress. Then check whether 'take on a task' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words). Rewrite without changing the main meaning: 'Natalie's employer gave her responsibility for organising the team party, although this work did not help her career.' Use 'be tasked with'.",
+        "targetExpression": "be tasked with",
+        "gradingCriteria": "First decide whether the answer preserves both the assigned party-organising duty and its limited career value. Then check whether 'be tasked with' is used naturally and grammatically. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). In a software project, the same person is always asked to take notes and organise meetings. Describe one problem and one fairer approach. Use one phrase from this bank: 'take on a task', 'be expected to', 'be based on'.",
+        "targetExpression": "be expected to",
+        "gradingCriteria": "First decide whether the answer gives one relevant problem and one fairer task-allocation approach in the stated software-project scenario. Then check whether at least one phrase from the given bank is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences). Within the programme's topic, give your view on how managers should distribute visible and less-visible work. Naturally use at least one of today's target expressions.",
+        "targetExpression": "be based on",
+        "gradingCriteria": "First decide whether the answer gives a clear and relevant view on distributing visible and less-visible work. Then check whether at least one target expression is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Retell the episode in 80-120 words without looking at the full transcript. Use this structure: (1) topic - unequal distribution of less-visible workplace tasks; (2) two key ideas - examples of non-promotable work and its effects on workload or careers; (3) conclusion - what fairer promotion and task allocation could look like. Phrase bank: 'advance your career', 'take on a task', 'be based on'. Use at least two phrases naturally. Simple, clear English is enough; advanced vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "Women are often asked to do jobs that keep an office running but do little to improve their chances of promotion.",
+      "The programme calls jobs such as note-taking, organising social events and chairing meetings non-promotable tasks.",
+      "Research discussed in the episode says women disproportionately take on unimportant, less-visible work.",
+      "Non-promotable work contributes to differences in advancement, job dissatisfaction and burn-out.",
+      "Natalie was tasked with organising team parties and observed that women often handled more multitasking and family responsibilities.",
+      "Companies benefit from talented female leaders when promotion is based on ability rather than gender."
+    ]
+  }
+}
