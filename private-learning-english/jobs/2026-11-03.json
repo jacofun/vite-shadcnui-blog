@@ -1,0 +1,233 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-03",
+  "episodeId": "260528-living-with-debt",
+  "title": "Living with debt",
+  "publishedAt": "2026-05-28",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260528",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260528_6_minute_english_living_with_debt_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260528_6_minute_english_living_with_debt_transcript.pdf",
+  "reason": "从职场任务分配轮换到金融经济与个人消费。节目讨论借款、还款、基本生活开支和债务压力，既贴合金融科技与银行业务背景，也适合迁移到个人预算、信贷产品说明和风险沟通场景。练习围绕六个高频表达反复调用，从原文支撑逐步过渡到受控改写和有限场景迁移。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "金融经济",
+    "个人消费",
+    "债务管理",
+    "金融科技",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "take out a loan",
+        "meaning": "borrow money, usually from a bank or another lender",
+        "usage": "Before you take out a loan, check the interest rate and repayment period."
+      },
+      {
+        "expression": "pay off a debt",
+        "meaning": "repay all the money that you owe",
+        "usage": "She made a realistic plan to pay off the debt over three years."
+      },
+      {
+        "expression": "make ends meet",
+        "meaning": "have just enough money to pay for basic living expenses",
+        "usage": "Higher rent has made it harder for some families to make ends meet."
+      },
+      {
+        "expression": "be in arrears",
+        "meaning": "still owe money that should already have been paid",
+        "usage": "The customer is in arrears after missing two monthly payments."
+      },
+      {
+        "expression": "get out of control",
+        "meaning": "become too difficult to manage",
+        "usage": "Small debts can get out of control when fees and interest keep growing."
+      },
+      {
+        "expression": "financial strain",
+        "meaning": "stress caused by not having enough money for basic needs or repayments",
+        "usage": "Unexpected medical costs placed the family under financial strain."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "single-choice",
+        "prompt": "Why did Jason sometimes need to borrow money?",
+        "targetExpression": "take out a loan",
+        "options": [
+          {
+            "id": "a",
+            "text": "Available jobs did not provide enough money for his family."
+          },
+          {
+            "id": "b",
+            "text": "He wanted to invest in several expensive businesses."
+          },
+          {
+            "id": "c",
+            "text": "His bank required every customer to borrow money."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Jason says the available jobs were not enough to provide for a family, so sometimes he needed to take out loans."
+      },
+      {
+        "id": "obj-02",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript-based phrase: Sometimes people need to ______ to cover necessary costs.",
+        "targetExpression": "take out a loan",
+        "answers": [
+          "take out a loan",
+          "take out loans"
+        ],
+        "explanation": "Jason says, 'Sometimes you need to take out loans.' The singular form is also correct in this sentence."
+      },
+      {
+        "id": "obj-03",
+        "type": "single-choice",
+        "prompt": "What does 'pay off a debt' mean in the programme?",
+        "targetExpression": "pay off a debt",
+        "options": [
+          {
+            "id": "a",
+            "text": "Give back all the money you borrowed."
+          },
+          {
+            "id": "b",
+            "text": "Borrow more money without a repayment plan."
+          },
+          {
+            "id": "c",
+            "text": "Delay every bill until the following year."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript explains that pay back, pay off and clear a debt all mean giving back money that was borrowed."
+      },
+      {
+        "id": "obj-04",
+        "type": "fill-blank",
+        "prompt": "Complete the collocation: Jason hoped he could ______ his debts one day.",
+        "targetExpression": "pay off a debt",
+        "answers": [
+          "pay off",
+          "pay off all"
+        ],
+        "explanation": "Jason talks about spending several years paying his debts off. Both accepted forms fit the supplied sentence naturally."
+      },
+      {
+        "id": "obj-05",
+        "type": "single-choice",
+        "prompt": "Which situation best shows someone making ends meet?",
+        "targetExpression": "make ends meet",
+        "options": [
+          {
+            "id": "a",
+            "text": "Their income just covers food, bills and rent."
+          },
+          {
+            "id": "b",
+            "text": "Their income allows unlimited luxury spending."
+          },
+          {
+            "id": "c",
+            "text": "They have stopped paying for all basic needs."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme defines making ends meet as having just enough money for basic living expenses such as food, bills and rent."
+      },
+      {
+        "id": "obj-06",
+        "type": "fill-blank",
+        "prompt": "Complete the phrase: A household that has missed required monthly payments may ______.",
+        "targetExpression": "be in arrears",
+        "answers": [
+          "be in arrears"
+        ],
+        "explanation": "To be in arrears means still owing money that should already have been paid."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "According to the programme, what may happen when debt gets out of control?",
+        "targetExpression": "get out of control",
+        "options": [
+          {
+            "id": "a",
+            "text": "It can cause stress and worry."
+          },
+          {
+            "id": "b",
+            "text": "It automatically disappears after one month."
+          },
+          {
+            "id": "c",
+            "text": "It always increases a person's income."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The introduction states that debt which gets out of control causes stress and worry."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript-based phrase: Missing bills and losing internet service showed increasing ______.",
+        "targetExpression": "financial strain",
+        "answers": [
+          "financial strain"
+        ],
+        "explanation": "The transcript says the financial strain on Jason and his partner increased before they missed bills and had their internet disconnected."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words). Why did Jason sometimes need to borrow money? Use 'take out a loan'. Start: 'He sometimes had to... because...'.",
+        "targetExpression": "take out a loan",
+        "gradingCriteria": "First decide whether the answer says that available work or income was not enough to provide for Jason's family. Then check whether 'take out a loan' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words). Explain why debt can cause greater distress for people on low incomes. Use 'make ends meet'. You may use: 'basic expenses' and 'repayments'.",
+        "targetExpression": "make ends meet",
+        "gradingCriteria": "First decide whether the answer explains that limited income can make it hard to cover basic expenses and debt repayments. Then check whether 'make ends meet' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words). Rewrite without changing the main meaning: 'Many residents still owed monthly payments that should already have been paid.' Use 'be in arrears'.",
+        "targetExpression": "be in arrears",
+        "gradingCriteria": "First decide whether the answer preserves the meaning that required monthly payments were overdue. Then check whether 'be in arrears' is used naturally and grammatically. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). A customer is considering a loan because monthly expenses exceed income. State one risk and one sensible next step. Use one phrase from this bank: 'take out a loan', 'make ends meet', 'get out of control'.",
+        "targetExpression": "get out of control",
+        "gradingCriteria": "First decide whether the answer gives one relevant borrowing risk and one practical next step in the stated customer scenario. Then check whether at least one phrase from the given bank is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences). Within the programme's topic, explain one way banks or support groups could help people discuss debt earlier. Naturally use at least one of today's target expressions.",
+        "targetExpression": "financial strain",
+        "gradingCriteria": "First decide whether the answer gives a clear, relevant way banks or support groups could help people discuss or manage debt earlier. Then check whether at least one target expression is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Retell the episode in 80-120 words without looking at the full transcript. Use this structure: (1) topic - why debt is common and difficult to discuss; (2) two key ideas - how people borrow or manage repayments, and what happens when income is too low; (3) conclusion - the effects of unmanaged debt and the value of support. Phrase bank: 'pay off a debt', 'make ends meet', 'financial strain'. Use at least two phrases naturally. Simple, clear English is enough; advanced vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "Debt is money borrowed to buy something and must usually be paid back to a bank, credit card company or another person.",
+      "Jason sometimes took out loans because available work did not provide enough money for his family.",
+      "Pay back, pay off and clear a debt all mean returning borrowed money.",
+      "Many Woldham residents were trying to make ends meet and were in arrears on monthly payments.",
+      "Debt can be managed with regular income, but it can cause serious distress for people who are unemployed or on low incomes.",
+      "Jason and his partner experienced increasing financial strain, missed bills and had their internet disconnected."
+    ]
+  }
+}
