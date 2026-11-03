@@ -66,6 +66,46 @@ CORS responses reflect the validated Origin because wildcard subdomains cannot b
 `Access-Control-Allow-Credentials`. Authenticated POSTs also require the CSRF token returned by
 `verify` or `session`. Authentication responses are always uncacheable.
 
+## AI request limits and retry behavior
+
+All public assistant requests now require the existing `OSS_CONTENT_*` configuration, in both
+login modes. Quotas use the content bucket under `${PRIVATE_RESOURCE_ROOT}/.ai-limits/` (default
+`private/.ai-limits/`), covered by the same `private/*` RAM permissions as uploads. This internal
+dot-prefixed path is rejected by the resource signing API. No authentication registry or model
+is accessed by `/health`.
+
+Limits count accepted requests, including model failures. Public limits apply globally and per
+hashed source IP; episode questions and Just Write share private limits globally and per user.
+A rejected request returns HTTP 429 with `AI_RATE_LIMITED` before any model call. Both JSON and
+SSE use the same limits. Defaults can be overridden in the function environment:
+
+| Setting | Default |
+| --- | ---: |
+| `PUBLIC_AI_GLOBAL_MINUTE_LIMIT` | 60 |
+| `PUBLIC_AI_GLOBAL_DAILY_LIMIT` | 1000 |
+| `PUBLIC_AI_IP_MINUTE_LIMIT` | 6 |
+| `PUBLIC_AI_IP_DAILY_LIMIT` | 100 |
+| `PRIVATE_AI_GLOBAL_MINUTE_LIMIT` | 60 |
+| `PRIVATE_AI_GLOBAL_DAILY_LIMIT` | 2000 |
+| `PRIVATE_AI_USER_MINUTE_LIMIT` | 20 |
+| `PRIVATE_AI_USER_DAILY_LIMIT` | 200 |
+
+Daily counters reset at UTC midnight; minute counters use fixed UTC minute windows. Configure a
+lifecycle expiration for `private/.ai-limits/` after at least two days to remove inactive client
+counters. These are request budgets, not an exact currency budget or an in-flight concurrency
+semaphore. Existing `ASSESSMENT_DAILY_LIMIT` remains separate and unchanged.
+
+Upload publication uses the upload token's issue time so the exact completion request can be
+retried after a lost response or failed index write. Conflicting metadata remains rejected.
+Grading attempts are claimed through `updateJson` before quota consumption or model calls;
+abandoned `grading` states can be retried after 120 seconds. A claim ID prevents an old worker
+from overwriting a replacement attempt. Completed retries replay the requested JSON/SSE format.
+
+The existing content-store lease is retained: it is not a linearizable distributed lock during
+lease expiry and takeover. Use the documented single-instance boundary for this deployment.
+A complete storage-protocol change and cross-instance fencing are deferred; OSS PutObject does
+not support HTTP `If-Match` conditional replacement.
+
 ## Environment mode
 
 Add either one credential:

@@ -2293,13 +2293,54 @@ async function requestPublicAssistantAnswerStream({
   });
 }
 
-async function handlePublicAssistant({ body, config, env, fetchImpl, signal, stream = false }) {
+// Count accepted model requests in shared storage, including failed model calls.
+// These limits are independent of login limits and the existing grading quota.
+async function consumeAiRequestQuota({ contentStore, scope, subject, nowSeconds, minuteLimit, dailyLimit, storagePrefix = "/private/.ai-limits" }) {
+  if (!contentStore) throw new HttpError(503, "CONTENT_STORE_UNAVAILABLE", "AI quota storage is unavailable");
+  const path = `${storagePrefix}/${scope}/${createHash("sha256").update(subject).digest("hex")}.json`;
+  const day = Math.floor(nowSeconds / 86400);
+  const minute = Math.floor(nowSeconds / 60);
+  await contentStore.updateJson(path, {
+    missing: { schemaVersion: 1, day, minute, dailyCount: 0, minuteCount: 0 },
+    validate: (value) => value?.schemaVersion === 1 &&
+      [value.day, value.minute, value.dailyCount, value.minuteCount].every((n) => Number.isSafeInteger(n) && n >= 0),
+  }, (quota) => {
+    if (quota.day !== day) { quota.day = day; quota.dailyCount = 0; }
+    if (quota.minute !== minute) { quota.minute = minute; quota.minuteCount = 0; }
+    if (quota.dailyCount >= dailyLimit || quota.minuteCount >= minuteLimit) {
+      throw new HttpError(429, "AI_RATE_LIMITED", "AI request limit reached; please try again later");
+    }
+    quota.dailyCount += 1;
+    quota.minuteCount += 1;
+    return quota;
+  });
+}
+
+function aiLimit(env, name, fallback) {
+  return integerSetting(env, name, fallback, { min: 1, max: 1_000_000 });
+}
+
+async function limitPrivateAiRequest({ route, user, config, contentStore, nowSeconds, env }) {
+  if (!["assessment/ask", "just-write/teach"].includes(route)) return;
+  if (route === "just-write/teach" ? user.role !== "owner" : !hasPrivateResourceAccess(user)) {
+    throw new HttpError(403, "MISSING_PERMISSION", "AI access has not been granted");
+  }
+  await consumeAiRequestQuota({ contentStore, storagePrefix: `${config.privateRoot}/.ai-limits`, scope: "private", subject: "global", nowSeconds,
+    minuteLimit: aiLimit(env, "PRIVATE_AI_GLOBAL_MINUTE_LIMIT", 60),
+    dailyLimit: aiLimit(env, "PRIVATE_AI_GLOBAL_DAILY_LIMIT", 2000) });
+  await consumeAiRequestQuota({ contentStore, storagePrefix: `${config.privateRoot}/.ai-limits`, scope: "private-users", subject: user.id, nowSeconds,
+    minuteLimit: aiLimit(env, "PRIVATE_AI_USER_MINUTE_LIMIT", 20),
+    dailyLimit: aiLimit(env, "PRIVATE_AI_USER_DAILY_LIMIT", 200) });
+}
+
+async function handlePublicAssistant({ body, config, env, fetchImpl, signal, stream = false, beforeModel }) {
   const question = publicAssistantText(body.question, "question", 140);
   const pagePath = publicAssistantPagePath(body.pagePath);
   if (body.history !== undefined) {
     throw new HttpError(400, "INVALID_PUBLIC_ASSISTANT_REQUEST", "history is not supported");
   }
   const modelConfig = loadPublicAssistantModelConfig(env);
+  await beforeModel?.();
   if (stream) {
     const deltas = await requestPublicAssistantAnswerStream({
       modelConfig,
@@ -2360,6 +2401,47 @@ function assessmentHistory(previous, score) {
   };
 }
 
+const ASSESSMENT_LEASE_SECONDS = 120;
+const assessmentAttemptOptions = {
+  missing: null,
+  validate: (value) => value === null || (value?.schemaVersion === 1 && ["grading", "completed", "failed"].includes(value.status)),
+};
+
+function activeAssessmentAttempt(value, nowSeconds) {
+  const expiresAt = value.leaseExpiresAt ?? Date.parse(value.submittedAt) / 1000 + ASSESSMENT_LEASE_SECONDS;
+  return value.status === "grading" && (!Number.isFinite(expiresAt) || expiresAt > nowSeconds);
+}
+
+async function claimAssessmentAttempt(contentStore, path, pending, nowSeconds) {
+  return contentStore.updateJson(path, assessmentAttemptOptions, (current) => {
+    if (current) {
+      if (current.contentHash !== pending.contentHash) throw new HttpError(409, "ATTEMPT_ID_CONFLICT", "attemptId has already been used");
+      if (current.status === "completed") return current;
+      if (activeAssessmentAttempt(current, nowSeconds)) throw new HttpError(409, "ASSESSMENT_IN_PROGRESS", "Assessment is already in progress");
+    }
+    return pending;
+  });
+}
+
+async function writeAssessmentAttempt(contentStore, path, pending, value, { ignoreSuperseded = false } = {}) {
+  return contentStore.updateJson(path, assessmentAttemptOptions, (current) => {
+    if (current?.claimId !== pending.claimId || current.status !== "grading") {
+      if (ignoreSuperseded) return current;
+      throw new HttpError(409, "ASSESSMENT_SUPERSEDED", "Assessment was retried; read the latest result");
+    }
+    return value;
+  });
+}
+
+function assessmentResult(result, stream) {
+  if (!stream) return result;
+  return (async function* () {
+    yield sseEvent("meta", { model: result.model });
+    yield sseEvent("result", { result });
+    yield sseEvent("done", {});
+  })();
+}
+
 async function handleEnglishAssessment({
   route, body, user, config, contentStore, nowSeconds, env, fetchImpl, signal, stream = false,
 }) {
@@ -2415,14 +2497,21 @@ async function handleEnglishAssessment({
     const existing = await contentStore.readJson(paths.attempt, { missing: null });
     if (existing) {
       if (existing.contentHash !== contentHash) throw new HttpError(409, "ATTEMPT_ID_CONFLICT", "attemptId has already been used");
-      if (existing.status === "completed") return existing;
-      if (existing.status === "grading") throw new HttpError(409, "ASSESSMENT_IN_PROGRESS", "Assessment is already in progress");
+      if (existing.status === "completed") return assessmentResult(existing, stream);
+      if (activeAssessmentAttempt(existing, nowSeconds)) throw new HttpError(409, "ASSESSMENT_IN_PROGRESS", "Assessment is already in progress");
     }
-    await consumeAssessmentQuota(contentStore, paths.quota, modelConfig.dailyLimit);
     const previous = await contentStore.readJson(paths.latest, { missing: null });
     const submittedAt = existing?.submittedAt || new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
-    const pending = { schemaVersion: 1, status: "grading", submissionType, attemptId, episodeId, questionId, questionType: question.type, submittedAt, contentHash, answer };
-    await contentStore.putJson(paths.attempt, pending);
+    const pending = { schemaVersion: 1, status: "grading", submissionType, attemptId, episodeId, questionId, questionType: question.type, submittedAt, contentHash, answer,
+      claimId: randomBytes(16).toString("hex"), leaseExpiresAt: nowSeconds + ASSESSMENT_LEASE_SECONDS };
+    const claimed = await claimAssessmentAttempt(contentStore, paths.attempt, pending, nowSeconds);
+    if (claimed.status === "completed") return assessmentResult(claimed, stream);
+    try {
+      await consumeAssessmentQuota(contentStore, paths.quota, modelConfig.dailyLimit);
+    } catch (error) {
+      await writeAssessmentAttempt(contentStore, paths.attempt, pending, { ...pending, status: "failed", errorCode: error.code }, { ignoreSuperseded: true });
+      throw error;
+    }
     const attemptNumber = Number.isInteger(previous?.attemptNumber) ? previous.attemptNumber + 1 : previous ? 2 : 1;
     const completeSubjective = async (modelGrading) => {
       const grading = {
@@ -2438,16 +2527,16 @@ async function handleEnglishAssessment({
         grading,
         ...assessmentHistory(previous, grading.score),
       };
-      await contentStore.putJson(paths.attempt, completed);
+      await writeAssessmentAttempt(contentStore, paths.attempt, pending, completed);
       await contentStore.putJson(paths.latest, completed);
       return completed;
     };
-    const failSubjective = (error) => contentStore.putJson(paths.attempt, {
+    const failSubjective = (error) => writeAssessmentAttempt(contentStore, paths.attempt, pending, {
       ...pending,
       status: "failed",
       failedAt: new Date().toISOString(),
       errorCode: error instanceof HttpError ? error.code : "INTERNAL_ERROR",
-    });
+    }, { ignoreSuperseded: true });
     if (stream) {
       const gradingStream = await requestSubjectiveAssessmentGrading({
         modelConfig, episode, transcript, assessment, question, answer, attemptNumber, fetchImpl,
@@ -2482,14 +2571,21 @@ async function handleEnglishAssessment({
   const existing = await contentStore.readJson(paths.attempt, { missing: null });
   if (existing) {
     if (existing.contentHash !== contentHash) throw new HttpError(409, "ATTEMPT_ID_CONFLICT", "attemptId has already been used");
-    if (existing.status === "completed") return existing;
-    if (existing.status === "grading") throw new HttpError(409, "ASSESSMENT_IN_PROGRESS", "Assessment is already in progress");
+    if (existing.status === "completed") return assessmentResult(existing, stream);
+    if (activeAssessmentAttempt(existing, nowSeconds)) throw new HttpError(409, "ASSESSMENT_IN_PROGRESS", "Assessment is already in progress");
   }
-  await consumeAssessmentQuota(contentStore, paths.quota, modelConfig.dailyLimit);
   const previous = await contentStore.readJson(paths.latest, { missing: null });
   const submittedAt = existing?.submittedAt || new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
-  const pending = { schemaVersion: 1, status: "grading", submissionType: "retelling", attemptId, episodeId, submittedAt, contentHash, retelling, objective };
-  await contentStore.putJson(paths.attempt, pending);
+  const pending = { schemaVersion: 1, status: "grading", submissionType: "retelling", attemptId, episodeId, submittedAt, contentHash, retelling, objective,
+    claimId: randomBytes(16).toString("hex"), leaseExpiresAt: nowSeconds + ASSESSMENT_LEASE_SECONDS };
+  const claimed = await claimAssessmentAttempt(contentStore, paths.attempt, pending, nowSeconds);
+  if (claimed.status === "completed") return assessmentResult(claimed, stream);
+  try {
+    await consumeAssessmentQuota(contentStore, paths.quota, modelConfig.dailyLimit);
+  } catch (error) {
+    await writeAssessmentAttempt(contentStore, paths.attempt, pending, { ...pending, status: "failed", errorCode: error.code }, { ignoreSuperseded: true });
+    throw error;
+  }
   const completeRetelling = async (grading) => {
     const completed = {
       ...pending,
@@ -2500,16 +2596,16 @@ async function handleEnglishAssessment({
       grading,
       ...assessmentHistory(previous, grading.totalScore),
     };
-    await contentStore.putJson(paths.attempt, completed);
+    await writeAssessmentAttempt(contentStore, paths.attempt, pending, completed);
     await contentStore.putJson(paths.latest, completed);
     return completed;
   };
-  const failRetelling = (gradingError) => contentStore.putJson(paths.attempt, {
+  const failRetelling = (gradingError) => writeAssessmentAttempt(contentStore, paths.attempt, pending, {
     ...pending,
     status: "failed",
     failedAt: new Date().toISOString(),
     errorCode: gradingError instanceof HttpError ? gradingError.code : "INTERNAL_ERROR",
-  });
+  }, { ignoreSuperseded: true });
   if (stream) {
     const gradingStream = await requestAssessmentGrading({
       modelConfig, episode, transcript, assessment, retelling, fetchImpl, signal, stream: true,
@@ -2580,6 +2676,7 @@ async function handlePrivateResourceUpload({
   const upload = decryptToken(body.uploadToken, [config.currentSessionKey, config.previousSessionKey]);
   if (!upload || upload.kind !== "resource-upload" || upload.sub !== user.id ||
       !Number.isSafeInteger(upload.exp) || upload.exp <= nowSeconds ||
+      !Number.isSafeInteger(upload.iat) || upload.iat > nowSeconds ||
       !upload.collection || (!upload.episode && !upload.item) || !upload.files) {
     throw new HttpError(400, "INVALID_UPLOAD_TOKEN", "Upload token is invalid or expired");
   }
@@ -2617,7 +2714,8 @@ async function handlePrivateResourceUpload({
         throw new HttpError(409, "INVALID_MEDIA", "Media content does not match its file extension");
       }
     }
-    const uploadedAt = new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
+    // The upload token fixes publication time across completion retries.
+    const uploadedAt = new Date(upload.iat * 1000).toISOString().replace(".000Z", "Z");
     const metadataPath = `${upload.collection.basePath}/items/${upload.item.itemId}/metadata.json`;
     const metadata = {
       schemaVersion: 1,
@@ -2652,7 +2750,7 @@ async function handlePrivateResourceUpload({
     throw new HttpError(409, "INVALID_TRANSCRIPT", "Transcript content is incomplete");
   }
 
-  const syncedAt = new Date(nowSeconds * 1000).toISOString().replace(".000Z", "Z");
+  const syncedAt = new Date(upload.iat * 1000).toISOString().replace(".000Z", "Z");
   const objectPrefix = `${upload.collection.basePath}/${upload.episode.episodeId}`;
   const metadataPath = `${objectPrefix}/metadata.json`;
   const episodeMetadata = {
@@ -2739,6 +2837,15 @@ export function createHandler({
         const stream = acceptsEventStream(request);
         const result = await handlePublicAssistant({
           body: parseJsonBody(request.body), config, env, fetchImpl, signal: request.signal, stream,
+          beforeModel: async () => {
+            const quotaStore = contentStore || await createPrivateResourceContentStore({ env, credentials: request.credentials });
+            await consumeAiRequestQuota({ contentStore: quotaStore, storagePrefix: `${config.privateRoot}/.ai-limits`, scope: "public", subject: "global", nowSeconds,
+              minuteLimit: aiLimit(env, "PUBLIC_AI_GLOBAL_MINUTE_LIMIT", 60),
+              dailyLimit: aiLimit(env, "PUBLIC_AI_GLOBAL_DAILY_LIMIT", 1000) });
+            await consumeAiRequestQuota({ contentStore: quotaStore, storagePrefix: `${config.privateRoot}/.ai-limits`, scope: "public-clients", subject: request.sourceIp || "unknown", nowSeconds,
+              minuteLimit: aiLimit(env, "PUBLIC_AI_IP_MINUTE_LIMIT", 6),
+              dailyLimit: aiLimit(env, "PUBLIC_AI_IP_DAILY_LIMIT", 100) });
+          },
         });
         return stream ? streamResponse(config, result) : jsonResponse(config, 200, result);
       }
@@ -2846,6 +2953,7 @@ export function createHandler({
         });
         const body = parseJsonBody(request.body);
         const user = { id: "owner", role: "owner", permissions: [] };
+        await limitPrivateAiRequest({ route, user, config, contentStore: privateContentStore, nowSeconds, env });
         const assessmentStream = ["assessment/ask", "assessment/grade"].includes(route) && acceptsEventStream(request);
         const justWriteStream = route === "just-write/teach" && acceptsEventStream(request);
         const result = route.startsWith("assessment/")
@@ -3503,6 +3611,7 @@ async function persistentRequest(options) {
 
   const state = await store.read();
   const { user } = persistedSession(state, auth, config, nowSeconds);
+  await limitPrivateAiRequest({ route, user, config, contentStore, nowSeconds, env });
   if (route === "session") return jsonResponse(config, 200, sessionResult(auth, user));
   if (route === "sign") {
     if (!hasPrivateResourceAccess(user)) {
@@ -3671,6 +3780,10 @@ export async function administer({ store, command, userId, displayName = "Owner"
 }
 
 export const __test = {
+  consumeAiRequestQuota,
+  writeAssessmentAttempt,
+  handleEnglishAssessment,
+  handlePrivateResourceUpload,
   handleJustWrite,
   assistantEventStream,
   assessmentResponseSchema,

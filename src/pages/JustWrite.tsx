@@ -1,10 +1,11 @@
 import { ArrowLeft, ArrowRight, BookOpen, LoaderCircle, PenLine, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useBlocker, useNavigate, useParams } from "react-router-dom";
 
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
 import AssistantMessage from "@/components/common/AssistantMessage";
+import { ROUTE_NAVIGATION_CANCELLED_EVENT } from "@/lib/routePrefetch";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
 import { deleteJustWrite, listJustWrite, saveJustWrite, teachJustWrite, type JustWriteEntry, type JustWriteReview, type PrivateAuthSession } from "@/lib/privateAuth";
 
@@ -92,7 +93,8 @@ function EntryList({ session }: { session: PrivateAuthSession }): JSX.Element {
 }
 
 export function JustWriteEditor(): JSX.Element {
-  return <OwnerGate>{(session) => <Editor session={session} />}</OwnerGate>;
+  const { entryId } = useParams();
+  return <OwnerGate>{(session) => <Editor key={entryId ?? "new"} session={session} />}</OwnerGate>;
 }
 
 function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
@@ -108,7 +110,22 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
   const [loading, setLoading] = useState(Boolean(entryId));
   const [busy, setBusy] = useState<"done" | "teach" | null>(null);
   const [error, setError] = useState("");
+  const savedNavigationRef = useRef(false);
   const dirty = text !== (entry?.text ?? "") || Boolean(entry && date !== entry.date);
+
+  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
+    dirty && !savedNavigationRef.current &&
+    (currentLocation.pathname !== nextLocation.pathname || currentLocation.search !== nextLocation.search),
+  );
+
+  useEffect(() => {
+    if (blocker.state !== "blocked") return;
+    if (window.confirm("当前内容尚未保存，确定离开吗？")) blocker.proceed();
+    else {
+      blocker.reset();
+      window.dispatchEvent(new Event(ROUTE_NAVIGATION_CANCELLED_EVENT));
+    }
+  }, [blocker]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -141,6 +158,7 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
     setBusy("done"); setError("");
     try {
       await saveJustWrite(session, { id: entry?.id, date, text, review: reviewedText === text ? review : null });
+      savedNavigationRef.current = true;
       navigate(base);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "保存失败");
@@ -182,7 +200,7 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
   }
 
   return <Frame>
-    <Link className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-emerald-200" onClick={(event) => { if (dirty && !window.confirm("当前内容尚未保存，确定离开吗？")) event.preventDefault(); }} to={base}><ArrowLeft className="size-4" />返回 Just Write</Link>
+    <Link className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-emerald-200" to={base}><ArrowLeft className="size-4" />返回 Just Write</Link>
     <header className="mt-10"><div className="flex items-center gap-2 font-mono text-xs tracking-[0.18em] text-emerald-300"><PenLine className="size-4" />JUST WRITE</div><h1 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">How today went</h1><p className="mt-3 text-sm leading-7 text-slate-400">不用写得完美，先把想说的话写下来。</p></header>
     {loading ? <p className="mt-10 flex items-center gap-2 text-sm text-slate-400"><LoaderCircle className="size-4 animate-spin" />正在读取…</p> : (!entryId || entry) && <div className="mt-8">
       <label className="block text-xs text-slate-400" htmlFor="just-write-date">日期</label>

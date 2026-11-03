@@ -13,6 +13,7 @@ export interface UploadOptions {
 }
 
 const DEFAULT_RETRIES = 2;
+const UPLOAD_IDLE_TIMEOUT_MS = 60_000;
 
 function retryDelay(attempt: number): number {
   return 350 * attempt + Math.floor(Math.random() * 250);
@@ -24,11 +25,15 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
       reject(new DOMException("上传已取消", "AbortError"));
       return;
     }
-    const timer = window.setTimeout(resolve, ms);
-    signal?.addEventListener("abort", () => {
+    const abort = () => {
       window.clearTimeout(timer);
       reject(new DOMException("上传已取消", "AbortError"));
-    }, { once: true });
+    };
+    const timer = window.setTimeout(() => {
+      signal?.removeEventListener("abort", abort);
+      resolve();
+    }, ms);
+    signal?.addEventListener("abort", abort, { once: true });
   });
 }
 
@@ -52,13 +57,26 @@ function uploadAttempt(
     }
 
     const request = new XMLHttpRequest();
+    let idleTimer: ReturnType<typeof setTimeout> | undefined;
+    let stalled = false;
     const abort = () => request.abort();
+    const resetIdleTimer = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => { stalled = true; request.abort(); }, UPLOAD_IDLE_TIMEOUT_MS);
+    };
+    const timeoutError = () => Object.assign(new Error("上传超时，请重试"), { status: 408 });
     request.open("PUT", target.uploadUrl);
+    // Allow large uploads on slower links while bounding an attempt's lifetime.
+    request.timeout = Math.max(5 * 60_000, Math.ceil(file.size / (64 * 1024)) * 1000);
     Object.entries(target.headers).forEach(([name, value]) => request.setRequestHeader(name, value));
     signal?.addEventListener("abort", abort, { once: true });
 
-    const cleanup = () => signal?.removeEventListener("abort", abort);
+    const cleanup = () => {
+      clearTimeout(idleTimer);
+      signal?.removeEventListener("abort", abort);
+    };
     request.upload.addEventListener("progress", (event) => {
+      resetIdleTimer();
       highestLoaded.value = Math.max(highestLoaded.value, event.loaded);
       onProgress({
         loaded: highestLoaded.value,
@@ -92,10 +110,15 @@ function uploadAttempt(
       Object.assign(error, { status: 0 });
       reject(error);
     });
+    request.addEventListener("timeout", () => {
+      cleanup();
+      reject(timeoutError());
+    });
     request.addEventListener("abort", () => {
       cleanup();
-      reject(new DOMException("上传已取消", "AbortError"));
+      reject(stalled ? timeoutError() : new DOMException("上传已取消", "AbortError"));
     });
+    resetIdleTimer();
     request.send(file);
   });
 }

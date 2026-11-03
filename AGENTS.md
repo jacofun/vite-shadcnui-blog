@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-The Vite + React invite lives inside `src/`, with `pages/MainContent.tsx` orchestrating the layout. Reusable shadcn-inspired primitives stay under `src/components/ui/` (button, card, progress), while `components/animations/` and `components/gallery/` hold feature blocks. Event copy, schedule data, and SEO defaults are centralized in `src/config/config.ts`; adjust values there rather than scattering literals. Shared helpers such as `formatEventDate` belong in `src/lib/`, and static assets should be placed in `public/` or `src/assets/` for Vite to bundle.
+The Vite + React site lives inside `src/`; `main.tsx` defines routes and `App.tsx` provides the shared layout. The Node.js backend and its tests live in `functions/private-auth/`. Reusable shadcn-inspired primitives stay under `src/components/ui/` (button, card, progress), while `components/resources/` and `components/wedding/` hold feature blocks. Event copy, schedule data, and SEO defaults are centralized in `src/config/config.ts`; adjust values there rather than scattering literals. Shared helpers such as `formatEventDate` belong in `src/lib/`, and static assets should be placed in `public/` or `src/assets/` for Vite to bundle.
 
 ## Build, Test, and Development Commands
 - `pnpm install`: sync dependencies defined in `pnpm-lock.yaml`.
@@ -14,7 +14,7 @@ The Vite + React invite lives inside `src/`, with `pages/MainContent.tsx` orches
 Author components in TypeScript using lowercase filenames (`button.tsx`) with PascalCase exports when they render a single component. Keep indentation at two spaces and prefer double quotes, matching the existing ESLint-configured style; run `pnpm lint --fix` if you diverge. Compose Tailwind class strings from layout -> spacing -> color -> effects, and reuse tokens from `config.ts` instead of hardcoded values. Import shared utilities and configs through the `@/` alias provided in `tsconfig.json` for consistent paths.
 
 ## Testing Guidelines
-There is no automated test harness yet, so complete desktop and mobile walkthroughs in the dev server before shipping. Log console output and check animation timing, carousel controls, and metadata tags after each change. If you introduce automated tests, colocate `*.test.tsx` files with their components and document the required commands in this guide.
+Run `npm test --prefix functions/private-auth` for backend tests and `pnpm test:client` for browser-upload timeout/retry/cancellation tests. Also complete desktop and mobile walkthroughs in the dev server before shipping. Log console output and check animation timing, carousel controls, and metadata tags after each change. If you introduce automated tests, colocate `*.test.tsx` files with their components and document the required commands in this guide.
 
 ## Commit & Pull Request Guidelines
 History favors short, present-tense subjects (often in Chinese), e.g. `重构页面结构`; keep subjects under 72 characters and group related work per commit. Explain notable UI or data changes in the body when needed. Pull requests should include: a concise summary, screenshots or screen recordings of the altered sections, references to tracking issues, and a checklist of `pnpm lint`, `pnpm build`, and manual QA steps. Request review only after the preview or screenshots demonstrate the new invitation state.

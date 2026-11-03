@@ -35,3 +35,5 @@ export function prefetchPublicRoute(pathname: string): void {
 export function prefetchPrimaryPublicRoutes(): void {
   ["/notes", "/about", "/fragments"].forEach(prefetchPublicRoute);
 }
+
+export const ROUTE_NAVIGATION_CANCELLED_EVENT = "app:route-navigation-cancelled";

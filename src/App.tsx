@@ -5,6 +5,7 @@ import AiDisclaimer from "./components/common/AiDisclaimer";
 import Footer from "./components/common/Footer";
 import SiteHeader from "./components/common/SiteHeader";
 import { useFunctionHeartbeat } from "./hooks/useFunctionHeartbeat";
+import { ROUTE_NAVIGATION_CANCELLED_EVENT } from "./lib/routePrefetch";
 
 function App() {
   useFunctionHeartbeat();
@@ -53,8 +54,13 @@ function App() {
       setRoutePending(true);
     };
 
+    const handleNavigationCancelled = () => setRoutePending(false);
     document.addEventListener("click", handleNavigationIntent, true);
-    return () => document.removeEventListener("click", handleNavigationIntent, true);
+    window.addEventListener(ROUTE_NAVIGATION_CANCELLED_EVENT, handleNavigationCancelled);
+    return () => {
+      document.removeEventListener("click", handleNavigationIntent, true);
+      window.removeEventListener(ROUTE_NAVIGATION_CANCELLED_EVENT, handleNavigationCancelled);
+    };
   }, [pathname]);
 
   useEffect(() => {

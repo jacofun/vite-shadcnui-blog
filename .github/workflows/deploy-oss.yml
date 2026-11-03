@@ -52,6 +52,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Test client upload reliability
+        run: pnpm test:client
+
       - name: Build
         run: pnpm build
 
@@ -139,10 +142,21 @@ jobs:
 
           # Content-hashed JS/CSS/assets are safe to cache for a year.
           ossutil sync \
-            dist/ \
-            "${TARGET}" \
+            dist/assets/ \
+            "${TARGET}assets/" \
             --cache-control "public,max-age=31536000,immutable" \
             -f
+
+          # Only Vite content-hashed assets retain immutable caching. Revalidate
+          # fixed URLs such as feeds, sitemap, robots and public images on update.
+          while IFS= read -r -d '' public_file; do
+            relative_path="${public_file#dist/}"
+            ossutil cp \
+              "${public_file}" \
+              "${TARGET}${relative_path}" \
+              --cache-control "no-cache,max-age=0,must-revalidate" \
+              -f
+          done < <(find dist -type f ! -path 'dist/assets/*' ! -name '*.html' -print0)
 
           # BrowserRouter route shells are HTML too. Override every HTML object
           # with revalidation semantics so nested routes cannot remain stale.

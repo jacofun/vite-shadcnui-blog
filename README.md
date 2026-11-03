@@ -1,6 +1,6 @@
 # vite-shadcnui-blog
 
-基于 React、TypeScript、Vite 和 Tailwind CSS 构建的静态婚礼邀请站点。项目使用响应式图片、轮播、动画、SEO 元数据和 Waline 互动功能，并通过 GitHub Actions 自动构建后部署到阿里云 OSS。
+基于 React、TypeScript、Vite 和 Tailwind CSS 构建的个人站点，包含公开笔记、婚礼纪念页、Passkey 认证、私人资源、英语学习和 Just Write。前端通过 GitHub Actions 部署到阿里云 OSS，认证、上传校验和 AI 接口由 `functions/private-auth/` 提供。
 
 ## 技术栈
 
@@ -29,6 +29,8 @@ pnpm dev
 pnpm lint      # ESLint 静态检查
 pnpm build     # TypeScript 检查并生成 dist/
 pnpm check     # lint + build，提交前推荐执行
+pnpm test:client # 上传超时、重试与取消回归
+npm test --prefix functions/private-auth # 后端完整测试
 pnpm preview   # 本地预览生产构建
 ```
 
@@ -97,3 +99,12 @@ pnpm check
 ```
 
 只有 lint 和生产构建都通过的代码才应进入 `main`。
+
+## 本次可靠性修复的边界
+
+- 上传完成请求支持跨秒重复提交，保留已有冲突校验。
+- Just Write 未保存时，站内导航和浏览器后退统一提示；保存成功后正常返回。
+- 上传连续 60 秒无进展会超时，并进入已有重试流程；用户取消不重试。
+- 固定地址资源重新验证缓存，Vite 哈希资源保留长期缓存。
+- AI 限额和批改任务恢复说明见 [后端配置](functions/private-auth/README.md#ai-request-limits-and-retry-behavior)。
+- 本次保留现有存储协议、依赖版本和页面样式；分布式锁改造与模块拆分留待后续单独实施。

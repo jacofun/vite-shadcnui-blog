@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "node scripts/generate-public-meta.mjs && tsc -b && vite build && node scripts/generate-route-shells.mjs",
     "lint": "eslint .",
+    "test:client": "node --test scripts/test-upload-reliability.mjs",
     "check": "pnpm lint && pnpm build",
     "preview": "vite preview"
   },

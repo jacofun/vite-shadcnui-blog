@@ -239,10 +239,24 @@ test("streams episode assistant deltas without buffering the complete answer", a
   assert.match(output, /event: done/u);
 });
 
+function quotaStore() {
+  const documents = new Map();
+  return {
+    async updateJson(path, { missing, validate }, change) {
+      const current = structuredClone(documents.has(path) ? documents.get(path) : missing);
+      assert.equal(validate(current), true);
+      const next = change(current);
+      documents.set(path, structuredClone(next));
+      return next;
+    },
+  };
+}
+
 test("answers public page questions without authentication using the dedicated model", async () => {
   const calls = [];
   let modelCalls = 0;
   const handler = createHandler({
+    contentStore: quotaStore(),
     env: createEnv({
       DASHSCOPE_API_KEY: "test-api-key",
       DASHSCOPE_BASE_URL: "https://dashscope.example/v1",
@@ -361,6 +375,7 @@ test("answers public page questions without authentication using the dedicated m
 test("streams public assistant responses when requested by the browser", async () => {
   const encoder = new TextEncoder();
   const handler = createHandler({
+    contentStore: quotaStore(),
     env: createEnv({
       DASHSCOPE_API_KEY: "test-api-key",
       DASHSCOPE_BASE_URL: "https://dashscope.example/v1",
