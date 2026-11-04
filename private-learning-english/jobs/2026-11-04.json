@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-04",
+  "episodeId": "260514-how-reading-shapes-your-brain",
+  "title": "How reading shapes your brain",
+  "publishedAt": "2026-05-14",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260514",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260514_6_minute_english_how_reading_shapes_your_brain_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260514_6_minute_english_how_reading_shapes_your_brain_transcript_.pdf",
+  "reason": "从金融经济主题轮换到学习、认知与生产力。节目用清楚的因果和对比说明阅读如何调用并改变大脑网络，也比较不同书写系统带来的差异；既适合讨论个人学习方法，也能迁移到软件架构、系统设计和技术选择等熟悉场景。练习反复调用六个高频表达，从原文支撑逐步过渡到改写和有限场景迁移。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "学习方法",
+    "认知科学",
+    "生产力",
+    "语言学习",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "be born with",
+        "meaning": "have a quality or ability naturally from birth",
+        "usage": "Humans are born with the potential to learn spoken language."
+      },
+      {
+        "expression": "be designed for",
+        "meaning": "be made or intended for a particular purpose",
+        "usage": "This service is designed for teams that manage several applications."
+      },
+      {
+        "expression": "be involved in",
+        "meaning": "take part in or be connected with an activity or process",
+        "usage": "Several teams are involved in testing the new payment platform."
+      },
+      {
+        "expression": "compared to",
+        "meaning": "used to show similarities or differences between things",
+        "usage": "The new process is faster compared to the previous one."
+      },
+      {
+        "expression": "be shaped by",
+        "meaning": "be strongly influenced or formed by something",
+        "usage": "A team's working habits can be shaped by the tools it uses."
+      },
+      {
+        "expression": "reflect the requirements of",
+        "meaning": "show or match what a situation, system or group needs",
+        "usage": "The API design should reflect the requirements of its users."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "single-choice",
+        "prompt": "Which statement best matches the programme's explanation of reading?",
+        "targetExpression": "be born with",
+        "options": [
+          {
+            "id": "a",
+            "text": "People are born with complete reading pathways."
+          },
+          {
+            "id": "b",
+            "text": "People are not born with the brain pathways needed to read."
+          },
+          {
+            "id": "c",
+            "text": "Only bilingual people are born with reading pathways."
+          }
+        ],
+        "answer": "b",
+        "explanation": "The transcript says that newborn brains already have networks for seeing and producing sounds, but not the pathways needed for reading."
+      },
+      {
+        "id": "obj-02",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript-based phrase: The brain does not have a part ______ specifically ______ reading.",
+        "targetExpression": "be designed for",
+        "answers": [
+          "designed for"
+        ],
+        "explanation": "The programme says that we do not have a part of the brain designed specifically for reading."
+      },
+      {
+        "id": "obj-03",
+        "type": "single-choice",
+        "prompt": "Which processes does the brain use when it builds a reading network?",
+        "targetExpression": "be involved in",
+        "options": [
+          {
+            "id": "a",
+            "text": "Vision, auditory processing, language, attention and affect."
+          },
+          {
+            "id": "b",
+            "text": "Only vision and hand movement."
+          },
+          {
+            "id": "c",
+            "text": "Only speech and physical balance."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Rebecca Gotlieb says the brain uses parts involved in vision, auditory processing, language, attention and affect."
+      },
+      {
+        "id": "obj-04",
+        "type": "fill-blank",
+        "prompt": "Complete the comparison: Learning to read changes brain structure ______ someone who has not learned to read.",
+        "targetExpression": "compared to",
+        "answers": [
+          "compared to",
+          "compared with"
+        ],
+        "explanation": "The transcript uses 'compared to' when contrasting the brain structure of readers and non-readers; 'compared with' is an equivalent grammatical variant."
+      },
+      {
+        "id": "obj-05",
+        "type": "single-choice",
+        "prompt": "What does the programme suggest about the language a person reads?",
+        "targetExpression": "be shaped by",
+        "options": [
+          {
+            "id": "a",
+            "text": "It can shape which brain areas and connections develop."
+          },
+          {
+            "id": "b",
+            "text": "It has no effect on how the brain processes writing."
+          },
+          {
+            "id": "c",
+            "text": "Every writing system changes the brain in exactly the same way."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript says that the language we read shapes the brain and that Chinese symbols activate different areas from an alphabet-based system."
+      },
+      {
+        "id": "obj-06",
+        "type": "fill-blank",
+        "prompt": "Complete Maryanne Wolf's idea: The brain's circuit can ______ the writing system being learned.",
+        "targetExpression": "reflect the requirements of",
+        "answers": [
+          "reflect the requirements of"
+        ],
+        "explanation": "Maryanne Wolf says the brain's circuit reflects the requirements of Chinese, including greater visual memory and processing."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "What did the bilingual man's experience after a stroke demonstrate?",
+        "targetExpression": "compared to",
+        "options": [
+          {
+            "id": "a",
+            "text": "Reading Chinese and reading English can depend on different brain areas."
+          },
+          {
+            "id": "b",
+            "text": "A stroke always removes the ability to read every language."
+          },
+          {
+            "id": "c",
+            "text": "Chinese and English use identical brain pathways."
+          }
+        ],
+        "answer": "a",
+        "explanation": "After the stroke, the man could no longer read Chinese but could still read English, supporting the contrast between the brain processes used for the two writing systems."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete the transferable sentence: A reading circuit may ______ the language and writing system a person learns.",
+        "targetExpression": "be shaped by",
+        "answers": [
+          "be shaped by"
+        ],
+        "explanation": "The programme states that a brain circuit is shaped by learning to read Chinese and that different writing systems affect the brain differently."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words). Why does the brain use existing areas when a person learns to read? Use 'be designed for'. Start: 'The brain uses existing areas because...'.",
+        "targetExpression": "be designed for",
+        "gradingCriteria": "First decide whether the answer says that the brain has no dedicated part designed for reading. Then check whether 'be designed for' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words). Explain why reading is described as a whole-brain process. Use 'be involved in'. You may use: 'vision', 'language' and 'attention'.",
+        "targetExpression": "be involved in",
+        "gradingCriteria": "First decide whether the answer explains that reading uses several brain areas for processes such as vision, language, sound or attention. Then check whether 'be involved in' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words). Rewrite without changing the main meaning: 'Learning to read Chinese influences the brain's system of connections.' Use 'be shaped by'.",
+        "targetExpression": "be shaped by",
+        "gradingCriteria": "First decide whether the answer preserves the meaning that learning to read Chinese influences the brain's connections or reading circuit. Then check whether 'be shaped by' is used naturally and grammatically. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). Your team is choosing an architecture for a payment service. State one user or system need and explain how it should influence the design. Use one phrase from this bank: 'be designed for', 'be shaped by', 'reflect the requirements of'.",
+        "targetExpression": "reflect the requirements of",
+        "gradingCriteria": "First decide whether the answer identifies one relevant need and clearly connects it to the payment-service design. Then check whether at least one phrase from the given bank is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences). Within the programme's topic, explain whether reading in more than one language may benefit a learner, and give one reason. Naturally use at least one of today's target expressions.",
+        "targetExpression": "be shaped by",
+        "gradingCriteria": "First decide whether the answer gives a clear opinion about reading in more than one language and one relevant reason connected to learning or brain processing. Then check whether at least one target expression is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Retell the episode in 80-120 words without looking at the full transcript. Use this structure: (1) topic - why reading is not a natural ability present at birth; (2) two key ideas - how existing brain areas build a reading network, and how different writing systems affect that network; (3) conclusion or example - what the bilingual stroke case shows. Phrase bank: 'be designed for', 'be involved in', 'be shaped by'. Use at least two phrases naturally. Simple, clear English is enough; advanced vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "People are born with brain networks for seeing and producing sounds, but not with the pathways needed for reading.",
+      "The human brain has not had enough evolutionary time to develop a dedicated reading brain.",
+      "To build a reading network, the brain uses areas involved in vision, auditory processing, language, attention and affect.",
+      "Learning to read changes brain activity, structure and connectivity and activates all four lobes of the cortex.",
+      "Chinese symbols require more visual memory and processing than an alphabet-based writing system.",
+      "After a stroke, a bilingual man lost the ability to read Chinese but could still read English, showing that the two systems can rely on different brain areas."
+    ]
+  }
+}
