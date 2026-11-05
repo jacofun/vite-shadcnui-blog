@@ -9,7 +9,7 @@ function fixture() {
   const source = { async getStream(path) { copied.push(path); return { stream: Readable.from([Buffer.from("image")]) }; } };
   const client = {
     async get(path) { if (!objects.has(path)) throw missing(); return { content: objects.get(path) }; },
-    async head(path) { if (!objects.has(path)) throw missing(); return { res: { headers: { "content-length": objects.get(path).length } } }; },
+    async head(path) { if (!objects.has(path)) throw missing(); return { res: { headers: { "content-length": objects.get(path).length, "content-type": headers.get(path)?.mime } } }; },
     async putStream(path, stream, options) { const chunks = []; for await (const chunk of stream) chunks.push(chunk); objects.set(path, Buffer.concat(chunks)); headers.set(path, options); },
     async put(path, content, options) { objects.set(path, content); headers.set(path, options); },
     async delete(path) { objects.delete(path); },
@@ -61,4 +61,16 @@ test("withdrawing one entry retains originals still referenced by another public
   f.doc.entries[0].published = null;
   await sync(f.doc);
   assert.equal(f.objects.has(`site/published/media/${f.a.id}.jpg`), true);
+});
+
+test("website HTML rewrites are initialized as missing manifests and never reused as media", async () => {
+  const f = fixture();
+  f.objects.set("site/published/content.json", Buffer.from("<!doctype html><html>SPA fallback</html>"));
+  const destination = `site/published/media/${f.a.id}.jpg`;
+  f.objects.set(destination, Buffer.from("HTML!"));
+  f.headers.set(destination, { mime: "text/html" });
+  const sync = await createPublicPublisher(f);
+  await sync(f.doc);
+  assert.equal(JSON.parse(f.objects.get("site/published/content.json")).entries.length, 1);
+  assert.equal(f.objects.get(destination).toString(), "image");
 });

@@ -17,7 +17,11 @@ export async function createPublicPublisher({ env, source, client }) {
   const missing = error => error?.code === "NoSuchKey" || error?.status === 404;
   return async doc => {
     let previous = { entries: [] };
-    try { previous = JSON.parse((await client.get(key("content.json"))).content.toString("utf8")); }
+    try {
+      const content = (await client.get(key("content.json"))).content.toString("utf8");
+      // Website buckets can rewrite a missing object to index.html with HTTP 200.
+      if (!/^\s*(?:<!doctype html|<html)/i.test(content)) previous = JSON.parse(content);
+    }
     catch (error) { if (!missing(error)) throw error; }
     const selected = new Map();
     const entries = doc.entries.filter(entry => entry.published).map(entry => {
@@ -33,7 +37,11 @@ export async function createPublicPublisher({ env, source, client }) {
     for (const asset of selected.values()) {
       const destination = key(`media/${asset.id}.${asset.format}`);
       let exists = false;
-      try { const result = await client.head(destination); exists = Number(result.res.headers["content-length"]) === asset.bytes; }
+      try {
+        const result = await client.head(destination);
+        exists = Number(result.res.headers["content-length"]) === asset.bytes &&
+          result.res.headers["content-type"]?.split(";")[0] === asset.contentType;
+      }
       catch (error) { if (!missing(error)) throw error; }
       if (!exists) {
         const result = await source.getStream(asset.path.replace(/^\//, ""), { timeout: 600_000 });
