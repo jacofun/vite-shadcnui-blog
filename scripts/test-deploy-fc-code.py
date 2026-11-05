@@ -26,6 +26,7 @@ class DeploymentTest(unittest.TestCase):
                 return SimpleNamespace(body=SimpleNamespace(environment_variables={
                     "SESSION_CURRENT_KEY": "private-session-key", "OSS_CONTENT_BUCKET": "private-bucket",
                     "PRIVATE_RESOURCE_ROOT": "/private", "UNRELATED_SETTING": "preserved",
+                    "OSS_CONTENT_REGION": "oss-cn-beijing", "OSS_CONTENT_ENDPOINT": "https://oss-cn-beijing-internal.aliyuncs.com",
                 }))
 
             def update_function_with_options(self, name, request, headers, runtime):
@@ -56,6 +57,8 @@ class DeploymentTest(unittest.TestCase):
             self.assertNotIn("SESSION_CURRENT_KEY", migration)
             self.assertNotIn("UNRELATED_SETTING", migration)
             self.assertEqual(migration["OSS_CONTENT_BUCKET"], "private-bucket")
+            self.assertEqual(migration["OSS_CONTENT_ENDPOINT"], "https://oss-cn-beijing.aliyuncs.com")
+            self.assertEqual(update.environment_variables["OSS_CONTENT_ENDPOINT"], "https://oss-cn-beijing-internal.aliyuncs.com")
             self.assertEqual(destination.stat().st_mode & 0o777, 0o600)
             for secret in ["private-session-key", "test-site-secret", "test-source-secret"]:
                 self.assertNotIn(secret, output.getvalue())

@@ -61,6 +61,9 @@ def main() -> int:
         }
         migration = {k: v for k, v in existing_env.items() if k.startswith("OSS_CONTENT_") or k == "PRIVATE_RESOURCE_ROOT"}
         migration.update(public_settings)
+        # GitHub runners cannot use FC's VPC-only OSS endpoint.
+        source_region = migration.get("OSS_CONTENT_REGION", "").removeprefix("oss-")
+        migration["OSS_CONTENT_ENDPOINT"] = migration.get("OSS_CONTENT_PUBLIC_ENDPOINT") or f"https://oss-{source_region}.aliyuncs.com"
         migration["ALIBABA_CLOUD_ACCESS_KEY_ID"] = required_env("ALIBABA_CLOUD_ACCESS_KEY_ID")
         migration["ALIBABA_CLOUD_ACCESS_KEY_SECRET"] = required_env("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
         destination = Path(required_env("PUBLIC_MIGRATION_ENV_FILE"))
