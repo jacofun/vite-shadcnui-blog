@@ -12,7 +12,7 @@ export async function publishingRequest<T>(operation: string, body: unknown, ses
   return payload as T;
 }
 export async function getPublicContent(signal?: AbortSignal): Promise<PublishingEntry[]> {
-  const response = await fetch(`${PRIVATE_AUTH_API_BASE}/public/content`, { credentials: "omit", cache: "no-store", signal });
+  const response = await fetch("/published/content.json", { credentials: "omit", cache: "no-cache", signal });
   if (!response.ok) throw new Error("公开内容读取失败，请稍后重试");
   return (await response.json()).entries;
 }

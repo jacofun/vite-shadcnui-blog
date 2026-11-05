@@ -1,4 +1,5 @@
 import { handlePublishing, PublishingError } from "./publishing.js";
+import { createPublicPublisher } from "./public-publishing.js";
 import {
   createCipheriv,
   createDecipheriv,
@@ -398,7 +399,7 @@ function routeName(path, cookiePath, persistent = false) {
     "just-write/list", "just-write/save", "just-write/delete", "just-write/teach",
     "assessment/grade", "assessment/result", "assessment/ask",
     "public/assistant/ask", "health", "public/content",
-    "publishing/list", "publishing/save", "publishing/publish", "publishing/unpublish", "publishing/upload-init", "publishing/upload-complete",
+    "publishing/list", "publishing/save", "publishing/publish", "publishing/unpublish", "publishing/sync-public", "publishing/upload-init", "publishing/upload-complete",
   ];
   if (persistent) knownRoutes.push(
     "register/options", "register/verify", "reauth/challenge", "reauth/verify",
@@ -813,8 +814,10 @@ export async function createPrivateResourceContentStore({ env = process.env, cre
   const common = { bucket, region, authorizationV4: false, secure: true, ...ossCredentials };
   const oss = client || new OSS({ ...common, endpoint: internalEndpoint });
   const signer = publicClient || new OSS({ ...common, endpoint: publicEndpoint });
+  const syncPublished = await createPublicPublisher({ env, source: oss });
 
   return {
+    syncPublished,
     async readJson(path, { missing } = {}) {
       try {
         const result = await oss.get(objectName(path));
@@ -877,7 +880,7 @@ export async function createPrivateResourceContentStore({ env = process.env, cre
         await oss.deleteMulti(names.slice(offset, offset + 1000), { quiet: true });
       }
     },
-    async updateJson(path, { missing, validate }, change) {
+    async updateJson(path, { missing, validate, afterWrite, leaseMs = 30_000 }, change) {
       const run = contentIndexUpdate.then(async () => {
         const lockPath = `${path}.upload-lock`;
         const lockId = randomBytes(16).toString("hex");
@@ -886,7 +889,7 @@ export async function createPrivateResourceContentStore({ env = process.env, cre
           try {
             await oss.put(objectName(lockPath), Buffer.from(JSON.stringify({
               lockId,
-              expiresAt: Date.now() + 30_000,
+              expiresAt: Date.now() + leaseMs,
             })), {
               mime: "application/json; charset=utf-8",
               headers: { "x-oss-forbid-overwrite": "true" },
@@ -914,6 +917,7 @@ export async function createPrivateResourceContentStore({ env = process.env, cre
           await oss.put(objectName(path), Buffer.from(`${JSON.stringify(next, null, 2)}\n`), {
             mime: "application/json; charset=utf-8",
           });
+          if (afterWrite) await afterWrite(next);
           return next;
         } finally {
           try {

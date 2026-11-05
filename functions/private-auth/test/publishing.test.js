@@ -9,8 +9,9 @@ function fixture() {
   const objects = new Map();
   const contentTypes = new Map();
   const contentStore = {
+    async syncPublished() {},
     async readJson(_path, { missing } = {}) { return structuredClone(doc ?? missing); },
-    async updateJson(_path, { missing, validate }, change) { const current = structuredClone(doc ?? missing); assert.ok(validate(current)); doc = structuredClone(change(current)); return structuredClone(doc); },
+    async updateJson(_path, { missing, validate, afterWrite }, change) { const current = structuredClone(doc ?? missing); assert.ok(validate(current)); doc = structuredClone(change(current)); if (afterWrite) await afterWrite(doc); return structuredClone(doc); },
     signUpload(path, file) { contentTypes.set(path, file.contentType); return `https://upload.example/${path}`; },
     async stat(path) { const item = objects.get(path); if (!item) throw new Error("missing upload"); return { bytes: item.length, contentType: contentTypes.get(path) }; },
     async readPrefix(path) { return objects.get(path); },
@@ -187,4 +188,21 @@ test("legacy MOV headers are accepted but renaming unrelated files does not bypa
     objects.set(renamed.files.file.path, bytes);
     await assert.rejects(call("publishing/upload-complete", { uploadToken: renamed.uploadToken }), { code: "INVALID_MEDIA" });
   }
+});
+
+test("drafts do not sync public OSS; failed publication can be repaired from authoritative snapshots", async () => {
+  const { call, contentStore } = fixture();
+  const snapshots = [];
+  contentStore.syncPublished = async doc => { snapshots.push(structuredClone(doc)); throw new Error("public OSS unavailable"); };
+  const { entry } = await call("publishing/save", draft);
+  assert.equal(snapshots.length, 0);
+  await assert.rejects(call("publishing/publish", { id: entry.id, version: entry.version }), { code: "PUBLIC_SYNC_PENDING", statusCode: 409 });
+  const saved = (await call("publishing/list")).entries[0];
+  assert.equal(saved.published.body, draft.body);
+  await call("publishing/save", { ...saved, body: "Later private changes" });
+  contentStore.syncPublished = async doc => snapshots.push(structuredClone(doc));
+  await call("publishing/sync-public");
+  assert.equal(snapshots.at(-1).entries[0].published.body, draft.body);
+  assert.equal(snapshots.at(-1).entries[0].body, "Later private changes");
+  await assert.rejects(call("publishing/sync-public", {}, { user: { role: "member" } }), { statusCode: 403 });
 });

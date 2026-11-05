@@ -7,6 +7,8 @@ on:
     paths:
       - "functions/private-auth/**"
       - "scripts/deploy-fc-code.py"
+      - "scripts/test-deploy-fc-code.py"
+      - "scripts/sync-public-content.mjs"
       - ".github/workflows/deploy-fc.yml"
   pull_request:
     branches:
@@ -14,6 +16,8 @@ on:
     paths:
       - "functions/private-auth/**"
       - "scripts/deploy-fc-code.py"
+      - "scripts/test-deploy-fc-code.py"
+      - "scripts/sync-public-content.mjs"
       - ".github/workflows/deploy-fc.yml"
   workflow_dispatch:
 
@@ -63,13 +67,14 @@ jobs:
           cp "${SOURCE_DIR}/server.js" "${PACKAGE_DIR}/server.js"
           cp "${SOURCE_DIR}/index.js" "${PACKAGE_DIR}/index.js"
           cp "${SOURCE_DIR}/publishing.js" "${PACKAGE_DIR}/publishing.js"
+          cp "${SOURCE_DIR}/public-publishing.js" "${PACKAGE_DIR}/public-publishing.js"
           cp "${SOURCE_DIR}/package.json" "${PACKAGE_DIR}/package.json"
           cp "${SOURCE_DIR}/package-lock.json" "${PACKAGE_DIR}/package-lock.json"
           cp -R "${SOURCE_DIR}/node_modules" "${PACKAGE_DIR}/node_modules"
 
           (
             cd "${PACKAGE_DIR}"
-            zip -q -r "${ZIP_PATH}" server.js index.js publishing.js package.json package-lock.json node_modules
+            zip -q -r "${ZIP_PATH}" server.js index.js publishing.js public-publishing.js package.json package-lock.json node_modules
           )
 
           unzip -t "${ZIP_PATH}" >/dev/null
@@ -82,14 +87,15 @@ jobs:
           sha256sum "${ZIP_PATH}"
 
       - name: Setup Python
-        if: github.event_name != 'pull_request'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install FC deployment SDK
-        if: github.event_name != 'pull_request'
         run: python -m pip install --disable-pip-version-check "alibabacloud_fc20230330==4.7.9"
+
+      - name: Test FC environment preservation
+        run: python scripts/test-deploy-fc-code.py
 
       - name: Validate deployment credentials
         if: github.event_name != 'pull_request'
@@ -174,9 +180,25 @@ jobs:
         env:
           ALIYUN_FC_ACCESS_KEY_ID: ${{ secrets.ALIYUN_FC_ACCESS_KEY_ID }}
           ALIYUN_FC_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_FC_ACCESS_KEY_SECRET }}
+          CONFIGURE_PUBLIC_PUBLISHING: "true"
+          PUBLISHING_WEBSITE_OSS_TARGET: ${{ vars.ALIYUN_OSS_TARGET }}
+          PUBLISHING_WEBSITE_OSS_REGION: ${{ vars.ALIYUN_OSS_REGION }}
+          PUBLISHING_WEBSITE_ACCESS_KEY_ID: ${{ secrets.ALIYUN_OSS_ACCESS_KEY_ID }}
+          PUBLISHING_WEBSITE_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_OSS_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_PRIVATE_LEARNING_OSS_ACCESS_KEY_SECRET }}
+          PUBLIC_MIGRATION_ENV_FILE: ${{ runner.temp }}/public-migration-env.json
           ALIYUN_FC_REGION: cn-beijing
           ALIYUN_FC_FUNCTION_NAME: fc-blog-authenticator-web
           ALIYUN_FC_EXPECTED_RUNTIME: custom.debian10
           ALIYUN_FC_CODE_OSS_BUCKET: ${{ steps.fc_oss.outputs.bucket_name }}
           ALIYUN_FC_CODE_OSS_OBJECT: ${{ steps.fc_oss.outputs.object_name }}
         run: python scripts/deploy-fc-code.py
+
+      - name: Materialize published content into website OSS
+        if: github.event_name != 'pull_request'
+        run: node scripts/sync-public-content.mjs "${RUNNER_TEMP}/public-migration-env.json"
+
+      - name: Remove temporary publishing credentials
+        if: always()
+        run: rm -f "${RUNNER_TEMP}/public-migration-env.json"

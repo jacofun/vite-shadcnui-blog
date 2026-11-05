@@ -411,7 +411,7 @@ P-256 WebAuthn verification. A real FC RAM role, internal OSS endpoint and devic
 must still be checked before production rollout.
 
 The function deployment workflow creates `fc-blog-authenticator-web.zip` with `server.js`,
-`index.js`, `package.json`, `package-lock.json` and production `node_modules` at the ZIP root. It
+`index.js`, `publishing.js`, `public-publishing.js`, `package.json`, `package-lock.json` and production `node_modules` at the ZIP root. It
 uploads the ZIP to the private content bucket under `functions/fc-cicd/`, then updates only the
 code of `fc-blog-authenticator-web`. Runtime secrets, operator scripts and tests are excluded from
 the artifact.
@@ -465,3 +465,42 @@ a save. H.264/AAC MP4 remains a suitable export option when broad device playbac
 Validate with `npm test --prefix functions/private-auth`, `npm run test:client`, `npm run lint`,
 and `npm run build`. Browser verification can use a mocked OSS adapter; production OSS/CDN access
 and deployment must be checked separately before release.
+
+## Public content served directly by OSS
+
+Visitors read `/published/content.json` and `/published/media/<asset-id>.<format>` from the
+website bucket. No login, FC response, runtime signature or FC heartbeat is required for public
+reading. The legacy FC public-content endpoint remains for compatibility; the site does not use
+it as a fallback. Authentication, upload authorization, publishing and AI remain dynamic.
+
+FC keeps authoritative drafts/publication snapshots in the private bucket. On publish,
+unpublish or owner `publishing/sync-public`, selected publication originals are streamed once
+to the website bucket. Already copied originals are reused. Only whitelisted snapshot fields
+are written to the manifest; draft bodies, private paths and unselected uploads stay private.
+Each JSON object replacement is atomic at OSS, but the private index, media copies and public
+manifest are not one distributed transaction. Failed synchronization reports `PUBLIC_SYNC_PENDING`;
+refresh the editor and use “同步公开内容” to repair from authoritative snapshots. The existing
+single-instance store boundary still applies. Publication/sync holds the index lease for up to
+15 minutes; a crashed invocation requires waiting for that lease before retrying. Large originals
+consume FC transfer time only while publishing, never while visitors browse. A request that
+hits FC's configured execution timeout can be retried; completed originals are reused.
+
+The FC workflow merges only `PUBLISHING_PUBLIC_*` settings into existing environment variables,
+using the existing website bucket target/region and deployment secrets, then runs
+`scripts/sync-public-content.mjs` to migrate existing **published** snapshots. Other FC runtime
+settings and environment variables are preserved. Temporary migration credentials are removed
+with an always-run cleanup step and are not logged. Deployment requires FC GetFunction permission.
+The website OSS credential needs GetObject/PutObject/DeleteObject under `<site-prefix>/published/*`;
+the source credential needs read access to the private publishing prefix. No bucket-wide ACL or
+private-bucket visibility is changed. Review credential scope before deployment; a dedicated key
+restricted to the published prefix can replace the reused website deployment key later.
+
+Public JSON uses `no-cache,max-age=0,must-revalidate`; media uses a 60-second cache. CDN rules
+for `/published/*` must honor these origin headers and must not require private-path signatures.
+Withdrawing removes the entry and deletes originals that no remaining publication references;
+previously cached/downloaded copies are not revoked. Deletion is attempted before manifest
+replacement so storage errors remain retryable. A failed withdrawal manifest write can leave an
+older manifest referring to removed media until synchronization is retried. Frontend deployment
+never deletes the `published/` prefix. Do not add an empty build-time manifest over this live data.
+Before switching an existing deployment's frontend, complete the FC migration and verify the
+static manifest and media URLs anonymously; confirm your CDN cache rules separately.

@@ -4,9 +4,10 @@ import { PRIVATE_AUTH_API_BASE } from "@/lib/privateAuthApi";
 const INTERVAL_MS = 60_000;
 const TIMEOUT_MS = 10_000;
 
-/** One foreground heartbeat for the app, independent of routes and auth sessions. */
-export function useFunctionHeartbeat(): void {
+/** Keep interactive private tools warm only while their routes are open. */
+export function useFunctionHeartbeat(enabled = true): void {
   useEffect(() => {
+    if (!enabled) return;
     let stopped = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let controller: AbortController | undefined;
@@ -65,5 +66,5 @@ export function useFunctionHeartbeat(): void {
       window.removeEventListener("pagehide", pause);
       window.removeEventListener("pageshow", resume);
     };
-  }, []);
+  }, [enabled]);
 }

@@ -70,7 +70,7 @@ function Editor({ session }: { session: PrivateAuthSession }) {
           setEntries(old => [current, ...old.filter(e => e.id !== current.id)]);
         } else updateEntry(current);
       }
-      setMessage(operation === "publish" ? "已发布，访客可以查看。" : operation === "unpublish" ? "已撤下；此前已打开的媒体链接会在 CDN 有效期后失效。" : "草稿已保存，尚未公开新修改。");
+      setMessage(operation === "publish" ? "已发布，访客可以查看。" : operation === "unpublish" ? "已撤下；原媒体链接将在短时缓存过期后失效，已下载的文件不受影响。" : "草稿已保存，尚未公开新修改。");
     } catch (e) { setError(e instanceof Error ? e.message : "操作失败"); }
     finally { setBusy(false); }
   }
@@ -99,7 +99,7 @@ function Editor({ session }: { session: PrivateAuthSession }) {
     <Helmet><title>内容发布 · 私人资源</title><meta name="robots" content="noindex,nofollow" /></Helmet>
     <div className="mx-auto max-w-6xl">
       <Link to="/resources" className="text-sm text-cyan-200">← 私人资源</Link>
-      <h1 className="mt-7 text-3xl">内容发布</h1><p className="mt-3 text-sm leading-7 text-slate-400">写文章、发组图或视频。先保存草稿，确认后发布到公开页面。</p>
+      <h1 className="mt-7 text-3xl">内容发布</h1><button className={`${button} mt-4`} disabled={busy} onClick={async () => { setBusy(true); setError(""); try { await publishingRequest("sync-public", {}, session); setMessage("公开内容已同步到 OSS。"); } catch (e) { setError(e instanceof Error ? e.message : "同步失败"); } finally { setBusy(false); } }}>同步公开内容</button><p className="mt-3 text-sm leading-7 text-slate-400">写文章、发组图或视频。先保存草稿，确认后发布到公开页面。</p>
       {error && <p role="alert" className="mt-5 text-rose-300">{error}</p>}{message && <p role="status" className="mt-5 text-emerald-200">{message}</p>}
       <div className="mt-8 grid gap-8 lg:grid-cols-[230px_minmax(0,1fr)]">
         <aside><button className={button} disabled={busy} onClick={() => select(blank())}>＋ 新建内容</button><div className="mt-5 space-y-2">{entries.map(entry => <button className="block w-full rounded-lg border border-white/10 p-3 text-left text-sm disabled:opacity-40" disabled={busy} key={entry.id} onClick={() => select(entry)}><span className="block break-words">{entry.title}</span><span className="mt-1 block text-xs text-slate-400">{entry.published ? "已发布 · 可继续编辑草稿" : "草稿"}</span></button>)}</div></aside>

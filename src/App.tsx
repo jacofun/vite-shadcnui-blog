@@ -8,8 +8,8 @@ import { useFunctionHeartbeat } from "./hooks/useFunctionHeartbeat";
 import { ROUTE_NAVIGATION_CANCELLED_EVENT } from "./lib/routePrefetch";
 
 function App() {
-  useFunctionHeartbeat();
   const { pathname } = useLocation();
+  useFunctionHeartbeat(pathname.startsWith("/resources") || pathname.startsWith("/auth"));
   const [readingProgress, setReadingProgress] = useState(0);
   const [routePending, setRoutePending] = useState(false);
   const isWedding = pathname.startsWith("/wedding");

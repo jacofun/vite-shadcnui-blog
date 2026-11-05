@@ -7,6 +7,8 @@ on:
     paths-ignore:
       - "functions/private-auth/**"
       - "scripts/deploy-fc-code.py"
+      - "scripts/test-deploy-fc-code.py"
+      - "scripts/sync-public-content.mjs"
       - ".github/workflows/deploy-fc.yml"
   pull_request:
     branches:
@@ -14,6 +16,8 @@ on:
     paths-ignore:
       - "functions/private-auth/**"
       - "scripts/deploy-fc-code.py"
+      - "scripts/test-deploy-fc-code.py"
+      - "scripts/sync-public-content.mjs"
       - ".github/workflows/deploy-fc.yml"
   workflow_dispatch:
 
@@ -125,6 +129,25 @@ jobs:
             /usr/local/bin/ossutil
 
           ossutil version
+
+      - name: Wait for public OSS content initialization
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          MANIFEST="${RUNNER_TEMP}/public-content-check.json"
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent --max-time 15 \
+              "https://yanxiao.me/published/content.json?deploy=${GITHUB_SHA}-${attempt}" \
+              -o "${MANIFEST}" && \
+              python -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d.get("schemaVersion")==1 and isinstance(d.get("entries"),list)' "${MANIFEST}"; then
+              echo "Public OSS manifest is ready."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Public OSS initialization failed; keeping the existing frontend. Check the FC migration workflow."
+          exit 1
 
       - name: Deploy website and wedding assets
         if: github.event_name != 'pull_request'

@@ -109,8 +109,16 @@ export async function handlePublishing({ route, body = {}, user, config, content
     return { asset: { ...file, url: url(file) } };
   }
   const timestamp = new Date(nowSeconds * 1000).toISOString();
+  const publicChange = ["publishing/publish", "publishing/unpublish", "publishing/sync-public"].includes(route);
+  if (publicChange && !contentStore.syncPublished) fail(409, "PUBLIC_STORE_NOT_CONFIGURED", "公开 OSS 存储尚未配置，无法发布，请联系站点管理员");
   let result;
-  await contentStore.updateJson(path, { missing: empty(), validate: valid }, doc => {
+  await contentStore.updateJson(path, { missing: empty(), validate: valid,
+    ...(publicChange ? { leaseMs: 900_000, afterWrite: async doc => {
+      try { await contentStore.syncPublished(doc); }
+      catch { fail(409, "PUBLIC_SYNC_PENDING", "发布状态已保存，但公开 OSS 同步未完成。请刷新列表后点击同步公开内容重试。"); }
+    } } : {}),
+  }, doc => {
+    if (route === "publishing/sync-public") { result = null; return doc; }
     let entry = body.id ? doc.entries.find(e => e.id === body.id) : null;
     if (body.id && !entry) fail(404, "NOT_FOUND", "内容不存在");
     if (entry && body.version !== entry.version) fail(409, "CONTENT_CHANGED", "内容已在其他页面修改，请重新读取后编辑");
