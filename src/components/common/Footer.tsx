@@ -5,10 +5,10 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 };
 
-export default function Footer(): JSX.Element {
+export default function Footer({ compact = false }: { compact?: boolean }): JSX.Element {
   return (
-    <footer className="border-t border-white/10 bg-[#05070d] text-slate-400">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-6 py-6 text-xs text-slate-600 sm:px-8 md:flex-row md:items-end md:justify-between lg:px-10">
+    <footer className={`border-t border-white/10 ${compact ? "bg-[#0b1014]" : "bg-[#05070d]"} text-slate-400`}>
+      <div className={`mx-auto flex w-full max-w-6xl flex-col gap-5 px-6 py-6 text-xs ${compact ? "text-slate-500" : "text-slate-600"} sm:px-8 md:flex-row md:items-end md:justify-between lg:px-10`}>
         <div>
           <Link className="text-xs font-semibold tracking-[0.14em] text-slate-300 transition hover:text-white" onClick={scrollToTop} to="/">
             YANXIAO.ME
@@ -17,7 +17,7 @@ export default function Footer(): JSX.Element {
         </div>
 
         <div className="flex max-w-2xl flex-col gap-2 md:items-end">
-          <p className="leading-5">本站部分内容由 AI 生成或辅助整理，信息可能有误，请注意甄别。</p>
+          {!compact && <p className="leading-5">本站部分内容由 AI 生成或辅助整理，信息可能有误，请注意甄别。</p>}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-5">
             <a
               className="transition hover:text-slate-300"

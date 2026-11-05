@@ -93,3 +93,10 @@
 };
 
 export default config;
+export const siteHome = {
+  title: "彦骁的笔记",
+  description: "技术、AI，以及日常的记录。",
+  // Optional public note/journal route to pin as the homepage feature.
+  featuredHref: undefined as string | undefined,
+  selectionLimit: 2,
+};

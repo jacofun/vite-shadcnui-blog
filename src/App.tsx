@@ -13,7 +13,8 @@ function App() {
   const [readingProgress, setReadingProgress] = useState(0);
   const [routePending, setRoutePending] = useState(false);
   const isWedding = pathname.startsWith("/wedding");
-  const showHeader = !isWedding;
+  const isHome = pathname === "/";
+  const showHeader = !isWedding && !isHome;
   const showAiDisclaimer =
     showHeader && pathname.startsWith("/notes");
   const showFooter =
@@ -92,7 +93,7 @@ function App() {
   }, [showReadingProgress, pathname]);
 
   return (
-    <div className={`min-h-screen ${isWedding ? "bg-[#fff1ec]" : "bg-[#070a12]"}`}>
+    <div className={`min-h-screen ${isWedding ? "bg-[#fff1ec]" : isHome ? "bg-[#0b1014]" : "bg-[#070a12]"}`}>
       {showHeader && (
         <div className="sticky top-0 z-[110]">
           <SiteHeader />
@@ -127,7 +128,7 @@ function App() {
         </div>
       )}
       <Outlet />
-      {showFooter && <Footer />}
+      {showFooter && <Footer compact={isHome} />}
     </div>
   );
 }

@@ -1,100 +1,249 @@
-import type { JSX } from "react";
-import { ArrowRight } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { useEffect, useMemo, useState, type JSX } from "react";
+import { ArrowRight, ArrowUpRight, Play, X } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 
-import PublicAiAssistant from "@/components/common/PublicAiAssistant";
-import HomeCommandCenter from "@/components/home/HomeCommandCenter";
-import { formatNoteDate, notes } from "@/lib/notes";
+import HomeNavigation from "@/components/home/HomeNavigation";
+import { siteHome } from "@/config/config";
+import {
+  buildHomeContent,
+  selectHomeContent,
+  type HomeContent,
+} from "@/lib/homeContent";
+import { notes } from "@/lib/notes";
+import { getPublicContent, type PublishingEntry } from "@/lib/publishing";
+import "./Home.css";
+
+function ContentMeta({ item }: { item: HomeContent }) {
+  return (
+    <p className="home-content-meta">
+      {item.category}
+      {item.readingMinutes
+        ? ` · ${item.readingMinutes} 分钟`
+        : item.media.some((media) => media.kind === "video")
+          ? " · 视频"
+          : ""}
+    </p>
+  );
+}
+
+function Featured({ item }: { item: HomeContent }) {
+  const [failedImages, setFailedImages] = useState<string[]>([]);
+  const image = item.media.find(
+    (media) => media.kind === "image" && !failedImages.includes(media.url),
+  );
+  const video = item.media.find((media) => media.kind === "video");
+  if (image)
+    return (
+      <Link
+        className="home-feature home-feature-image"
+        to={item.href}
+        data-home-feature="image"
+      >
+        <img
+          src={image.url}
+          alt={image.alt}
+          fetchPriority="high"
+          decoding="async"
+          onError={() => setFailedImages((current) => [...current, image.url])}
+        />
+        <div className="home-feature-shade" aria-hidden="true" />
+        <div className="home-feature-copy">
+          <span className="home-eyebrow">{item.category}</span>
+          <h1>{item.title}</h1>
+          <div className="home-feature-bottom">
+            <p>{item.summary}</p>
+            <span>
+              {video ? <Play size={15} aria-hidden="true" /> : null}
+              {video ? "观看记录" : "查看记录"}
+              <ArrowUpRight size={18} aria-hidden="true" />
+            </span>
+          </div>
+        </div>
+      </Link>
+    );
+  return (
+    <section
+      className="home-feature home-feature-text"
+      data-home-feature={video ? "video" : "text"}
+    >
+      <div className="home-feature-copy">
+        <span className="home-eyebrow">{item.category}</span>
+        <h1>
+          <Link to={item.href}>{item.title}</Link>
+        </h1>
+        {item.summary && <p className="home-feature-summary">{item.summary}</p>}
+        <div className="home-feature-actions">
+          {video && (
+            <Dialog.Root>
+              <Dialog.Trigger asChild>
+                <button className="home-watch-button" type="button">
+                  <Play size={16} aria-hidden="true" />
+                  播放视频
+                </button>
+              </Dialog.Trigger>
+              <Dialog.Portal>
+                <Dialog.Overlay className="home-search-overlay" />
+                <Dialog.Content className="home-video-dialog">
+                  <Dialog.Title>{item.title}</Dialog.Title>
+                  <Dialog.Description className="home-sr-only">
+                    使用播放器控制播放、声音及全屏。
+                  </Dialog.Description>
+                  <Dialog.Close asChild>
+                    <button
+                      className="home-icon-button home-video-close"
+                      aria-label="关闭视频"
+                    >
+                      <X size={20} />
+                    </button>
+                  </Dialog.Close>
+                  <video
+                    controls
+                    playsInline
+                    preload="metadata"
+                    src={video.url}
+                    aria-label={item.title}
+                  />
+                </Dialog.Content>
+              </Dialog.Portal>
+            </Dialog.Root>
+          )}
+          <Link className="home-read-link" to={item.href}>
+            {video ? "查看完整记录" : "阅读全文"}
+            <ArrowUpRight size={17} aria-hidden="true" />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Selected({ item }: { item: HomeContent }) {
+  const [failedImages, setFailedImages] = useState<string[]>([]);
+  const image = item.media.find(
+    (media) => media.kind === "image" && !failedImages.includes(media.url),
+  );
+  const video = item.media.some((media) => media.kind === "video");
+  return (
+    <Link
+      className={`home-selected-item ${image ? "has-image" : ""}`}
+      to={item.href}
+      data-home-selected
+    >
+      {image && (
+        <span className="home-selected-image">
+          <img
+            src={image.url}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            onError={() =>
+              setFailedImages((current) => [...current, image.url])
+            }
+          />
+          {video && (
+            <span className="home-selected-play">
+              <Play size={18} aria-hidden="true" />
+            </span>
+          )}
+        </span>
+      )}
+      <div className="home-selected-copy">
+        <ContentMeta item={item} />
+        <h3>{item.title}</h3>
+        {!image && item.summary && (
+          <p className="home-selected-summary">{item.summary}</p>
+        )}
+      </div>
+      <ArrowUpRight
+        className="home-selected-arrow"
+        size={17}
+        aria-hidden="true"
+      />
+    </Link>
+  );
+}
 
 export default function Home(): JSX.Element {
-  const recentNotes = notes.slice(0, 5);
-
+  const [published, setPublished] = useState<PublishingEntry[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 10_000);
+    getPublicContent(controller.signal)
+      .then((entries) => {
+        if (!controller.signal.aborted)
+          setPublished(Array.isArray(entries) ? entries : []);
+      })
+      .catch(() => {
+        /* Local notes remain readable when the publishing service is unavailable. */
+      })
+      .finally(() => window.clearTimeout(timeout));
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeout);
+    };
+  }, []);
+  const items = useMemo(() => buildHomeContent(notes, published), [published]);
+  const { featured, selected } = selectHomeContent(
+    items,
+    siteHome.featuredHref,
+    siteHome.selectionLimit,
+  );
   return (
     <>
       <Helmet>
-        <title>彦骁的笔记</title>
-        <meta content="技术、AI、金融市场，以及一些值得长期留下来的记录。" name="description" />
+        <title>{siteHome.title}</title>
+        <meta name="description" content={siteHome.description} />
         <link href="https://yanxiao.me/" rel="canonical" />
-        <meta content="彦骁的笔记" property="og:title" />
-        <meta content="技术、AI、金融市场，以及一些值得长期留下来的记录。" property="og:description" />
-        <meta content="https://yanxiao.me/" property="og:url" />
-        <meta content="website" property="og:type" />
+        <meta property="og:title" content={siteHome.title} />
+        <meta property="og:description" content={siteHome.description} />
+        <meta property="og:url" content="https://yanxiao.me/" />
+        <meta property="og:type" content="website" />
       </Helmet>
-
-      <main className="min-h-screen bg-[#070a12] text-slate-100">
-        <section className="border-b border-white/[0.07]">
-          <div className="mx-auto max-w-6xl px-6 py-14 sm:px-8 sm:py-20 lg:px-10">
-            <p className="font-mono text-[10px] tracking-[0.2em] text-slate-600 sm:text-[11px]">
-              YANXIAO.ME / PERSONAL NOTES
-            </p>
-            <h1 className="mt-4 text-[2.65rem] font-semibold leading-none tracking-[-0.055em] text-white sm:text-6xl">
-              彦骁的笔记
-            </h1>
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base sm:leading-8">
-              技术、AI、金融市场，以及一些值得长期留下来的记录。
-            </p>
-
-            <PublicAiAssistant
-              launcher={(controls) => <HomeCommandCenter {...controls} />}
-              pagePath="/notes"
-            />
-          </div>
-        </section>
-
-        <div className="mx-auto max-w-6xl px-6 pb-20 sm:px-8 lg:px-10">
-          <section className="py-10 sm:py-12">
-            <div className="flex items-center justify-between gap-5 pb-5">
-              <div className="flex items-baseline gap-3">
-                <h2 className="text-lg font-medium text-white sm:text-xl">最近更新</h2>
-                <span className="font-mono text-[10px] text-slate-700">RECENT</span>
-              </div>
-              <Link className="inline-flex items-center gap-2 text-xs text-slate-500 transition hover:text-cyan-300 sm:text-sm" to="/notes">
-                全部笔记
-                <ArrowRight className="size-3.5" />
-              </Link>
+      <div className="home-page">
+        <div className="home-shell">
+          <HomeNavigation items={items} />
+          <main className="home-main">
+            <div className="home-intro">
+              <p>{siteHome.description}</p>
+              <span>PERSONAL JOURNAL</span>
             </div>
-
-            <div className="divide-y divide-white/[0.07] border-y border-white/[0.08]">
-              {recentNotes.map((note, index) => (
-                <Link
-                  className="group grid min-w-0 gap-2 py-5 transition sm:grid-cols-[108px_minmax(0,1fr)_auto] sm:items-center sm:gap-6"
-                  key={note.slug}
-                  to={`/notes/${note.slug}`}
-                >
-                  <div className="flex items-center gap-3 font-mono text-[10px] text-slate-600 sm:block sm:text-xs">
-                    <time>{formatNoteDate(note.updated)}</time>
-                    {index === 0 && <span className="text-cyan-300 sm:mt-1 sm:block sm:text-[9px]">LATEST</span>}
-                  </div>
-                  <h3 className="min-w-0 break-words text-base font-medium leading-6 text-slate-300 transition [overflow-wrap:anywhere] group-hover:text-cyan-100 sm:text-lg">
-                    {note.title}
-                  </h3>
-                  <div className="flex items-center gap-3 text-[11px] text-slate-600 sm:justify-end sm:text-xs">
-                    <span>{note.category}</span>
-                    <span aria-hidden="true" className="size-0.5 rounded-full bg-slate-700" />
-                    <span>{note.readingMinutes} min</span>
-                    <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1 group-hover:text-cyan-300" />
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            <Link
-              className="group mt-8 flex items-center justify-between gap-6 py-4 text-sm transition"
-              to="/fragments"
-            >
-              <div className="min-w-0">
-                <p className="font-medium text-slate-300 transition group-hover:text-white">碎片记录</p>
-                <p className="mt-1 text-xs leading-5 text-slate-600">照片、声音，以及不需要单独成文的内容。</p>
-              </div>
-              <span className="inline-flex shrink-0 items-center gap-2 text-xs text-slate-600 transition group-hover:text-cyan-300">
-                查看
-                <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
-              </span>
-            </Link>
-          </section>
+            {featured ? (
+              <Featured key={featured.key} item={featured} />
+            ) : (
+              <section className="home-feature home-feature-text">
+                <div className="home-feature-copy">
+                  <h1>{siteHome.title}</h1>
+                  <Link className="home-read-link" to="/notes">
+                    浏览笔记
+                    <ArrowUpRight size={17} aria-hidden="true" />
+                  </Link>
+                </div>
+              </section>
+            )}
+            {selected.length > 0 && (
+              <section
+                className="home-selection"
+                aria-labelledby="home-selection-heading"
+              >
+                <div className="home-section-heading">
+                  <h2 id="home-selection-heading">最近留下的</h2>
+                  <Link to="/notes">
+                    全部笔记
+                    <ArrowRight size={15} aria-hidden="true" />
+                  </Link>
+                </div>
+                <div className="home-selected-grid">
+                  {selected.map((item) => (
+                    <Selected key={item.key} item={item} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </main>
         </div>
-      </main>
+      </div>
     </>
   );
 }

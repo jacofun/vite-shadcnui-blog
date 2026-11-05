@@ -10,6 +10,8 @@ export type NoteMeta = {
   readingMinutes: number;
   series?: string;
   seriesOrder?: number;
+  cover?: string;
+  coverAlt?: string;
   aiAssisted: boolean;
   aiSummary?: string;
 };
@@ -71,7 +73,7 @@ function parseFrontMatter(source: string): {
   };
 }
 
-function calculateReadingMinutes(content: string): number {
+export function calculateReadingMinutes(content: string): number {
   const chineseCharacters = content.match(/[\u3400-\u9fff]/g)?.length ?? 0;
   const latinWords = content
     .replace(/[\u3400-\u9fff]/g, " ")
@@ -122,6 +124,8 @@ function createNote(path: string, source: string): Note {
     readingMinutes: calculateReadingMinutes(content),
     series: value("series") || inferredSeries,
     seriesOrder: Number.isFinite(seriesOrderValue) && seriesOrderValue > 0 ? seriesOrderValue : undefined,
+    cover: value("cover") || undefined,
+    coverAlt: value("coverAlt") || undefined,
     aiAssisted: value("aiAssisted") === "true",
     aiSummary: value("aiSummary", summary) || undefined,
   } satisfies NoteMeta;

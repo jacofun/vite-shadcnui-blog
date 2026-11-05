@@ -51,6 +51,15 @@ public/                    # 不经过 Vite 模块处理的静态资源
 .github/workflows/         # CI/CD 工作流
 ```
 
+## 首页展示
+
+首页保留一条主推荐和两条近期内容，搜索与 AI 问答从顶部搜索入口打开。私人资源中发布的公开快照与 Markdown 笔记共同参与排序；草稿和私人附件不会被首页请求。
+
+- 默认优先选择最近带图片或视频的公开内容作为主推荐；没有媒体时使用文字排版，图片加载失败后也会回退。
+- 通过 `src/config/config.ts` 的 `siteHome.featuredHref` 可固定主推荐，例如 `/notes/文章-slug` 或 `/journal/发布-id`。删除固定地址后恢复自动选择。
+- Markdown 笔记可在 frontmatter 中选填 `cover` 和 `coverAlt`，封面地址支持站内绝对路径或 HTTPS。没有封面的文章无需补图。
+- 图片和视频复用已有发布流程。首页没有附带演示图片，视频点击后才加载播放器。公开内容接口不可用时仍展示本地笔记。
+
 ## 图片构建
 
 `vite-imagetools` 会在构建阶段为图库图片生成多尺寸 AVIF、WebP 和 JPEG 资源。页面通过 `<picture>` / `<source>` 让浏览器选择适合当前设备的格式和尺寸。
