@@ -128,6 +128,7 @@ export default function PrivateResources(): JSX.Element {
               )}
 
               <div className="mt-7 flex flex-wrap gap-3">
+                {access.session?.user.role === "owner" && <Link className="rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-4 py-2.5 text-sm text-cyan-200" to="/resources/publish">内容发布</Link>}
                 {canUpload && <Link className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-2.5 text-sm font-medium text-cyan-200 transition hover:border-cyan-300/40 hover:bg-cyan-300/[0.12]" to="/resources/upload"><UploadCloud className="size-4" />上传资源</Link>}
                 {access.session?.user.role === "owner" && <Link className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07]" to="/resources/new"><FolderPlus className="size-4" />新建合集</Link>}
                 <Link className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07]" to="/resources/clipboard"><Clipboard className="size-4" />文本剪贴板</Link>

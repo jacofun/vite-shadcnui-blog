@@ -62,13 +62,14 @@ jobs:
 
           cp "${SOURCE_DIR}/server.js" "${PACKAGE_DIR}/server.js"
           cp "${SOURCE_DIR}/index.js" "${PACKAGE_DIR}/index.js"
+          cp "${SOURCE_DIR}/publishing.js" "${PACKAGE_DIR}/publishing.js"
           cp "${SOURCE_DIR}/package.json" "${PACKAGE_DIR}/package.json"
           cp "${SOURCE_DIR}/package-lock.json" "${PACKAGE_DIR}/package-lock.json"
           cp -R "${SOURCE_DIR}/node_modules" "${PACKAGE_DIR}/node_modules"
 
           (
             cd "${PACKAGE_DIR}"
-            zip -q -r "${ZIP_PATH}" server.js index.js package.json package-lock.json node_modules
+            zip -q -r "${ZIP_PATH}" server.js index.js publishing.js package.json package-lock.json node_modules
           )
 
           unzip -t "${ZIP_PATH}" >/dev/null

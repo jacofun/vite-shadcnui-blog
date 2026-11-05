@@ -415,3 +415,40 @@ The function deployment workflow creates `fc-blog-authenticator-web.zip` with `s
 uploads the ZIP to the private content bucket under `functions/fc-cicd/`, then updates only the
 code of `fc-blog-authenticator-web`. Runtime secrets, operator scripts and tests are excluded from
 the artifact.
+
+## Owner publishing workspace
+
+Local implementation: `/resources/publish` reuses the existing Passkey session and CSRF token.
+Only `owner` can manage content; the resource-upload grant alone does not grant publishing rights.
+There is no new password or login endpoint. The new `publishing.js` module must be packaged with
+`index.js` and `server.js`; the FC packaging workflow includes it.
+
+- `POST publishing/list`: drafts, publication state and uploaded media previews.
+- `POST publishing/upload-init` / `publishing/upload-complete`: reuse direct signed OSS PUT,
+  progress/retry support, and server-side size/type/header validation. Supported: JPG, PNG,
+  WebP (20 MiB) and MP4 (1 GiB). Completion is idempotent within the 15-minute upload token.
+- `POST publishing/save`: save an article or media moment draft, optional Markdown body up to
+  30,000 characters and up to 12 selected media assets. Media is optional.
+- `POST publishing/publish` / `publishing/unpublish`: explicitly publish a snapshot or withdraw
+  it. Editing a draft does not change the previously published snapshot. Writes require the
+  current version, preventing silent overwrite by stale editors.
+- `GET public/content`: anonymous, uncached, published snapshots only. Private fields, other
+  media and drafts are excluded. Media URLs are generated only for the selected published assets.
+
+Content and uploads live in `${PRIVATE_RESOURCE_ROOT}/.publishing/` in the existing content bucket.
+Existing `private/*` RAM permissions cover the default prefix. No existing private collection is
+made public. Published media remains stored privately and is delivered through the existing CDN
+signature mechanism. Shared URLs can remain usable until the CDN-configured authentication window
+ends; withdrawal immediately removes the item from the API, but is not immediate media revocation.
+CDN signature duration follows the CDN configuration, not a per-link expiry parameter.
+
+Published articles are linked from `/notes`, moments from `/fragments`; `/journal` lists public
+entries and `/journal/:entryId` displays one entry. Existing Markdown-in-git notes stay supported.
+Dynamic entries are not yet included in the build-generated RSS, sitemap or AI context; the public
+journal supports reading them without a frontend rebuild. The owner workspace is bounded to 100
+entries and 500 uploaded assets, and uses the existing content-store locking boundary. Asset garbage
+collection and transcoding are not part of this change.
+
+Validate with `npm test --prefix functions/private-auth`, `npm run test:client`, `npm run lint`,
+and `npm run build`. Browser verification can use a mocked OSS adapter; production OSS/CDN access
+and deployment must be checked separately before release.

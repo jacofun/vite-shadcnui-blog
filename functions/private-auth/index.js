@@ -1,3 +1,4 @@
+import { handlePublishing } from "./publishing.js";
 import {
   createCipheriv,
   createDecipheriv,
@@ -396,7 +397,8 @@ function routeName(path, cookiePath, persistent = false) {
     "clipboard/get", "clipboard/save", "clipboard/delete",
     "just-write/list", "just-write/save", "just-write/delete", "just-write/teach",
     "assessment/grade", "assessment/result", "assessment/ask",
-    "public/assistant/ask", "health",
+    "public/assistant/ask", "health", "public/content",
+    "publishing/list", "publishing/save", "publishing/publish", "publishing/unpublish", "publishing/upload-init", "publishing/upload-complete",
   ];
   if (persistent) knownRoutes.push(
     "register/options", "register/verify", "reauth/challenge", "reauth/verify",
@@ -407,7 +409,7 @@ function routeName(path, cookiePath, persistent = false) {
 }
 
 function usesPrivateContentStore(route) {
-  return ["uploads/", "collections/", "files/", "clipboard/", "assessment/", "just-write/"].some((prefix) => route.startsWith(prefix));
+  return ["publishing/", "uploads/", "collections/", "files/", "clipboard/", "assessment/", "just-write/"].some((prefix) => route.startsWith(prefix));
 }
 
 function jsonResponse(config, statusCode, body, extraHeaders = {}) {
@@ -2789,6 +2791,10 @@ async function handlePrivateResourceUpload({
   return { published: true, collectionId: upload.collection.collectionId, itemId: summary.episodeId };
 }
 
+function publishingRequest(args) {
+  return handlePublishing({ ...args, encryptToken, decryptToken, signPath: signCdnPath });
+}
+
 export function createHandler({
   env = process.env,
   now = () => Math.floor(Date.now() / 1000),
@@ -2822,7 +2828,7 @@ export function createHandler({
       const route = routeName(request.path, config.cookiePath, config.storeMode === "oss");
       if (!route) throw new HttpError(404, "NOT_FOUND", "Route does not exist");
 
-      const expectedMethod = ["session", "passkeys"].includes(route) ? "GET" : "POST";
+      const expectedMethod = ["public/content", "session", "passkeys"].includes(route) ? "GET" : "POST";
       if (request.method !== expectedMethod) {
         throw new HttpError(405, "METHOD_NOT_ALLOWED", "Method is not allowed");
       }
@@ -2832,6 +2838,11 @@ export function createHandler({
       if (route === "health") return jsonResponse(config, 200, { ok: true });
 
       const nowSeconds = now();
+
+      if (route === "public/content") {
+        const publishingStore = contentStore || await createPrivateResourceContentStore({ env, credentials: request.credentials });
+        return jsonResponse(config, 200, await publishingRequest({ route, config, contentStore: publishingStore, nowSeconds }));
+      }
 
       if (route === "public/assistant/ask") {
         const stream = acceptsEventStream(request);
@@ -2956,7 +2967,9 @@ export function createHandler({
         await limitPrivateAiRequest({ route, user, config, contentStore: privateContentStore, nowSeconds, env });
         const assessmentStream = ["assessment/ask", "assessment/grade"].includes(route) && acceptsEventStream(request);
         const justWriteStream = route === "just-write/teach" && acceptsEventStream(request);
-        const result = route.startsWith("assessment/")
+        const result = route.startsWith("publishing/")
+          ? await publishingRequest({ route, body, user, config, contentStore: privateContentStore, nowSeconds })
+          : route.startsWith("assessment/")
           ? await handleEnglishAssessment({
             route, body, user, config, contentStore: privateContentStore, nowSeconds, env, fetchImpl,
             signal: request.signal, stream: assessmentStream,
@@ -3612,6 +3625,7 @@ async function persistentRequest(options) {
   const state = await store.read();
   const { user } = persistedSession(state, auth, config, nowSeconds);
   await limitPrivateAiRequest({ route, user, config, contentStore, nowSeconds, env });
+  if (route.startsWith("publishing/")) return jsonResponse(config, 200, await publishingRequest({ route, body, user, config, contentStore, nowSeconds }));
   if (route === "session") return jsonResponse(config, 200, sessionResult(auth, user));
   if (route === "sign") {
     if (!hasPrivateResourceAccess(user)) {

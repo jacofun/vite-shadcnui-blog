@@ -1,3 +1,4 @@
+import PublishedContent from "@/components/common/PublishedContent";
 import { ArrowUpRight } from "lucide-react";
 import type { JSX } from "react";
 import { Helmet } from "react-helmet-async";
@@ -34,6 +35,7 @@ export default function Fragments(): JSX.Element {
           </header>
 
           <section aria-label="碎片记录" className="mt-4">
+            <PublishedContent type="moment" />
             {fragments.map((fragment, index) => (
               <article
                 className="grid gap-5 border-b border-white/[0.08] py-9 sm:grid-cols-[110px_minmax(0,1fr)] sm:gap-8 sm:py-12"

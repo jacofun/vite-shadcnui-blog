@@ -45,6 +45,8 @@ const PrivateRouteBoundary = lazy(
 );
 const PrivateAuth = lazy(() => import("./pages/PrivateAuth.tsx"));
 const PrivateClipboard = lazy(() => import("./pages/PrivateClipboard.tsx"));
+const PrivatePublishing = lazy(() => import("./pages/PrivatePublishing.tsx"));
+const PublicJournal = lazy(() => import("./pages/PublicJournal.tsx"));
 const JustWrite = lazy(() => import("./pages/JustWrite.tsx"));
 const JustWriteEditor = lazy(() => import("./pages/JustWrite.tsx").then((module) => ({ default: module.JustWriteEditor })));
 const PrivateResources = lazy(() => import("./pages/PrivateResources.tsx"));
@@ -70,6 +72,8 @@ const router = createBrowserRouter([
       { path: "fragments", element: lazyPage(<Fragments />) },
       { path: "now", element: lazyPage(<Now />) },
       { path: "timeline", element: lazyPage(<Timeline />) },
+      { path: "journal", element: lazyPage(<PublicJournal />) },
+      { path: "journal/:entryId", element: lazyPage(<PublicJournal />) },
       { path: "notes", element: lazyPage(<Notes />) },
       { path: "notes/:slug", element: lazyPage(<NoteDetail />) },
       {
@@ -77,6 +81,7 @@ const router = createBrowserRouter([
         children: [
           { path: "auth", element: lazyPage(<PrivateAuth />) },
           { path: "resources", element: lazyPage(<PrivateResources />) },
+          { path: "resources/publish", element: lazyPage(<PrivatePublishing />) },
           { path: "resources/clipboard", element: lazyPage(<PrivateClipboard />) },
           { path: "resources/just-write", element: lazyPage(<JustWrite />) },
           { path: "resources/just-write/write", element: lazyPage(<JustWriteEditor />) },

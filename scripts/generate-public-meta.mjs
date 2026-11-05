@@ -174,6 +174,8 @@ const assistantContext = {
 };
 
 const routeShells = [
+  "/journal",
+  "/resources/publish",
   "/notes",
   "/fragments",
   "/about",

@@ -1,3 +1,4 @@
+import PublishedContent from "@/components/common/PublishedContent";
 import {
   useEffect,
   useMemo,
@@ -88,6 +89,7 @@ export default function Notes(): JSX.Element {
             </p>
           </div>
 
+          <PublishedContent type="article" />
           <div className="mt-12 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-600" />
