@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { Link, useBlocker } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import MarkdownRenderer from "@/components/notes/MarkdownRenderer";
+import PublishingVideo from "@/components/common/PublishingVideo";
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
-import { publishingRequest, type PublishingAsset, type PublishingEntry } from "@/lib/publishing";
+import { publishingRequest, type PublishingAsset, type PublishingEntry, type PublishingUploadFormat } from "@/lib/publishing";
 import type { PrivateAuthSession, PrivateResourceUploadTarget } from "@/lib/privateAuth";
 import { uploadPrivateResourceFile } from "@/lib/privateResourceUpload";
 const blank = (): PublishingEntry => ({ id: "", version: 0, title: "", summary: "", body: "", type: "article", assetIds: [], published: null });
@@ -20,6 +21,7 @@ export default function PrivatePublishing() {
 function Editor({ session }: { session: PrivateAuthSession }) {
   const [entries, setEntries] = useState<PublishingEntry[]>([]);
   const [assets, setAssets] = useState<PublishingAsset[]>([]);
+  const [uploadFormats, setUploadFormats] = useState<PublishingUploadFormat[]>([]);
   const [draft, setDraft] = useState(blank);
   const [baseline, setBaseline] = useState(JSON.stringify(blank()));
   const [busy, setBusy] = useState(false);
@@ -37,7 +39,7 @@ function Editor({ session }: { session: PrivateAuthSession }) {
   }, [blocker]);
   useEffect(() => {
     let active = true;
-    publishingRequest<{ entries: PublishingEntry[]; assets: PublishingAsset[] }>("list", {}, session).then(data => { if (active) { setEntries(data.entries); setAssets(data.assets); } }).catch(e => { if (active) setError(e.message); });
+    publishingRequest<{ entries: PublishingEntry[]; assets: PublishingAsset[]; uploadFormats?: PublishingUploadFormat[] }>("list", {}, session).then(data => { if (active) { setEntries(data.entries); setAssets(data.assets); setUploadFormats(data.uploadFormats ?? []); } }).catch(e => { if (active) setError(e.message); });
     return () => { active = false; };
   }, [session]);
   useEffect(() => {
@@ -77,6 +79,10 @@ function Editor({ session }: { session: PrivateAuthSession }) {
     setBusy(true); setError("");
     try {
       for (const file of Array.from(files)) {
+        const extension = file.name.trim().split(".").pop()?.toLowerCase();
+        const rule = uploadFormats.find(format => format.extension === extension);
+        if (uploadFormats.length && !rule) throw new Error(`${file.name}：不支持此文件格式，请查看下方支持的格式列表。`);
+        if (rule && (file.size < 1 || file.size > rule.maxBytes)) throw new Error(`${file.name}：文件为空或超过大小限制，图片上限 20MB，视频上限 1GB。`);
         const retry = pendingUpload?.file === file;
         const initialized = retry ? pendingUpload : await publishingRequest<{ uploadToken: string; files: { file: PrivateResourceUploadTarget } }>("upload-init", { name: file.name, bytes: file.size }, session);
         setPendingUpload({ ...initialized, file });
@@ -102,13 +108,14 @@ function Editor({ session }: { session: PrivateAuthSession }) {
           <label className="block space-y-2"><span>标题</span><input maxLength={200} className={field} value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} /></label>
           <label className="block space-y-2"><span>简介（可选）</span><input maxLength={500} className={field} value={draft.summary} onChange={e => setDraft({ ...draft, summary: e.target.value })} /></label>
           <label className="block space-y-2"><span>正文（支持 Markdown，可选）</span><textarea rows={12} maxLength={30000} className={field} value={draft.body} onChange={e => setDraft({ ...draft, body: e.target.value })} /></label>
-          <label className="block space-y-2"><span>上传图片或视频</span><input className={field} type="file" accept="image/jpeg,image/png,image/webp,video/mp4" multiple onChange={e => { void upload(e.target.files); e.target.value = ""; }} /><span className="block text-xs text-slate-400">图片不超过 20MB，MP4 视频不超过 1GB；每篇最多选择 12 项素材，第一张选中的图片用于列表展示。不上传图片也可发布文章。</span></label>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{assets.map(asset => <label key={asset.id} className="min-w-0 rounded-lg border border-white/10 p-2"><input type="checkbox" checked={draft.assetIds.includes(asset.id)} onChange={e => setDraft({ ...draft, assetIds: e.target.checked ? [...draft.assetIds, asset.id].slice(0, 12) : draft.assetIds.filter(id => id !== asset.id) })} /> <span className="text-xs">{asset.kind === "image" ? "图片" : "视频"}</span>{asset.kind === "image" ? <img className="mt-2 aspect-video w-full object-cover" src={asset.url} alt={asset.name} loading="lazy" /> : <video className="mt-2 aspect-video w-full" controls preload="none" playsInline src={asset.url} />}<span className="mt-2 block truncate text-xs text-slate-400">{asset.name}</span></label>)}</div>
+          <label className="block space-y-2"><span>上传图片或视频</span><input className={field} type="file" accept={uploadFormats.length ? uploadFormats.map(format => `.${format.extension}`).join(",") : "image/jpeg,image/png,image/webp,video/mp4"} multiple onChange={e => { void upload(e.target.files); e.target.value = ""; }} /><span className="block text-xs text-slate-400">图片不超过 20MB，视频不超过 1GB；每篇最多选择 12 项素材，第一张选中的图片用于列表展示。不上传图片也可发布文章。</span></label>
+          {uploadFormats.length > 0 && <details className="text-xs leading-6 text-slate-400"><summary className="cursor-pointer">支持的格式与播放说明</summary><p className="mt-2 break-words">{uploadFormats.map(format => format.extension.toUpperCase()).join("、")}</p><p>视频以原格式保存，网页播放取决于浏览器和视频编码。无法播放时可打开或下载原文件；如需方便跨设备播放，可先转为 H.264 / AAC 编码的 MP4。</p></details>}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{assets.map(asset => <div key={asset.id} className="min-w-0 rounded-lg border border-white/10 p-2"><label className="text-xs"><input type="checkbox" checked={draft.assetIds.includes(asset.id)} onChange={e => setDraft({ ...draft, assetIds: e.target.checked ? [...draft.assetIds, asset.id].slice(0, 12) : draft.assetIds.filter(id => id !== asset.id) })} /> {asset.kind === "image" ? "图片" : "视频"}</label>{asset.kind === "image" ? <img className="mt-2 aspect-video w-full object-cover" src={asset.url} alt={asset.name} loading="lazy" /> : <PublishingVideo className="mt-2 aspect-video w-full" src={asset.url} name={asset.name} />}<span className="mt-2 block truncate text-xs text-slate-400">{asset.name}</span></div>)}</div>
         </fieldset>
         {progress && <p role="status">{progress}</p>}
         {pendingUpload && !busy && <button className={button} onClick={() => void upload([pendingUpload.file])}>重试上传：{pendingUpload.file.name}</button>}
         <div className="flex flex-wrap gap-3"><button className={button} disabled={busy || !draft.title.trim()} onClick={() => void act("save")}>保存草稿</button><button className={button} onClick={() => setPreview(!preview)}>预览</button><button className={`${button} bg-cyan-300 text-slate-950`} disabled={busy || !draft.title.trim()} onClick={() => void act("publish")}>发布到网站</button>{Boolean(draft.published) && <><Link className={button} to={`/journal/${draft.id}`} target="_blank">查看公开页面</Link><button className={button} disabled={busy} onClick={() => { if (window.confirm("确认从公开页面撤下这篇内容？")) void act("unpublish"); }}>撤下</button></>}</div>
-        {preview && <article className="space-y-5 border-t border-white/15 pt-7"><h2 className="text-2xl">{draft.title || "未填写标题"}</h2><p className="text-slate-400">{draft.summary}</p><MarkdownRenderer content={draft.body} />{draft.assetIds.map(id => assets.find(a => a.id === id)).filter((a): a is PublishingAsset => Boolean(a)).map(a => a.kind === "image" ? <img key={a.id} className="max-h-[600px] w-full object-contain" src={a.url} alt={a.name} /> : <video key={a.id} className="w-full" controls playsInline preload="none" src={a.url} />)}</article>}
+        {preview && <article className="space-y-5 border-t border-white/15 pt-7"><h2 className="text-2xl">{draft.title || "未填写标题"}</h2><p className="text-slate-400">{draft.summary}</p><MarkdownRenderer content={draft.body} />{draft.assetIds.map(id => assets.find(a => a.id === id)).filter((a): a is PublishingAsset => Boolean(a)).map(a => a.kind === "image" ? <img key={a.id} className="max-h-[600px] w-full object-contain" src={a.url} alt={a.name} /> : <PublishingVideo key={a.id} src={a.url} name={a.name} />)}</article>}
         </section>
       </div>
     </div>

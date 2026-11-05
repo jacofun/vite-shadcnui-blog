@@ -1,21 +1,69 @@
 import { randomBytes } from "node:crypto";
 
-class PublishingError extends Error {
+export class PublishingError extends Error {
   constructor(statusCode, code, message) { super(message); Object.assign(this, { statusCode, code }); }
 }
 const fail = (status, code, message) => { throw new PublishingError(status, code, message); };
 const empty = () => ({ schemaVersion: 1, entries: [], assets: [] });
 const valid = (d) => d?.schemaVersion === 1 && Array.isArray(d.entries) && Array.isArray(d.assets);
-const formats = { jpg: ["image/jpeg", "image"], jpeg: ["image/jpeg", "image"], png: ["image/png", "image"], webp: ["image/webp", "image"], mp4: ["video/mp4", "video"] };
+const formats = {
+  jpg: ["image/jpeg", "image"], jpeg: ["image/jpeg", "image"], png: ["image/png", "image"], webp: ["image/webp", "image"],
+  mp4: ["video/mp4", "video"], m4v: ["video/mp4", "video"], mov: ["video/quicktime", "video"],
+  f4v: ["video/mp4", "video"], "3gp": ["video/3gpp", "video"], "3g2": ["video/3gpp2", "video"],
+  webm: ["video/webm", "video"], mkv: ["video/x-matroska", "video"],
+  avi: ["video/x-msvideo", "video"], wmv: ["video/x-ms-wmv", "video"], asf: ["video/x-ms-asf", "video"],
+  flv: ["video/x-flv", "video"], mpg: ["video/mpeg", "video"], mpeg: ["video/mpeg", "video"],
+  mpe: ["video/mpeg", "video"], m2v: ["video/mpeg", "video"], vob: ["video/mpeg", "video"],
+  ts: ["video/mp2t", "video"], mts: ["video/mp2t", "video"], m2ts: ["video/mp2t", "video"],
+  ogv: ["video/ogg", "video"], rm: ["application/vnd.rn-realmedia", "video"], rmvb: ["application/vnd.rn-realmedia-vbr", "video"],
+};
+const uploadFormats = Object.entries(formats).map(([extension, [contentType, kind]]) => ({
+  extension, contentType, kind, maxBytes: (kind === "image" ? 20 : 1024) * 1024 * 1024,
+}));
 function text(value, max, required = false) {
   if (typeof value !== "string" || value.length > max || value.includes("\0") || (required && !value.trim())) fail(400, "INVALID_CONTENT", "内容为空或超过长度限制");
   return value;
 }
 function magic(format, bytes) {
+  if (!Buffer.isBuffer(bytes) || bytes.length < 12) return false;
   if (format === "jpg" || format === "jpeg") return bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
   if (format === "png") return bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
   if (format === "webp") return bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP";
-  return bytes.toString("ascii", 4, 8) === "ftyp";
+  if (["mp4", "m4v", "mov", "f4v", "3gp", "3g2"].includes(format)) {
+    // ISO BMFF/QuickTime boxes, including older MOV files without an ftyp box.
+    for (let offset = 0; offset + 12 <= bytes.length;) {
+      const size = bytes.readUInt32BE(offset);
+      const type = bytes.toString("ascii", offset + 4, offset + 8);
+      if (size !== 0 && size !== 1 && size < 8) return false;
+      if (type === "ftyp") return size >= 16 && bytes.length >= offset + 16;
+      if (format === "mov" && ["moov", "mdat"].includes(type)) return true;
+      if (!["free", "skip", "wide"].includes(type) || size < 8) return false;
+      offset += size;
+    }
+    return false;
+  }
+  if (format === "webm" || format === "mkv") {
+    if (bytes.readUInt32BE(0) !== 0x1a45dfa3) return false;
+    // EBML DocType (0x4282) is in the initial header; exclude unrelated EBML files.
+    const docType = format === "webm" ? "webm" : "matroska";
+    return bytes.subarray(0, 1024).includes(Buffer.concat([Buffer.from([0x42, 0x82, 0x80 | docType.length]), Buffer.from(docType)]));
+  }
+  if (format === "avi") return bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "AVI ";
+  if (format === "wmv" || format === "asf") return bytes.subarray(0, 16).equals(Buffer.from("3026b2758e66cf11a6d900aa0062ce6c", "hex"));
+  if (format === "flv") return bytes.toString("ascii", 0, 3) === "FLV" && bytes[3] === 1 && bytes.readUInt32BE(5) >= 9;
+  if (["mpg", "mpeg", "mpe", "m2v", "vob"].includes(format)) return [0x000001ba, 0x000001b3].includes(bytes.readUInt32BE(0));
+  if (["ts", "mts", "m2ts"].includes(format)) {
+    // MPEG-TS uses 188-byte packets; cameras also emit 192/204-byte variants.
+    return [188, 192, 204].some(size => {
+      for (let offset = 0; offset < size && offset + 2 * size < bytes.length; offset++) {
+        if ([0, 1, 2].every(index => bytes[offset + index * size] === 0x47)) return true;
+      }
+      return false;
+    });
+  }
+  if (format === "ogv") return bytes.toString("ascii", 0, 4) === "OggS" && bytes[4] === 0;
+  if (format === "rm" || format === "rmvb") return bytes.length >= 18 && bytes.toString("ascii", 0, 4) === ".RMF";
+  return false;
 }
 
 export async function handlePublishing({ route, body = {}, user, config, contentStore, nowSeconds, encryptToken, decryptToken, signPath }) {
@@ -32,12 +80,12 @@ export async function handlePublishing({ route, body = {}, user, config, content
   if (route === "publishing/list") {
     const doc = await contentStore.readJson(path, { missing: empty() });
     if (!valid(doc)) fail(503, "INVALID_CONTENT_STORE", "内容暂时不可用");
-    return { entries: doc.entries, assets: doc.assets.map(a => ({ ...a, url: url(a) })) };
+    return { entries: doc.entries, assets: doc.assets.map(a => ({ ...a, url: url(a) })), uploadFormats };
   }
   if (route === "publishing/upload-init") {
-    const name = text(body.name, 255, true);
+    const name = text(body.name, 255, true).trim();
     const format = name.split(".").pop().toLowerCase();
-    if (!formats[format]) fail(400, "INVALID_MEDIA", "支持 JPG、PNG、WebP 图片和 MP4 视频");
+    if (!Object.hasOwn(formats, format)) fail(400, "INVALID_MEDIA", "不支持此文件格式，请查看上传区域的支持格式列表");
     const [contentType, kind] = formats[format];
     if (!Number.isSafeInteger(body.bytes) || body.bytes < 1 || body.bytes > (kind === "image" ? 20 : 1024) * 1024 * 1024) fail(400, "INVALID_MEDIA", "图片上限 20MB，视频上限 1GB");
     const id = randomBytes(16).toString("hex");

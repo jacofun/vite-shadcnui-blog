@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 
 import HomeNavigation from "@/components/home/HomeNavigation";
+import PublishingVideo from "@/components/common/PublishingVideo";
 import { siteHome } from "@/config/config";
 import {
   buildHomeContent,
@@ -98,13 +99,7 @@ function Featured({ item }: { item: HomeContent }) {
                       <X size={20} />
                     </button>
                   </Dialog.Close>
-                  <video
-                    controls
-                    playsInline
-                    preload="metadata"
-                    src={video.url}
-                    aria-label={item.title}
-                  />
+                  <PublishingVideo src={video.url} name={item.title} />
                 </Dialog.Content>
               </Dialog.Portal>
             </Dialog.Root>

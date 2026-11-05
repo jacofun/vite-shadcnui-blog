@@ -7,11 +7,12 @@ const key = Buffer.alloc(32, 7);
 function fixture() {
   let doc;
   const objects = new Map();
+  const contentTypes = new Map();
   const contentStore = {
     async readJson(_path, { missing } = {}) { return structuredClone(doc ?? missing); },
     async updateJson(_path, { missing, validate }, change) { const current = structuredClone(doc ?? missing); assert.ok(validate(current)); doc = structuredClone(change(current)); return structuredClone(doc); },
-    signUpload(path) { return `https://upload.example/${path}`; },
-    async stat(path) { const item = objects.get(path); if (!item) throw new Error("missing upload"); return { bytes: item.length, contentType: path.endsWith(".mp4") ? "video/mp4" : "image/png" }; },
+    signUpload(path, file) { contentTypes.set(path, file.contentType); return `https://upload.example/${path}`; },
+    async stat(path) { const item = objects.get(path); if (!item) throw new Error("missing upload"); return { bytes: item.length, contentType: contentTypes.get(path) }; },
     async readPrefix(path) { return objects.get(path); },
   };
   const args = { user: { id: "owner", role: "owner" }, config: { privateRoot: "/private", currentSessionKey: key }, contentStore, nowSeconds: NOW,
@@ -108,4 +109,82 @@ test("MP4 upload is verified and published as video, with unselected media exclu
   assert.equal(result.media.length, 1);
   assert.equal(result.media[0].kind, "video");
   assert.equal(result.media[0].name, "clip.mp4");
+});
+
+test("HTTP publishing preserves validation errors and hides unexpected storage failures", async () => {
+  const { contentStore } = fixture();
+  const env = { WEBAUTHN_ORIGIN: "https://yanxiao.me", WEBAUTHN_RP_ID: "yanxiao.me",
+    WEBAUTHN_CREDENTIAL_ID: Buffer.from("owner").toString("base64url"),
+    WEBAUTHN_PUBLIC_KEY: Buffer.alloc(77, 9).toString("base64url"),
+    SESSION_CURRENT_KEY: key.toString("base64url"), CDN_AUTH_KEY: "PrivateCdnKey123456", SESSION_VERSION: "1" };
+  const session = __test.encryptToken({ kind: "session", sub: "owner", version: "1", csrf: "test-csrf", iat: NOW, exp: NOW + 3600 }, key);
+  const handler = createHandler({ env, contentStore, now: () => NOW });
+  const request = (operation, body) => handler({ method: "POST", path: `/api/private-auth/publishing/${operation}`,
+    headers: { origin: env.WEBAUTHN_ORIGIN, cookie: `__Secure-private_auth=${session}`, "x-csrf-token": "test-csrf" },
+    body: JSON.stringify(body) });
+  for (const body of [{ name: "clip.exe", bytes: 1024 }, { name: "clip.constructor", bytes: 1024 }, { name: "clip.mp4", bytes: 1024 * 1024 * 1024 + 1 }]) {
+    const result = await request("upload-init", body);
+    assert.equal(result.statusCode, 400, result.body);
+    assert.equal(JSON.parse(result.body).code, "INVALID_MEDIA");
+    assert.doesNotMatch(JSON.parse(result.body).message, /service is unavailable/);
+  }
+  const invalidToken = await request("upload-complete", { uploadToken: "expired-or-invalid" });
+  assert.equal(invalidToken.statusCode, 400, invalidToken.body);
+  assert.equal(JSON.parse(invalidToken.body).code, "INVALID_UPLOAD_TOKEN");
+  const upload = await request("upload-init", { name: "clip.mp4", bytes: 24 });
+  assert.equal(upload.statusCode, 200, upload.body);
+  contentStore.signUpload = () => { throw new Error("internal storage details must stay private"); };
+  const unavailable = await request("upload-init", { name: "clip.mp4", bytes: 24 });
+  assert.equal(unavailable.statusCode, 500);
+  assert.deepEqual(JSON.parse(unavailable.body), { code: "INTERNAL_ERROR", message: "Private authentication service is unavailable" });
+});
+
+test("mainstream video containers accept uppercase extensions and verify the uploaded container", async () => {
+  const bmff = Buffer.from("000000186674797069736f6d0000000069736f6d6d703432", "hex");
+  const ebml = type => Buffer.concat([Buffer.from("1a45dfa3a3428280", "hex").subarray(0, 7), Buffer.from([0x80 | type.length]), Buffer.from(type)]);
+  const packetStream = size => { const bytes = Buffer.alloc(size * 3); for (let i = 0; i < 3; i++) bytes[i * size + (size === 192 ? 4 : 0)] = 0x47; return bytes; };
+  const cases = [
+    ...["mp4", "m4v", "mov", "f4v", "3gp", "3g2"].map(extension => [extension, bmff]),
+    ["webm", ebml("webm")], ["mkv", ebml("matroska")],
+    ["avi", Buffer.from("524946462000000041564920", "hex")],
+    ...["wmv", "asf"].map(extension => [extension, Buffer.from("3026b2758e66cf11a6d900aa0062ce6c", "hex")]),
+    ["flv", Buffer.from("464c5601050000000900000000", "hex")],
+    ...["mpg", "mpeg", "mpe", "m2v", "vob"].map(extension => [extension, Buffer.from("000001ba4400040004010000", "hex")]),
+    ["ts", packetStream(188)], ["mts", packetStream(192)], ["m2ts", packetStream(192)],
+    ["ogv", Buffer.from("4f6767530002000000000000", "hex")],
+    ...["rm", "rmvb"].map(extension => [extension, Buffer.concat([Buffer.from(".RMF"), Buffer.alloc(14)])]),
+  ];
+  const { call, objects } = fixture();
+  const { uploadFormats } = await call("publishing/list");
+  assert.deepEqual(uploadFormats.filter(f => f.kind === "video").map(f => f.extension).sort(), cases.map(([ext]) => ext).sort());
+  for (const [extension, bytes] of cases) {
+    const upload = await call("publishing/upload-init", { name: `clip.${extension.toUpperCase()}`, bytes: bytes.length });
+    const path = upload.files.file.path;
+    objects.set(path, Buffer.alloc(bytes.length));
+    await assert.rejects(call("publishing/upload-complete", { uploadToken: upload.uploadToken }), { code: "INVALID_MEDIA" }, extension);
+    objects.set(path, bytes);
+    const { asset } = await call("publishing/upload-complete", { uploadToken: upload.uploadToken });
+    assert.equal(asset.kind, "video", extension);
+    assert.equal(asset.format, extension);
+    assert.equal(asset.contentType, uploadFormats.find(f => f.extension === extension).contentType);
+  }
+  assert.equal((await call("publishing/list")).assets.length, cases.length);
+  assert.equal((await call("public/content")).entries.length, 0);
+});
+
+test("legacy MOV headers are accepted but renaming unrelated files does not bypass container checks", async () => {
+  const { call, objects, contentStore } = fixture();
+  const bytes = Buffer.from("0000000877696465000000106d6461740000000000000000", "hex");
+  const upload = await call("publishing/upload-init", { name: "camera.mov", bytes: bytes.length });
+  objects.set(upload.files.file.path, bytes);
+  const { asset } = await call("publishing/upload-complete", { uploadToken: upload.uploadToken });
+  assert.equal(asset.format, "mov");
+  contentStore.stat = async () => ({ bytes: bytes.length, contentType: "text/html" });
+  await assert.rejects(call("publishing/upload-complete", { uploadToken: upload.uploadToken }), { code: "INVALID_MEDIA" });
+  for (const name of ["renamed.avi", "renamed.webm", "renamed.mp4"]) {
+    const renamed = await call("publishing/upload-init", { name, bytes: bytes.length });
+    contentStore.stat = async () => ({ bytes: bytes.length });
+    objects.set(renamed.files.file.path, bytes);
+    await assert.rejects(call("publishing/upload-complete", { uploadToken: renamed.uploadToken }), { code: "INVALID_MEDIA" });
+  }
 });

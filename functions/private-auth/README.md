@@ -425,8 +425,15 @@ There is no new password or login endpoint. The new `publishing.js` module must 
 
 - `POST publishing/list`: drafts, publication state and uploaded media previews.
 - `POST publishing/upload-init` / `publishing/upload-complete`: reuse direct signed OSS PUT,
-  progress/retry support, and server-side size/type/header validation. Supported: JPG, PNG,
-  WebP (20 MiB) and MP4 (1 GiB). Completion is idempotent within the 15-minute upload token.
+  progress/retry support, and server-side size/type/container-header validation. Images: JPG,
+  JPEG, PNG and WebP (20 MiB). Videos (1 GiB): MP4, M4V, MOV, F4V, 3GP, 3G2, WebM, MKV,
+  AVI, WMV, ASF, FLV, MPG, MPEG, MPE, M2V, VOB, TS, MTS, M2TS, OGV, RM and RMVB.
+  Completion is idempotent within the 15-minute upload token. Header checks identify the
+  expected container; they do not decode the complete file, inspect codecs or scan for malware.
+- `publishing/list` also returns `uploadFormats` with each extension, MIME type, media kind
+  and byte limit. The owner file picker and preflight checks use this list; the server still
+  independently validates the upload. Publishing validation errors preserve their HTTP 4xx
+  status, code and message rather than being reported as authentication-service failures.
 - `POST publishing/save`: save an article or media moment draft, optional Markdown body up to
   30,000 characters and up to 12 selected media assets. Media is optional.
 - `POST publishing/publish` / `publishing/unpublish`: explicitly publish a snapshot or withdraw
@@ -448,6 +455,12 @@ Dynamic entries are not yet included in the build-generated RSS, sitemap or AI c
 journal supports reading them without a frontend rebuild. The owner workspace is bounded to 100
 entries and 500 uploaded assets, and uses the existing content-store locking boundary. Asset garbage
 collection and transcoding are not part of this change.
+
+Video originals are stored without conversion. Browser playback depends on both container and
+codec support; accepting MOV, MKV or older formats does not guarantee inline playback. Owner
+previews, public entries and the homepage video dialog provide an original-file link and a
+message on playback failure. Cross-origin downloads can open a browser tab rather than force
+a save. H.264/AAC MP4 remains a suitable export option when broad device playback is needed.
 
 Validate with `npm test --prefix functions/private-auth`, `npm run test:client`, `npm run lint`,
 and `npm run build`. Browser verification can use a mocked OSS adapter; production OSS/CDN access

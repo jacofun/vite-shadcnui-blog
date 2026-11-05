@@ -1,4 +1,4 @@
-import { handlePublishing } from "./publishing.js";
+import { handlePublishing, PublishingError } from "./publishing.js";
 import {
   createCipheriv,
   createDecipheriv,
@@ -2791,8 +2791,15 @@ async function handlePrivateResourceUpload({
   return { published: true, collectionId: upload.collection.collectionId, itemId: summary.episodeId };
 }
 
-function publishingRequest(args) {
-  return handlePublishing({ ...args, encryptToken, decryptToken, signPath: signCdnPath });
+async function publishingRequest(args) {
+  try {
+    return await handlePublishing({ ...args, encryptToken, decryptToken, signPath: signCdnPath });
+  } catch (error) {
+    if (error instanceof PublishingError) {
+      throw new HttpError(error.statusCode, error.code, error.message);
+    }
+    throw error;
+  }
 }
 
 export function createHandler({
