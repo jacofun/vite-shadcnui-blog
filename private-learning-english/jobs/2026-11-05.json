@@ -1,0 +1,237 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-05",
+  "episodeId": "260625-stress-free-family-meals",
+  "title": "Stress-free family meals",
+  "publishedAt": "2026-06-25",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260625",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260625_6_minute_english_stress_free_family_meals_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260625_6_minute_english_stress_free_family_meals_transcript.pdf",
+  "reason": "从学习与认知主题轮换到日常生活和人际沟通。节目围绕家庭用餐中的选择、控制感和冲突展开，表达简单但可迁移性强，也适合用于项目协商、任务分配和团队分歧等熟悉场景。练习集中复用六个高频短语，从原文回忆逐步过渡到受控改写和有限场景迁移。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "日常生活",
+    "人际沟通",
+    "家庭用餐",
+    "冲突管理",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "go through ups and downs",
+        "meaning": "experience a mixture of good and difficult periods",
+        "usage": "Most long projects go through ups and downs before they are completed."
+      },
+      {
+        "expression": "depend on",
+        "meaning": "be decided or influenced by a particular thing",
+        "usage": "The release date may depend on the test results."
+      },
+      {
+        "expression": "be up to someone",
+        "meaning": "be someone's responsibility or decision",
+        "usage": "It is up to the team to decide which option meets its needs."
+      },
+      {
+        "expression": "be willing to",
+        "meaning": "be prepared or happy to do something",
+        "usage": "The engineers are willing to test the safer approach first."
+      },
+      {
+        "expression": "be a big deal",
+        "meaning": "be especially important to someone",
+        "usage": "Reliable weekend support is a big deal for this customer."
+      },
+      {
+        "expression": "give someone a choice",
+        "meaning": "allow someone to choose between possible options",
+        "usage": "The manager gave the team a choice between two delivery plans."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "single-choice",
+        "prompt": "What does 'go through ups and downs' mean in the programme?",
+        "targetExpression": "go through ups and downs",
+        "options": [
+          {
+            "id": "a",
+            "text": "Experience a mixture of good and difficult periods."
+          },
+          {
+            "id": "b",
+            "text": "Follow the same routine without any change."
+          },
+          {
+            "id": "c",
+            "text": "Move food between two different rooms."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript explains that ups and downs are a mixture of good and bad things; Charlotte's children sometimes eat happily and sometimes do not."
+      },
+      {
+        "id": "obj-02",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript-based idea: A child's appetite can ______ the weather, the day's activities and their mood.",
+        "targetExpression": "depend on",
+        "answers": [
+          "depend on"
+        ],
+        "explanation": "Charlotte says her children's appetite depends on the weather, what they have been doing and their mood."
+      },
+      {
+        "id": "obj-03",
+        "type": "single-choice",
+        "prompt": "Why can dinnertime become a battleground for parents and young children?",
+        "targetExpression": "be up to someone",
+        "options": [
+          {
+            "id": "a",
+            "text": "Children can control whether they eat the food served."
+          },
+          {
+            "id": "b",
+            "text": "Parents never decide what food to cook or when to serve it."
+          },
+          {
+            "id": "c",
+            "text": "Every child has a serious food allergy."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Anne Fishel says parents control what and when they serve, but it is up to the children to decide whether they eat."
+      },
+      {
+        "id": "obj-04",
+        "type": "fill-blank",
+        "prompt": "Complete the phrase: At mealtimes, it is ______ whether they eat.",
+        "targetExpression": "be up to someone",
+        "answers": [
+          "up to children to decide",
+          "up to the children to decide",
+          "up to kids to decide",
+          "up to the kids to decide"
+        ],
+        "explanation": "The transcript says that it is up to kids to decide whether they are going to eat."
+      },
+      {
+        "id": "obj-05",
+        "type": "single-choice",
+        "prompt": "In this episode, what does it mean if something is 'a big deal' to a child?",
+        "targetExpression": "be a big deal",
+        "options": [
+          {
+            "id": "a",
+            "text": "It is of special importance to the child."
+          },
+          {
+            "id": "b",
+            "text": "It is too expensive for the family."
+          },
+          {
+            "id": "c",
+            "text": "It is a large amount of food."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The vocabulary recap defines a big deal as something of special importance; having some control is important to young children."
+      },
+      {
+        "id": "obj-06",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript-based sentence: Children control what they are ______ eat.",
+        "targetExpression": "be willing to",
+        "answers": [
+          "willing to"
+        ],
+        "explanation": "The transcript describes children controlling what they are willing to eat."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "Which approach does the programme recommend for a more stress-free meal?",
+        "targetExpression": "give someone a choice",
+        "options": [
+          {
+            "id": "a",
+            "text": "Offer a choice and avoid pressuring children to finish everything."
+          },
+          {
+            "id": "b",
+            "text": "Introduce many new flavours as quickly as possible."
+          },
+          {
+            "id": "c",
+            "text": "Require every child to clear the plate before leaving."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The experts recommend giving children a choice and creating a stress-free atmosphere by not pressurising them to finish everything."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete the recommendation: Parents can ______ by offering small, healthy snacks and dips.",
+        "targetExpression": "give someone a choice",
+        "answers": [
+          "give children a choice",
+          "give their children a choice",
+          "give kids a choice",
+          "give their kids a choice"
+        ],
+        "explanation": "The transcript recommends giving children a choice, for example by offering small, healthy snacks and dips before the meal."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words). Who decides whether young children eat the food served? Use 'be up to someone'. Start: 'It is up to...'.",
+        "targetExpression": "be up to someone",
+        "gradingCriteria": "First decide whether the answer says that the children decide whether they eat the food served. Then check whether 'be up to someone' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words). Explain why a child's appetite may change from one meal to another. Use 'depend on'. You may use: 'mood', 'weather' and 'activities'.",
+        "targetExpression": "depend on",
+        "gradingCriteria": "First decide whether the answer explains that appetite can change with factors such as mood, weather or the day's activities. Then check whether 'depend on' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words). Rewrite without changing the main meaning: 'Children do not always want to eat the food their parents serve.' Use 'be willing to'.",
+        "targetExpression": "be willing to",
+        "gradingCriteria": "First decide whether the answer preserves the meaning that children sometimes do not want or choose to eat the food served. Then check whether 'be willing to' is used naturally and grammatically. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). Your project team disagrees about which technical option to test first. Explain how the decision can be made without creating unnecessary conflict. Use one phrase from this bank: 'be up to someone', 'be willing to', 'give someone a choice'.",
+        "targetExpression": "give someone a choice",
+        "gradingCriteria": "First decide whether the answer gives a practical way to make the stated technical decision while reducing team conflict. Then check whether at least one phrase from the given bank is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences). Within the programme's topic, suggest one way adults can reduce tension when a child refuses food, and explain why it may help. Naturally use at least one of today's target expressions.",
+        "targetExpression": "give someone a choice",
+        "gradingCriteria": "First decide whether the answer suggests one relevant way to reduce tension at mealtimes and explains why it may help. Then check whether at least one target expression is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Retell the episode in 80-120 words without looking at the full transcript. Use this structure: (1) topic - why family meals can become stressful; (2) two key ideas - why children's appetites change and why control matters to them; (3) conclusion or example - one expert recommendation for a calmer meal. Phrase bank: 'go through ups and downs', 'be up to someone', 'give someone a choice'. Use at least two phrases naturally. Simple, clear English is enough; advanced vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "Family meals can help people reconnect, but conflict may start when children refuse the food that has been cooked.",
+      "Children's appetites go through ups and downs and may depend on the weather, their activities and their mood.",
+      "Parents decide what food to cook and when to serve it, but children decide whether they will eat it.",
+      "Having control over eating can be a big deal for young children and can make dinner feel like a battleground.",
+      "A food allergy restricted what Sharon Wee's daughter could eat, and rice and beans became a safe winning formula.",
+      "The experts recommend giving children a choice and not pressurising them to finish everything on their plate."
+    ]
+  }
+}
