@@ -57,7 +57,7 @@ function CodeBlock({ children }: { children: ReactNode }): JSX.Element {
   );
 }
 
-const headingClass = "group scroll-mt-28 font-semibold tracking-tight text-white";
+const headingClass = "group scroll-mt-[calc(var(--site-header-height)+4rem)] font-semibold tracking-tight text-white";
 
 function HeadingWithCopy({ children, level }: { children: ReactNode; level: 1 | 2 | 3 | 4 }): JSX.Element {
   const [copied, setCopied] = useState(false);

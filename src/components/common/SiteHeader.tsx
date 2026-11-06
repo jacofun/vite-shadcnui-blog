@@ -1,190 +1,215 @@
-import { useEffect, useRef, useState, type JSX } from "react";
-import { ChevronDown, Heart, Menu, Search } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-
-import { prefetchPrimaryPublicRoutes, prefetchPublicRoute } from "@/lib/routePrefetch";
+import * as Dialog from "@radix-ui/react-dialog";
+import { ArrowUpRight, Bot, MoreHorizontal, Search, X } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import PublicAiAssistant from "@/components/common/PublicAiAssistant";
+import { siteHome } from "@/config/config";
+import type { HomeContent } from "@/lib/homeContent";
+import {
+  prefetchPrimaryPublicRoutes,
+  prefetchPublicRoute,
+} from "@/lib/routePrefetch";
+import "./SiteHeader.css";
 
 const primaryNavigation = [
-  { label: "首页", to: "/" },
-  { label: "笔记", to: "/notes" },
-  { label: "碎片", to: "/fragments" },
-  { label: "现在", to: "/now" },
-  { label: "关于", to: "/about" },
-] as const;
+  { to: "/notes", label: "笔记" },
+  { to: "/fragments", label: "碎片" },
+  { to: "/about", label: "关于", className: "home-nav-about" },
+];
 
 const secondaryNavigation = [
-  { label: "资源", to: "/resources" },
-  { label: "婚礼纪念", to: "/wedding", wedding: true },
-] as const;
+  { to: "/about", label: "关于" },
+  { to: "/now", label: "现在" },
+  { to: "/timeline", label: "时间线" },
+  { to: "/journal", label: "最新发布" },
+  { to: "/resources", label: "私人资源" },
+  { to: "/wedding", label: "婚礼纪念" },
+];
 
-const navigation = [...primaryNavigation, ...secondaryNavigation] as const;
-
-function isNavigationActive(pathname: string, to: string): boolean {
-  return to === "/" ? pathname === "/" : pathname.startsWith(to);
-}
-
-export default function SiteHeader(): JSX.Element {
-  const location = useLocation();
-  const headerRef = useRef<HTMLElement>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+export default function SiteHeader({ items }: { items: HomeContent[] }) {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [more, setMore] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const moreButton = useRef<HTMLButtonElement>(null);
+  const normalized = query.trim().toLowerCase();
+  const results = normalized
+    ? items.filter((item) => item.searchText.includes(normalized)).slice(0, 6)
+    : items.slice(0, 4);
 
   useEffect(() => {
-    setMobileMenuOpen(false);
-    setMoreMenuOpen(false);
-  }, [location.pathname]);
+    setMore(false);
+    setOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const timer = window.setTimeout(prefetchPrimaryPublicRoutes, 900);
     return () => window.clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setMobileMenuOpen(false);
-        setMoreMenuOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  useEffect(() => {
-    if (!mobileMenuOpen && !moreMenuOpen) return;
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!headerRef.current?.contains(event.target as Node)) {
-        setMobileMenuOpen(false);
-        setMoreMenuOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [mobileMenuOpen, moreMenuOpen]);
-
   const preloadProps = (to: string) => ({
     onFocus: () => prefetchPublicRoute(to),
     onMouseEnter: () => prefetchPublicRoute(to),
     onTouchStart: () => prefetchPublicRoute(to),
   });
-  const moreMenuActive = secondaryNavigation.some((item) => isNavigationActive(location.pathname, item.to));
+
+  useEffect(() => {
+    if (!more) return;
+    const dismiss = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setMore(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMore(false);
+        moreButton.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [more]);
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (results[0]) {
+      setOpen(false);
+      navigate(results[0].href);
+    }
+  }
 
   return (
-    <header
-      className="relative border-b border-white/10 bg-[#070a12]/95 lg:bg-[#070a12]/85 lg:backdrop-blur-xl"
-      data-site-header
-      ref={headerRef}
-    >
-      <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-8 lg:px-10">
-        <Link className="text-sm font-semibold tracking-[0.16em] text-white transition hover:text-cyan-100" to="/">
-          <span className="hidden min-[360px]:inline">YANXIAO.ME</span>
-          <span className="min-[360px]:hidden">YX</span>
-        </Link>
-
-        <nav aria-label="主导航" className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-5 md:flex lg:gap-7">
-          {primaryNavigation.map((item) => {
-            const isActive = isNavigationActive(location.pathname, item.to);
-            return (
-              <Link
+    <div className="site-header">
+      <div className="site-header-shell">
+        <header className="home-header" data-site-header>
+          <Link className="home-brand" to="/" aria-label={`${siteHome.title}首页`}>
+            {siteHome.title}
+          </Link>
+          <nav className="home-nav" aria-label="主导航">
+            {primaryNavigation.map((item) => (
+              <NavLink
                 {...preloadProps(item.to)}
-                aria-current={isActive ? "page" : undefined}
-                className={`relative inline-flex items-center gap-1.5 py-2 text-sm transition after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-center after:transition-transform ${
-                  isActive
-                      ? "text-slate-100 after:scale-x-100 after:bg-cyan-300/70"
-                      : "text-slate-400 hover:text-slate-200 after:scale-x-0 after:bg-cyan-300/70"
-                }`}
+                className={item.className}
                 key={item.to}
                 to={item.to}
               >
                 {item.label}
-              </Link>
-            );
-          })}
-
-          <div className="relative">
-            <button
-              aria-expanded={moreMenuOpen}
-              className={`inline-flex items-center gap-1 py-2 text-sm transition ${moreMenuActive || moreMenuOpen ? "text-slate-100" : "text-slate-400 hover:text-slate-200"}`}
-              onClick={() => setMoreMenuOpen((open) => !open)}
-              type="button"
-            >
-              更多
-              <ChevronDown className={`size-3.5 transition-transform ${moreMenuOpen ? "rotate-180" : ""}`} />
-            </button>
-            {moreMenuOpen && (
-              <div className="absolute right-0 top-[calc(100%+0.5rem)] w-44 rounded-xl border border-white/10 bg-[#0a0e18]/98 p-2 shadow-2xl shadow-black/40 backdrop-blur-xl">
-                {secondaryNavigation.map((item) => {
-                  const isActive = isNavigationActive(location.pathname, item.to);
-                  const isWedding = "wedding" in item && item.wedding;
-                  return (
-                    <Link
+              </NavLink>
+            ))}
+            <div className="home-more" ref={menuRef}>
+              <button
+                ref={moreButton}
+                className="home-icon-button"
+                type="button"
+                aria-label="更多页面"
+                aria-expanded={more}
+                aria-controls="home-more-pages"
+                onClick={() => setMore(!more)}
+              >
+                <MoreHorizontal aria-hidden="true" size={19} />
+              </button>
+              {more && (
+                <div className="home-more-pages" id="home-more-pages">
+                  {secondaryNavigation.map((item) => (
+                    <NavLink
                       {...preloadProps(item.to)}
-                      className={`flex min-h-10 items-center justify-between rounded-lg px-3 text-sm transition ${isActive ? "bg-white/[0.05] text-white" : isWedding ? "text-rose-300/80 hover:bg-rose-300/[0.06] hover:text-rose-200" : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"}`}
                       key={item.to}
+                      onClick={() => setMore(false)}
                       to={item.to}
                     >
                       {item.label}
-                      {isWedding && <Heart className="size-3.5" />}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </nav>
-
-        <Link
-          aria-label="搜索笔记"
-          className="hidden size-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white/[0.05] hover:text-cyan-300 md:flex"
-          to="/notes"
-        >
-          <Search className="size-4" />
-        </Link>
-
-        <button
-          aria-controls="mobile-navigation"
-          aria-expanded={mobileMenuOpen}
-          aria-label={mobileMenuOpen ? "收起导航菜单" : "展开导航菜单"}
-          className="flex size-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-slate-300 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white md:hidden"
-          onClick={() => setMobileMenuOpen((open) => !open)}
-          type="button"
-        >
-          <Menu className="size-5" />
-        </button>
-
-        {mobileMenuOpen && (
-          <nav
-            aria-label="移动端主导航"
-            className="absolute right-6 top-[calc(100%+0.5rem)] z-20 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#0a0e18]/98 p-2 shadow-2xl shadow-black/40 backdrop-blur-xl sm:right-8 md:hidden"
-            id="mobile-navigation"
-          >
-            {navigation.map((item) => {
-              const isActive = isNavigationActive(location.pathname, item.to);
-              const isWedding = "wedding" in item && item.wedding;
-              return (
-                <Link
-                  {...preloadProps(item.to)}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`relative flex min-h-11 items-center justify-between rounded-xl px-4 py-2.5 text-sm transition after:absolute after:inset-x-4 after:bottom-1 after:h-px ${
-                    isWedding
-                      ? isActive
-                        ? "bg-rose-300/[0.06] text-rose-200 after:bg-rose-300/70"
-                        : "text-rose-300/80 hover:bg-rose-300/[0.06] hover:text-rose-200 after:bg-transparent"
-                      : isActive
-                        ? "bg-white/[0.05] text-slate-100 after:bg-cyan-300/70"
-                        : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 after:bg-transparent"
-                  }`}
-                  key={item.to}
-                  to={item.to}
-                >
-                  <span>{item.label}</span>
-                  {isWedding && <Heart className="size-3.5" />}
-                </Link>
-              );
-            })}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
+            <PublicAiAssistant
+              pagePath="/notes"
+              launcher={({ ask }) => (
+                <Dialog.Root open={open} onOpenChange={setOpen}>
+                  <Dialog.Trigger asChild>
+                    <button
+                      className="home-icon-button"
+                      type="button"
+                      aria-label="搜索笔记"
+                    >
+                      <Search size={18} aria-hidden="true" />
+                    </button>
+                  </Dialog.Trigger>
+                  <Dialog.Portal>
+                    <Dialog.Overlay className="home-search-overlay" />
+                    <Dialog.Content className="home-search-dialog">
+                      <div className="home-search-heading">
+                        <Dialog.Title>搜索笔记</Dialog.Title>
+                        <Dialog.Close asChild>
+                          <button
+                            className="home-icon-button"
+                            aria-label="关闭搜索"
+                          >
+                            <X size={19} />
+                          </button>
+                        </Dialog.Close>
+                      </div>
+                      <Dialog.Description>
+                        查找文章、已发布内容，或向 AI 提问。
+                      </Dialog.Description>
+                      <form onSubmit={submit}>
+                        <label className="home-search-field">
+                          <Search size={18} aria-hidden="true" />
+                          <input
+                            aria-label="搜索内容"
+                            placeholder="输入关键词…"
+                            value={query}
+                            onChange={(event) => setQuery(event.target.value)}
+                            maxLength={140}
+                            type="search"
+                          />
+                        </label>
+                      </form>
+                      <div className="home-search-results" aria-live="polite">
+                        <p>{normalized ? "匹配的内容" : "最近的内容"}</p>
+                        {results.length ? (
+                          results.map((item) => (
+                            <Link
+                              key={item.key}
+                              to={item.href}
+                              onClick={() => setOpen(false)}
+                            >
+                              <span>{item.title}</span>
+                              <ArrowUpRight size={15} aria-hidden="true" />
+                            </Link>
+                          ))
+                        ) : (
+                          <p>没有找到相关内容，试试其他关键词。</p>
+                        )}
+                      </div>
+                      <button
+                        className="home-ai-button"
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          window.setTimeout(
+                            () => ask(query.trim() || "最近更新了什么？"),
+                            0,
+                          );
+                        }}
+                      >
+                        <Bot size={17} aria-hidden="true" />
+                        {query.trim() ? "向 AI 询问这个问题" : "问 AI"}
+                        <ArrowUpRight size={15} aria-hidden="true" />
+                      </button>
+                    </Dialog.Content>
+                  </Dialog.Portal>
+                </Dialog.Root>
+              )}
+            />
           </nav>
-        )}
+        </header>
       </div>
-    </header>
+    </div>
   );
 }

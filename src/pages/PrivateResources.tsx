@@ -103,7 +103,7 @@ export default function PrivateResources(): JSX.Element {
         <meta content="noindex,nofollow" name="robots" />
       </Helmet>
 
-      <main className="min-h-[calc(100svh-4rem)] bg-[#070a12] px-6 py-12 text-slate-100 sm:px-8 sm:py-16 lg:px-10">
+      <main className="min-h-[calc(100svh-var(--site-header-height))] bg-[#070a12] px-6 py-12 text-slate-100 sm:px-8 sm:py-16 lg:px-10">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
             <header className="relative max-w-3xl">

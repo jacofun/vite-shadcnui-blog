@@ -24,7 +24,7 @@ function dateLabel(value: string): string {
 function Frame({ children }: { children: React.ReactNode }): JSX.Element {
   return <>
     <Helmet><title>Just Write · 私人资源</title><meta content="noindex,nofollow" name="robots" /></Helmet>
-    <main className="min-h-[calc(100svh-4rem)] bg-[#070a12] px-5 py-10 text-slate-100 sm:px-8 sm:py-16">
+    <main className="min-h-[calc(100svh-var(--site-header-height))] bg-[#070a12] px-5 py-10 text-slate-100 sm:px-8 sm:py-16">
       <div className="mx-auto max-w-3xl">{children}</div>
     </main>
   </>;

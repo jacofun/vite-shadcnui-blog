@@ -1,19 +1,15 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { useEffect, useMemo, useState, type JSX } from "react";
+import { useState, type JSX } from "react";
 import { ArrowRight, ArrowUpRight, Play, X } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 
-import HomeNavigation from "@/components/home/HomeNavigation";
 import PublishingVideo from "@/components/common/PublishingVideo";
 import { siteHome } from "@/config/config";
 import {
-  buildHomeContent,
   selectHomeContent,
   type HomeContent,
 } from "@/lib/homeContent";
-import { notes } from "@/lib/notes";
-import { getPublicContent, type PublishingEntry } from "@/lib/publishing";
 import "./Home.css";
 
 function ContentMeta({ item }: { item: HomeContent }) {
@@ -161,25 +157,7 @@ function Selected({ item }: { item: HomeContent }) {
 }
 
 export default function Home(): JSX.Element {
-  const [published, setPublished] = useState<PublishingEntry[]>([]);
-  useEffect(() => {
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 10_000);
-    getPublicContent(controller.signal)
-      .then((entries) => {
-        if (!controller.signal.aborted)
-          setPublished(Array.isArray(entries) ? entries : []);
-      })
-      .catch(() => {
-        /* Local notes remain readable when the publishing service is unavailable. */
-      })
-      .finally(() => window.clearTimeout(timeout));
-    return () => {
-      controller.abort();
-      window.clearTimeout(timeout);
-    };
-  }, []);
-  const items = useMemo(() => buildHomeContent(notes, published), [published]);
+  const items = useOutletContext<HomeContent[]>();
   const { featured, selected } = selectHomeContent(
     items,
     siteHome.featuredHref,
@@ -198,7 +176,6 @@ export default function Home(): JSX.Element {
       </Helmet>
       <div className="home-page">
         <div className="home-shell">
-          <HomeNavigation items={items} />
           <main className="home-main">
             <div className="home-intro">
               <p>{siteHome.description}</p>

@@ -4,6 +4,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import AiDisclaimer from "./components/common/AiDisclaimer";
 import Footer from "./components/common/Footer";
 import SiteHeader from "./components/common/SiteHeader";
+import { useHomeContent } from "./hooks/useHomeContent";
 import { useFunctionHeartbeat } from "./hooks/useFunctionHeartbeat";
 import { ROUTE_NAVIGATION_CANCELLED_EVENT } from "./lib/routePrefetch";
 
@@ -14,7 +15,8 @@ function App() {
   const [routePending, setRoutePending] = useState(false);
   const isWedding = pathname.startsWith("/wedding");
   const isHome = pathname === "/";
-  const showHeader = !isWedding && !isHome;
+  const showHeader = !isWedding;
+  const items = useHomeContent(showHeader);
   const showAiDisclaimer =
     showHeader && pathname.startsWith("/notes");
   const showFooter =
@@ -93,10 +95,10 @@ function App() {
   }, [showReadingProgress, pathname]);
 
   return (
-    <div className={`min-h-screen ${isWedding ? "bg-[#fff1ec]" : isHome ? "bg-[#0b1014]" : "bg-[#070a12]"}`}>
+    <div className={`site-layout min-h-screen ${isWedding ? "bg-[#fff1ec]" : isHome ? "bg-[#0b1014]" : "bg-[#070a12]"}`}>
       {showHeader && (
-        <div className="sticky top-0 z-[110]">
-          <SiteHeader />
+        <div className={isHome ? "relative z-[110]" : "sticky top-0 z-[110]"}>
+          <SiteHeader items={items} />
           {showAiDisclaimer && <AiDisclaimer />}
           {routePending && (
             <div
@@ -127,7 +129,7 @@ function App() {
           <div className="h-full w-1/3 animate-[route-loading_1s_ease-in-out_infinite] bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-400" />
         </div>
       )}
-      <Outlet />
+      <Outlet context={items} />
       {showFooter && <Footer compact={isHome} />}
     </div>
   );

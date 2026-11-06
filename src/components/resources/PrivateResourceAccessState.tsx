@@ -43,7 +43,7 @@ export default function PrivateResourceAccessState({ error, status }: Props): JS
   }
 
   return (
-    <main className="min-h-[calc(100svh-4rem)] bg-[#070a12] px-6 py-20 text-slate-100">
+    <main className="min-h-[calc(100svh-var(--site-header-height))] bg-[#070a12] px-6 py-20 text-slate-100">
       <section className="mx-auto max-w-lg rounded-3xl border border-white/10 bg-white/[0.035] p-8 text-center shadow-2xl shadow-black/20">
         {!isLoading && (
           <div className="mx-auto flex size-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10">

@@ -25,7 +25,7 @@ export default function PrivateClipboard(): JSX.Element {
         <meta content="noindex,nofollow" name="robots" />
       </Helmet>
 
-      <main className="min-h-[calc(100svh-4rem)] bg-[#070a12] px-6 py-12 text-slate-100 sm:px-8 sm:py-16 lg:px-10">
+      <main className="min-h-[calc(100svh-var(--site-header-height))] bg-[#070a12] px-6 py-12 text-slate-100 sm:px-8 sm:py-16 lg:px-10">
         <div className="mx-auto max-w-4xl">
           <Link className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-cyan-300" to="/resources">
             <ArrowLeft className="size-4" />返回私人资源

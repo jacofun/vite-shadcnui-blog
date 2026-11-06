@@ -166,7 +166,7 @@ export default function PrivateAuth(): JSX.Element {
         <meta content="noindex,nofollow" name="robots" />
       </Helmet>
 
-      <main className="relative h-[calc(100dvh-4rem)] overflow-hidden bg-[#070a12] text-slate-100">
+      <main className="relative h-[calc(100dvh-var(--site-header-height))] overflow-hidden bg-[#070a12] text-slate-100">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.035)_1px,transparent_1px)] bg-[size:52px_52px]" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(600px_circle_at_50%_8%,rgba(34,211,238,0.11),transparent_68%)]" />
 

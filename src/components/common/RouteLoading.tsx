@@ -15,7 +15,7 @@ export default function RouteLoading(): JSX.Element {
     <main
       aria-busy="true"
       aria-live="polite"
-      className="min-h-[calc(100svh-4rem)] bg-[#070a12] text-slate-100"
+      className="min-h-[calc(100svh-var(--site-header-height))] bg-[#070a12] text-slate-100"
     >
       {visible && (
         <div className="mx-auto flex min-h-[45vh] max-w-6xl items-center px-6 sm:px-8 lg:px-10">

@@ -255,7 +255,7 @@ export default function NoteDetail(): JSX.Element {
           </article>
 
           <aside className="hidden lg:block">
-            <div className="sticky top-28">
+            <div className="sticky top-[calc(var(--site-header-height)+3rem)]">
               <p className="mb-4 font-mono text-[11px] tracking-[0.16em] text-slate-600">ON THIS PAGE</p>
               <nav className="space-y-1 border-l border-white/10">
                 {headings.map((heading) => (
