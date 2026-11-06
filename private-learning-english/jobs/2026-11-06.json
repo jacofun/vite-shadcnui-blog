@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-06",
+  "episodeId": "260101-is-it-ok-to-disagree",
+  "title": "Is it OK to disagree?",
+  "publishedAt": "2026-01-01",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260101",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260101_6_minute_english_is_it_ok_to_disagree_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/260101_6_minute_english__is_it_ok_to_disagree_transcript.pdf",
+  "reason": "从日常家庭沟通轮换到职场沟通与团队协作。节目讨论如何在意见不同时控制情绪、降低对话中的紧张感，并主动接触不同观点，适合迁移到技术评审、项目方案讨论和跨团队协作场景。练习反复调用六个高频表达，从原文支撑的回忆题逐步过渡到受控改写和有限工作场景迁移。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "职场沟通",
+    "团队协作",
+    "分歧处理",
+    "项目管理",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "agree with someone",
+        "meaning": "have the same opinion as another person",
+        "usage": "I do not agree with every detail, but I understand the team's concern."
+      },
+      {
+        "expression": "be open to discussions",
+        "meaning": "be willing to talk about an issue and consider other views",
+        "usage": "We should be open to discussions before choosing the final design."
+      },
+      {
+        "expression": "calm down",
+        "meaning": "become less angry, worried or excited",
+        "usage": "Let us calm down before replying to the incident report."
+      },
+      {
+        "expression": "take the heat out of something",
+        "meaning": "make a tense or angry situation less intense",
+        "usage": "A short break can take the heat out of a difficult meeting."
+      },
+      {
+        "expression": "be willing to listen to and consider new ideas",
+        "meaning": "be prepared to hear and think about unfamiliar viewpoints",
+        "usage": "Good reviewers are willing to listen to and consider new ideas."
+      },
+      {
+        "expression": "get to know someone",
+        "meaning": "spend time learning about a person and understanding them better",
+        "usage": "Working together helped the two teams get to know each other."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "single-choice",
+        "prompt": "According to the programme, how can social-media algorithms make disagreement harder?",
+        "targetExpression": "agree with someone",
+        "options": [
+          {
+            "id": "a",
+            "text": "They tend to show us ideas we already like and agree with."
+          },
+          {
+            "id": "b",
+            "text": "They require users to meet people with different views."
+          },
+          {
+            "id": "c",
+            "text": "They delay every message for fifteen minutes."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript says algorithms tend to show us what we already like and agree with, which may reduce contact with different opinions."
+      },
+      {
+        "id": "obj-02",
+        "type": "fill-blank",
+        "prompt": "Complete Paul Dolan's recommendation: We should control our emotions and ______ when we disagree.",
+        "targetExpression": "be open to discussions",
+        "answers": [
+          "be open to discussions"
+        ],
+        "explanation": "The transcript says we should learn to control our emotions and be open to discussions when we disagree."
+      },
+      {
+        "id": "obj-03",
+        "type": "single-choice",
+        "prompt": "What does the programme suggest doing when you feel aroused by a disagreement?",
+        "targetExpression": "calm down",
+        "options": [
+          {
+            "id": "a",
+            "text": "Pause, take a deep breath and calm down."
+          },
+          {
+            "id": "b",
+            "text": "Send the message immediately while the feeling is strong."
+          },
+          {
+            "id": "c",
+            "text": "Avoid every future discussion of the issue."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Paul explains that the brain can start calming down within seconds; taking a deep breath can help a person feel calmer."
+      },
+      {
+        "id": "obj-04",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript-based phrase: Calming down can take some of the ______ the environment.",
+        "targetExpression": "take the heat out of something",
+        "answers": [
+          "heat out of"
+        ],
+        "explanation": "Paul says calming down can take some of the heat out of the environment, meaning it can reduce intense anger."
+      },
+      {
+        "id": "obj-05",
+        "type": "single-choice",
+        "prompt": "Which sentence best describes an open-minded person in the programme?",
+        "targetExpression": "be willing to listen to and consider new ideas",
+        "options": [
+          {
+            "id": "a",
+            "text": "They are willing to listen to and consider new ideas."
+          },
+          {
+            "id": "b",
+            "text": "They change their opinion whenever someone disagrees."
+          },
+          {
+            "id": "c",
+            "text": "They only discuss ideas they already support."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript directly defines open-minded as being willing to listen to and consider new ideas."
+      },
+      {
+        "id": "obj-06",
+        "type": "fill-blank",
+        "prompt": "Complete the question from the discussion: How can we be more open to ______ people we might disagree with?",
+        "targetExpression": "get to know someone",
+        "answers": [
+          "getting to know",
+          "getting to know the"
+        ],
+        "explanation": "The transcript asks how people can be more open to getting to know people they might disagree with."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "Why might meeting people with different views make us more tolerant?",
+        "targetExpression": "get to know someone",
+        "options": [
+          {
+            "id": "a",
+            "text": "We may realise they are not as different from us as we thought."
+          },
+          {
+            "id": "b",
+            "text": "They will always change their beliefs to match ours."
+          },
+          {
+            "id": "c",
+            "text": "It removes the need to discuss difficult topics."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Paul says that being around different people helps us realise they are not that different, which can make us more tolerant and open-minded."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete Neil's idea: We cannot always ______ everyone else.",
+        "targetExpression": "agree with someone",
+        "answers": [
+          "agree with"
+        ],
+        "explanation": "Neil says we cannot always agree with everyone else because people have personal opinions and beliefs."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words). What can someone do before sending a message when a disagreement makes them angry? Use 'calm down'. Start: 'They can calm down by...'.",
+        "targetExpression": "calm down",
+        "gradingCriteria": "First decide whether the answer says the person can pause, breathe or wait before sending the message. Then check whether 'calm down' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words). Explain why meeting people with different opinions may increase tolerance. Use 'get to know someone'. You may use: 'not so different' or 'understand them better'.",
+        "targetExpression": "get to know someone",
+        "gradingCriteria": "First decide whether the answer explains that personal contact can show people are less different than expected or help us understand them better. Then check whether 'get to know someone' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words). Rewrite without changing the main meaning: 'A short pause can reduce the anger in a difficult conversation.' Use 'take the heat out of something'.",
+        "targetExpression": "take the heat out of something",
+        "gradingCriteria": "First decide whether the answer preserves the idea that a short pause can make an angry conversation less intense. Then check whether 'take the heat out of something' is used naturally and grammatically. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). Two engineers strongly disagree about whether to replace a stable component before release. Suggest how the team should discuss the decision. Use one phrase from this bank: 'be open to discussions', 'agree with someone', 'calm down'.",
+        "targetExpression": "be open to discussions",
+        "gradingCriteria": "First decide whether the answer gives a practical way to discuss the stated technical disagreement before making a decision. Then check whether at least one phrase from the bank is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences). Within the programme's topic, describe one habit that could help people handle disagreement more peacefully, and explain why it may work. Naturally use at least one of today's target expressions.",
+        "targetExpression": "be willing to listen to and consider new ideas",
+        "gradingCriteria": "First decide whether the answer describes one relevant habit for handling disagreement more peacefully and explains why it may work. Then check whether at least one target expression is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Retell the episode in 80-120 words without looking at the full transcript. Use this structure: (1) topic - why disagreement and social division can be difficult; (2) two key ideas - how emotions affect decisions and why meeting different people may help; (3) conclusion or example - one practical way to disagree more calmly. Phrase bank: 'calm down', 'take the heat out of something', 'get to know someone'. Use at least two phrases naturally. Simple, clear English is enough; advanced vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "People can find it difficult to communicate with others whose opinions are very different from their own.",
+      "Social-media algorithms may strengthen this problem by showing users ideas they already like and agree with.",
+      "Paul Dolan says people generally make better and more respectful decisions when they calm down.",
+      "A short pause or deep breath can start calming the brain and take some of the heat out of a tense situation.",
+      "People often want others to be open-minded, although they may be less open-minded themselves.",
+      "Meeting people with different beliefs can show that they are not so different and may increase tolerance and open-mindedness."
+    ]
+  }
+}
