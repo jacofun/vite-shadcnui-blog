@@ -1,0 +1,233 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-07",
+  "episodeId": "250417-can-ai-solve-crime",
+  "title": "Can AI solve crime?",
+  "publishedAt": "2025-04-17",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2025/ep-250417",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/250417_6_minute_english_can_ai_solve_crime_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/250417_6_minute_english_can_ai_solve_crime_transcript_.pdf",
+  "reason": "从职场分歧沟通轮换到科技与 AI。节目用犯罪调查中的证据比对、模式识别和数据隐私讨论 AI 的实际价值与边界，适合迁移到金融科技风控、平台可观测性和工程决策场景。练习反复调用六个高频表达，从原文支撑的回忆逐步过渡到受控改写和有限工作场景迁移。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "科技与AI",
+    "金融科技",
+    "数据隐私",
+    "模式识别",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "where someone is coming from",
+        "meaning": "someone's opinion, perspective or reason for thinking in a certain way",
+        "usage": "I understand where the security team is coming from, even if I prefer a different design."
+      },
+      {
+        "expression": "have a background in",
+        "meaning": "have previous work or experience related to an area",
+        "usage": "She has a background in financial risk systems."
+      },
+      {
+        "expression": "what can something do for me?",
+        "meaning": "how can something help or improve things for me?",
+        "usage": "Before adopting the tool, ask: what can it do for our team?"
+      },
+      {
+        "expression": "see a renaissance in",
+        "meaning": "see new interest or activity return to an area",
+        "usage": "We are seeing a renaissance in smaller, simpler software tools."
+      },
+      {
+        "expression": "go out of favour",
+        "meaning": "become less popular or appealing",
+        "usage": "The old approach went out of favour when a faster option appeared."
+      },
+      {
+        "expression": "get real-time insight",
+        "meaning": "receive useful information as events are happening",
+        "usage": "The dashboard helps the operations team get real-time insight into failures."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "single-choice",
+        "prompt": "When Aleks asks Alastair where he is coming from, what does she want him to explain?",
+        "targetExpression": "where someone is coming from",
+        "options": [
+          {
+            "id": "a",
+            "text": "His perspective and reason for asking the question."
+          },
+          {
+            "id": "b",
+            "text": "The police station he travelled from."
+          },
+          {
+            "id": "c",
+            "text": "The database where the evidence is stored."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript explains that 'where someone is coming from' means their perspective or point of view."
+      },
+      {
+        "id": "obj-02",
+        "type": "fill-blank",
+        "prompt": "Complete the sentence with the transcript-based expression: Alastair is a police officer who ______ investigation.",
+        "targetExpression": "have a background in",
+        "answers": [
+          "has a background in"
+        ],
+        "explanation": "Alastair says his background is in investigation; the programme explains that a background is the area of previous work or experience."
+      },
+      {
+        "id": "obj-03",
+        "type": "single-choice",
+        "prompt": "What is Alastair really asking when he says, 'What can AI do for me?'",
+        "targetExpression": "what can something do for me?",
+        "options": [
+          {
+            "id": "a",
+            "text": "How can AI help or improve police work?"
+          },
+          {
+            "id": "b",
+            "text": "Can AI become a serving police officer?"
+          },
+          {
+            "id": "c",
+            "text": "Who owns the AI system?"
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript directly explains that this question means, 'How can artificial intelligence help or improve something?'"
+      },
+      {
+        "id": "obj-04",
+        "type": "fill-blank",
+        "prompt": "Complete Ruth Morgan's idea: We are ______ the pattern-recognition forms of evidence.",
+        "targetExpression": "see a renaissance in",
+        "answers": [
+          "seeing a renaissance in"
+        ],
+        "explanation": "Ruth says, 'we're seeing a renaissance in the pattern-recognition forms of evidence', meaning renewed interest in them."
+      },
+      {
+        "id": "obj-05",
+        "type": "single-choice",
+        "prompt": "Why had finger-mark and footwear-mark evidence gone a little out of favour?",
+        "targetExpression": "go out of favour",
+        "options": [
+          {
+            "id": "a",
+            "text": "DNA evidence had attracted more excitement."
+          },
+          {
+            "id": "b",
+            "text": "Police were no longer allowed to photograph marks."
+          },
+          {
+            "id": "c",
+            "text": "The marks could never be compared with a database."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme says this evidence became less popular because of the excitement around DNA evidence."
+      },
+      {
+        "id": "obj-06",
+        "type": "fill-blank",
+        "prompt": "Complete the expression: By comparing a mark with a database, police can ______.",
+        "targetExpression": "get real-time insight",
+        "answers": [
+          "get real-time insight",
+          "get real time insight"
+        ],
+        "explanation": "Ruth says a photo of a mark can be compared with a database to get real-time insight."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "Which sentence best explains the main privacy concern discussed in the programme?",
+        "targetExpression": "what can something do for me?",
+        "options": [
+          {
+            "id": "a",
+            "text": "Finding patterns may require collecting lots of private information."
+          },
+          {
+            "id": "b",
+            "text": "Real-time information is always too slow for investigators."
+          },
+          {
+            "id": "c",
+            "text": "AI can only work with fictional television crimes."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript says lots of private information would need to be collected, while police usually need clear reasons for accessing it."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete the reusable question for evaluating a new tool: Before adopting it, ask, 'What can it ______?'",
+        "targetExpression": "what can something do for me?",
+        "answers": [
+          "do for me",
+          "do for us"
+        ],
+        "explanation": "The programme teaches 'What can something do for me?' as a way to ask how it can help or improve things; 'us' is a natural team-context variation."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words). Why is Alastair interested in AI for police work? Use 'have a background in'. Start: 'He has a background in...'.",
+        "targetExpression": "have a background in",
+        "gradingCriteria": "First decide whether the answer says Alastair has investigation experience and wants to know how AI could help police work. Then check whether 'have a background in' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words). Explain how AI can help with a photographed finger mark or footwear mark. Use 'get real-time insight'. You may use: 'compare with a database' or 'find a pattern'.",
+        "targetExpression": "get real-time insight",
+        "gradingCriteria": "First decide whether the answer explains that AI can compare a photographed mark with a database and quickly provide useful information or identify patterns. Then check whether 'get real-time insight' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words). Rewrite without changing the main meaning: 'Finger-mark and footwear-mark evidence became less popular when DNA evidence attracted more attention.' Use 'go out of favour'.",
+        "targetExpression": "go out of favour",
+        "gradingCriteria": "First decide whether the answer preserves the contrast between the reduced popularity of mark evidence and the greater attention given to DNA evidence. Then check whether 'go out of favour' is used naturally and grammatically. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). Your platform team is considering an AI tool for finding unusual transaction or system patterns. Explain what the team should evaluate before adoption. Use one phrase from this bank: 'what can something do for me?', 'get real-time insight', 'where someone is coming from'.",
+        "targetExpression": "what can something do for me?",
+        "gradingCriteria": "First decide whether the answer gives a practical evaluation point for the stated AI tool, such as useful results, evidence quality, privacy or access to data. Then check whether at least one phrase from the bank is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences). Within the programme's topic, say whether AI should be used to help investigate crime and name one condition that should limit its use. Naturally use at least one of today's target expressions.",
+        "targetExpression": "get real-time insight",
+        "gradingCriteria": "First decide whether the answer gives a clear view on using AI in crime investigation and names one relevant limit, such as privacy, evidence reliability or justified data access. Then check whether at least one target expression is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Retell the episode in 80-120 words without looking at the full transcript. Use this structure: (1) topic - why police work involves reviewing a lot of evidence; (2) two key ideas - how AI can compare marks and find patterns, and why private information is a concern; (3) conclusion or example - what role AI should have beside human detectives. Phrase bank: 'what can something do for me?', 'go out of favour', 'get real-time insight'. Use at least two phrases naturally. Simple, clear English is enough; advanced vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "Police investigations involve collecting and reviewing large amounts of evidence, including DNA, fingerprints and CCTV.",
+      "Alastair is a serving police officer with a background in investigation who wants to know how AI could help police work.",
+      "Ruth Morgan says AI is bringing renewed interest to pattern-recognition evidence such as finger marks and footwear marks.",
+      "AI can compare a photographed mark with a database and provide real-time insight, making pattern finding easier and more reliable.",
+      "Using AI to find patterns may require collecting lots of private information, and police normally need clear reasons to access it.",
+      "The programme suggests AI may assist detectives but is unlikely to replace them soon."
+    ]
+  }
+}
