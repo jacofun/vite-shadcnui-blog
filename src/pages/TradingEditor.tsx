@@ -72,6 +72,9 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
   const [image, setImage] = useState<File | null>(null);
   const [phase, setPhase] = useState<TradePhase>("plan");
   const [caption, setCaption] = useState("");
+  const [skipKind, setSkipKind] = useState<"abandoned" | "missed">("abandoned");
+  const [skipReason, setSkipReason] = useState("");
+  const [customSignal, setCustomSignal] = useState("");
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const allowedToLeave = useRef(false);
   const createId = useRef(crypto.randomUUID());
@@ -248,7 +251,7 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
               <InputField title="市场"><Select disabled={planLocked} value={plan.market} options={markets} onChange={(v) => change("market", v as TradePlan["market"])} /></InputField>
               <InputField title="交易方向"><Select disabled={planLocked} value={plan.direction} options={[{ label: "做多", value: "long" }, { label: "做空", value: "short" }]} onChange={(v) => change("direction", v as TradePlan["direction"])} /></InputField>
               <InputField title="记录类型"><Select disabled={planLocked} value={plan.recordType} options={[{ label: "实盘", value: "live" }, { label: "模拟", value: "paper" }, { label: "仅观察", value: "observation" }]} onChange={(v) => change("recordType", v as TradePlan["recordType"])} /></InputField>
-              <InputField title="交易策略"><Select disabled={planLocked} value={plan.strategy} options={["反转", "趋势", "突破", "区间", "其他", plan.strategy].filter((s, i, arr) => arr.indexOf(s) === i).map((s) => ({ label: s, value: s }))} onChange={(v) => change("strategy", v)} /></InputField>
+              <InputField title="交易策略"><input list="trading-strategies" className={field} disabled={planLocked} maxLength={60} value={plan.strategy} onChange={(e) => change("strategy", e.target.value)} placeholder="自定义或选择常用策略" /><datalist id="trading-strategies">{["反转","趋势","突破","区间","其他"].map((item) => <option key={item} value={item} />)}</datalist></InputField>
               <InputField title="交易周期"><Select disabled={planLocked} value={plan.timeframe} options={["15分钟", "1小时", "4小时", "日线", "周线", "月线"].map((s) => ({ label: s, value: s }))} onChange={(v) => change("timeframe", v)} /></InputField>
               <InputField title="分析时间"><input className={field} disabled={planLocked} type="datetime-local" value={localDatetime(plan.setupAt)} onChange={(e) => { if (e.target.value) change("setupAt", readDatetime(e.target.value)); }} /></InputField>
               <InputField title="交易账户（别名）"><input className={field} disabled={planLocked} value={plan.account} maxLength={60} onChange={(e) => change("account", e.target.value)} placeholder="例如：主要账户" /></InputField>
@@ -262,6 +265,7 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
             </div>
             <p className="mt-5 text-xs font-medium text-slate-300">行情结构及观察信号</p>
             <TagChoices values={plan.signals} options={signalOptions} disabled={planLocked} onChange={(v) => change("signals", v)} />
+            {!planLocked && <div className="mt-3 flex max-w-sm gap-2"><input className={field} maxLength={32} placeholder="自定义信号" value={customSignal} onChange={(e) => setCustomSignal(e.target.value)} /><button type="button" className="mt-1.5 rounded-xl border border-white/15 px-3 text-sm text-cyan-200 disabled:opacity-40" disabled={!customSignal.trim() || plan.signals.length >= 12} onClick={() => { change("signals", [...new Set([...plan.signals, customSignal.trim()])]); setCustomSignal(""); }}>添加</button></div>}
             <div className="mt-5 space-y-4">
               {([
                 { key: "thesis", title: "交易逻辑 *", placeholder: "为什么关注这个标的和当前位置？" },
@@ -294,13 +298,20 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
               <p className="mt-1 text-xs leading-6 text-slate-500">仅按计划价计算；已实现 R 使用首次确认的初始计划风险。多币种与合约乘数暂不自动换算。</p>
             </div>
           </section>
+          {trade?.status === "planned" && <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
+            <h3 className="font-medium">未成交机会处理</h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <InputField title="结束原因分类"><Select value={skipKind} onChange={(v) => setSkipKind(v as typeof skipKind)} options={[{ label: "主动放弃（信号不成立）", value: "abandoned" }, { label: "错过机会（符合条件但未操作）", value: "missed" }]} /></InputField>
+              <InputField title="具体原因（结束前必填）"><input className={field} maxLength={1000} value={skipReason} onChange={(e) => setSkipReason(e.target.value)} placeholder="例如：确认条件未触发" /></InputField>
+            </div>
+          </section>}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-slate-500">{trade?.planHistory.length ? `已有 ${trade.planHistory.length} 个已确认计划版本，历史不可覆盖。` : "确认计划后会保存不可覆盖的初始快照。"}</p>
             <div className="flex flex-wrap gap-2">
               {(!trade || trade.status === "draft") && <button disabled={actionsDisabled} type="button" onClick={() => void savePlan()} className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-3 text-sm hover:border-cyan-300/40 disabled:opacity-50"><Save className="size-4" />保存草稿</button>}
               {trade?.status === "draft" && <button disabled={actionsDisabled || dirty} onClick={() => void submitPlan()} type="button" className="inline-flex items-center gap-2 rounded-xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 disabled:opacity-40"><ShieldCheck className="size-4" />确认交易计划</button>}
               {trade && ["planned", "open"].includes(trade.status) && dirty && <button disabled={actionsDisabled} type="button" onClick={() => void saveRevision()} className="inline-flex items-center gap-2 rounded-xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 disabled:opacity-40"><FilePenLine className="size-4" />保存修订版本</button>}
-              {trade?.status === "planned" && <button disabled={actionsDisabled || dirty} onClick={() => { if (window.confirm("确定将此机会标记为未成交吗？")) void run("skip", async () => (await skipTrade(session, trade)).trade); }} type="button" className="rounded-xl border border-white/10 px-4 py-3 text-sm text-slate-300 disabled:opacity-50">放弃/错过机会</button>}
+              {trade?.status === "planned" && <button disabled={actionsDisabled || dirty || !skipReason.trim()} onClick={() => { if (window.confirm("确认将该机会结束为未成交？")) void run("skip", async () => (await skipTrade(session, trade, skipKind, skipReason)).trade); }} type="button" className="rounded-xl border border-white/10 px-4 py-3 text-sm text-slate-300 disabled:opacity-50">结束未成交机会</button>}
               {trade && trade.status !== "draft" && <button type="button" onClick={() => setTab("execution")} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm">查看执行<ChevronRight className="size-4" /></button>}
             </div>
           </div>
@@ -343,6 +354,7 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
               <p className="mt-3 whitespace-pre-wrap text-xs leading-6 text-slate-400">{trade.planHistory[0]?.plan.trigger || "尚未确认计划"}</p></div>
             <div className="rounded-xl bg-white/[0.04] p-4"><p className="text-xs text-cyan-300">实际成交结果</p><p className="mt-2 text-sm">已实现盈亏 {formatPrice(trade.metrics.realizedPnl)} {trade.plan.currency}</p><p className="mt-1 text-sm">R 倍数 {formatPrice(trade.metrics.realizedR)}</p><p className="mt-1 text-sm">成交记录 {trade.executions.length} 条</p></div>
           </div>}
+          {trade?.skip && <p className="mt-4 text-sm text-slate-400">{trade.skip.kind === "missed" ? "错过机会" : "主动放弃"}：{trade.skip.reason}</p>}
           {!trade || !["closed", "skipped"].includes(trade.status) ? <p className="mt-5 text-sm text-slate-400">交易全部平仓或标记为未成交后，可以填写最终复盘。</p> :
             <div className="mt-6 space-y-5">
               <div className="grid gap-4 sm:grid-cols-3">
