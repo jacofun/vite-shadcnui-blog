@@ -29,7 +29,7 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
     (filter === "all" || entry.status === filter) &&
     [entry.plan.symbol, entry.plan.name, entry.plan.strategy].some((v) => v.toLowerCase().includes(search.toLowerCase().trim())),
   ), [entries, filter, search]);
-  const finished = entries.filter((e) => e.status === "closed" && e.plan.recordType !== "observation");
+  const finished = entries.filter((e) => e.status === "closed" && e.plan.recordType === "live");
   const reviewed = entries.filter((e) => e.review);
   const withR = finished.filter((e) => e.metrics.realizedR !== null);
   const meanR = withR.length ? withR.reduce((sum, t) => sum + (t.metrics.realizedR ?? 0), 0) / withR.length : null;
@@ -50,7 +50,7 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
           {[
             { label: "全部案例", value: String(entries.length), hint: "包括草稿和观察机会" },
             { label: "已完成复盘", value: String(reviewed.length), hint: "已填写执行与经验评价" },
-            { label: "平均已实现 R", value: meanR === null ? "—" : `${meanR >= 0 ? "+" : ""}${meanR.toFixed(2)}R`, hint: `${withR.length} 笔已平仓且有初始风险的记录` },
+            { label: "实盘平均已实现 R", value: meanR === null ? "—" : `${meanR >= 0 ? "+" : ""}${meanR.toFixed(2)}R`, hint: `${withR.length} 笔已平仓且有初始风险的记录` },
           ].map((item) => <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
             <p className="text-xs text-slate-400">{item.label}</p><p className="mt-3 text-3xl font-semibold tabular-nums">{item.value}</p>
             <p className="mt-2 text-xs text-slate-500">{item.hint}</p>
