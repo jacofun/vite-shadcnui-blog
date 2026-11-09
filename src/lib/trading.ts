@@ -117,8 +117,8 @@ export const listTrades = (session: PrivateAuthSession, signal?: AbortSignal) =>
   tradingRequest<{ entries: Trade[] }>(session, "list", {}, signal);
 export const getTrade = (session: PrivateAuthSession, id: string, signal?: AbortSignal) =>
   tradingRequest<{ trade: Trade }>(session, "get", { id }, signal);
-export const saveTrade = (session: PrivateAuthSession, plan: TradePlan, previous?: Trade) =>
-  tradingRequest<{ trade: Trade }>(session, "save", { plan, ...(previous && { id: previous.id, revision: previous.revision }) });
+export const saveTrade = (session: PrivateAuthSession, plan: TradePlan, previous?: Trade, createId?: string) =>
+  tradingRequest<{ trade: Trade }>(session, "save", { plan, ...(previous ? { id: previous.id, revision: previous.revision } : { id: createId ?? crypto.randomUUID() }) });
 export const confirmTrade = (session: PrivateAuthSession, trade: Trade) =>
   tradingRequest<{ trade: Trade }>(session, "confirm", { id: trade.id, revision: trade.revision });
 export const reviseTrade = (session: PrivateAuthSession, trade: Trade, plan: TradePlan) =>
