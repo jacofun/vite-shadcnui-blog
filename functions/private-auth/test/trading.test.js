@@ -118,7 +118,7 @@ test("unexecuted opportunity can be skipped and reviewed, observation cannot exe
   let trade = await confirm(request, await create(request, { ...originalPlan, recordType: "observation", entry: null, stop: null }));
   await assert.rejects(execution(request, trade, { id: id("09"), action: "entry", price: 100, quantity: 1 }),
     (error) => error.code === "INVALID_STATE");
-  trade = (await request("skip", { id: trade.id, revision: trade.revision })).trade;
+  trade = (await request("skip", { id: trade.id, revision: trade.revision, kind: "abandoned", reason: "没有触发确认条件" })).trade;
   assert.equal(trade.status, "skipped");
   assert.equal(trade.metrics.realizedR, null);
 });
