@@ -3022,7 +3022,7 @@ export function createHandler({
         const body = parseJsonBody(request.body);
         return jsonResponse(config, 200, {
           expiresAt: nowSeconds + config.cdnUrlTtlSeconds,
-          resources: signedResources(body, config, nowSeconds, randomBytesImpl, user),
+          resources: signedResources(body, config, nowSeconds, randomBytesImpl, { role: "owner" }),
         });
       }
 
