@@ -48,6 +48,8 @@ const PrivateClipboard = lazy(() => import("./pages/PrivateClipboard.tsx"));
 const PrivatePublishing = lazy(() => import("./pages/PrivatePublishing.tsx"));
 const PublicJournal = lazy(() => import("./pages/PublicJournal.tsx"));
 const JustWrite = lazy(() => import("./pages/JustWrite.tsx"));
+const TradingJournal = lazy(() => import("./pages/TradingJournal.tsx"));
+const TradingEditor = lazy(() => import("./pages/TradingEditor.tsx"));
 const JustWriteEditor = lazy(() => import("./pages/JustWrite.tsx").then((module) => ({ default: module.JustWriteEditor })));
 const PrivateResources = lazy(() => import("./pages/PrivateResources.tsx"));
 const PrivateResourceCollection = lazy(() => import("./pages/PrivateResourceCollection.tsx"));
@@ -84,6 +86,9 @@ const router = createBrowserRouter([
           { path: "resources/publish", element: lazyPage(<PrivatePublishing />) },
           { path: "resources/clipboard", element: lazyPage(<PrivateClipboard />) },
           { path: "resources/just-write", element: lazyPage(<JustWrite />) },
+          { path: "resources/trading", element: lazyPage(<TradingJournal />) },
+          { path: "resources/trading/new", element: lazyPage(<TradingEditor />) },
+          { path: "resources/trading/:tradeId", element: lazyPage(<TradingEditor />) },
           { path: "resources/just-write/write", element: lazyPage(<JustWriteEditor />) },
           { path: "resources/just-write/:entryId", element: lazyPage(<JustWriteEditor />) },
           { path: "resources/new", element: lazyPage(<PrivateResourceCreateCollection />) },
