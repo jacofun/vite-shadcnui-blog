@@ -74,6 +74,7 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
   const [caption, setCaption] = useState("");
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const allowedToLeave = useRef(false);
+  const createId = useRef(crypto.randomUUID());
   const dirty = JSON.stringify(plan) !== baseline;
   const blocker = useBlocker(({ currentLocation, nextLocation }) =>
     dirty && !allowedToLeave.current && currentLocation.pathname !== nextLocation.pathname);
@@ -145,7 +146,7 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
   }
   async function savePlan(): Promise<void> {
     await run("save", async () => {
-      const result = trade ? await saveTrade(session, plan, trade) : await saveTrade(session, plan);
+      const result = trade ? await saveTrade(session, plan, trade) : await saveTrade(session, plan, undefined, createId.current);
       resetFromTrade(result.trade);
       setMessage("草稿已保存");
       if (!trade) {
@@ -385,5 +386,5 @@ export default function TradingEditor(): JSX.Element {
   const access = usePrivateResourceSession();
   if (access.status !== "ready") return <PrivateResourceAccessState error={access.error} status={access.status} />;
   if (access.session?.user.role !== "owner") return <PrivateResourceAccessState error={null} status="forbidden" />;
-  return <Editor key={location.pathname} session={access.session} />;
+  return <Editor key={window.location.pathname} session={access.session} />;
 }
