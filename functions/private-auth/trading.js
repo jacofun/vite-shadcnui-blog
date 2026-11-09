@@ -251,7 +251,7 @@ export async function handleTrading({ route, body, user, config, contentStore, n
       if (route === "trading/execution/add") {
         if (trade.executions.length >= MAX_EXECUTIONS) throw new TradeError(409, "EXECUTION_LIMIT", "成交笔数已达上限");
         trade.executions.push(execution);
-        trade.executions.sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
+        trade.executions.sort((a, b) => a.at.localeCompare(b.at));
         calculateTrade(trade);
         if (trade.review) delete trade.review;
         recordEvent(trade, "execution_added", at);
@@ -259,7 +259,7 @@ export async function handleTrading({ route, body, user, config, contentStore, n
         if (found < 0) throw new TradeError(404, "EXECUTION_NOT_FOUND", "成交记录不存在");
         const previous = trade.executions[found];
         trade.executions[found] = execution;
-        trade.executions.sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
+        trade.executions.sort((a, b) => a.at.localeCompare(b.at));
         calculateTrade(trade);
         if (trade.review) delete trade.review;
         recordEvent(trade, "execution_updated", at, previous);
