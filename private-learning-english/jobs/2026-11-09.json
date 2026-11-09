@@ -1,0 +1,234 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-09",
+  "episodeId": "190530-vampire-shoppers",
+  "title": "Vampire shoppers",
+  "publishedAt": "2019-05-30",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english/ep-190530",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/190530_6min_english_vampire_shoppers_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/190530_6min_english_vampire_shoppers.pdf",
+  "reason": "从科技与 AI 轮换到金融消费与数字生活。节目讨论深夜网购、疲劳判断和冲动控制，既贴近日常消费，也能迁移到金融科技中的行为风险与产品设计。练习围绕六个高频表达反复调用，从原文支撑的回忆逐步过渡到改写、受限工作场景应用和有限自由表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "金融经济",
+    "消费决策",
+    "数字生活",
+    "冲动消费",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "get sucked into something",
+        "meaning": "become involved in something and find it hard to stop",
+        "usage": "It is easy to get sucked into comparing discounted gadgets late at night."
+      },
+      {
+        "expression": "be sleep deprived",
+        "meaning": "not have enough sleep",
+        "usage": "I avoid important decisions when I am sleep deprived."
+      },
+      {
+        "expression": "think straight",
+        "meaning": "think clearly and make sensible judgements",
+        "usage": "After a long incident call, I cannot always think straight."
+      },
+      {
+        "expression": "resist the urge",
+        "meaning": "stop yourself from acting on a strong feeling",
+        "usage": "She resisted the urge to buy the tool before the team tested it."
+      },
+      {
+        "expression": "feel-good factor",
+        "meaning": "a happy and positive feeling produced by an activity or experience",
+        "usage": "A quick purchase can provide a short feel-good factor."
+      },
+      {
+        "expression": "make a purchase you regret",
+        "meaning": "buy something and later wish you had not bought it",
+        "usage": "A short pause can help you avoid making a purchase you regret."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "single-choice",
+        "prompt": "What does 'get sucked into something' mean in the discussion of late-night shopping?",
+        "targetExpression": "get sucked into something",
+        "options": [
+          {
+            "id": "a",
+            "text": "Become involved and find it hard to stop."
+          },
+          {
+            "id": "b",
+            "text": "Compare prices carefully before buying."
+          },
+          {
+            "id": "c",
+            "text": "Return an unwanted item immediately."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript defines the expression as being unable to stop yourself getting involved in something you did not intend to do."
+      },
+      {
+        "id": "obj-02",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript-based expression: Parents, shift-workers and gamers may shop late when they are ______.",
+        "targetExpression": "be sleep deprived",
+        "answers": [
+          "sleep deprived",
+          "sleep-deprived"
+        ],
+        "explanation": "The programme describes people without enough sleep as 'sleep deprived'."
+      },
+      {
+        "id": "obj-03",
+        "type": "single-choice",
+        "prompt": "Why can tired people make poor shopping decisions at night?",
+        "targetExpression": "think straight",
+        "options": [
+          {
+            "id": "a",
+            "text": "They may not think straight."
+          },
+          {
+            "id": "b",
+            "text": "Online shops hide every price."
+          },
+          {
+            "id": "c",
+            "text": "They cannot use payment systems after midnight."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Rob says that when people are very tired, they do not always think straight and can make bad decisions."
+      },
+      {
+        "id": "obj-04",
+        "type": "fill-blank",
+        "prompt": "Complete the expression: Sleep deprivation can make it harder to ______ to spend.",
+        "targetExpression": "resist the urge",
+        "answers": [
+          "resist the urge"
+        ],
+        "explanation": "Helen Undy explains that lack of sleep reduces people's ability to control spending impulses and resist the urge to spend."
+      },
+      {
+        "id": "obj-05",
+        "type": "single-choice",
+        "prompt": "What does the programme mean by the 'feel-good factor' of buying something?",
+        "targetExpression": "feel-good factor",
+        "options": [
+          {
+            "id": "a",
+            "text": "A happy and positive feeling."
+          },
+          {
+            "id": "b",
+            "text": "A guaranteed financial saving."
+          },
+          {
+            "id": "c",
+            "text": "A legal right to a refund."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Neil explains that a feel-good factor is something that gives a person a happy and positive feeling."
+      },
+      {
+        "id": "obj-06",
+        "type": "fill-blank",
+        "prompt": "Complete the reusable warning: Shopping when exhausted may lead you to ______.",
+        "targetExpression": "make a purchase you regret",
+        "answers": [
+          "make a purchase you regret",
+          "make purchases you regret"
+        ],
+        "explanation": "At the start of the programme, Neil says tired shoppers sometimes make purchases they regret."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "How can lack of sleep and mental-health problems affect spending, according to Helen Undy?",
+        "targetExpression": "resist the urge",
+        "options": [
+          {
+            "id": "a",
+            "text": "Both can make it harder to resist advertising and spending impulses."
+          },
+          {
+            "id": "b",
+            "text": "Both make online returns automatic."
+          },
+          {
+            "id": "c",
+            "text": "Both remove the feel-good factor from every purchase."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript says both sleep deprivation and mental-health problems can reduce control over spending impulses and make advertising harder to resist."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete the workplace example with today's expression: During a late incident, do not ______ an expensive tool subscription without checking the need first.",
+        "targetExpression": "get sucked into something",
+        "answers": [
+          "get sucked into buying",
+          "get sucked into purchasing"
+        ],
+        "explanation": "The expression naturally transfers to a situation where an attractive offer draws someone into an unplanned purchase."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words). Why may some parents, shift-workers and gamers shop late at night? Use 'be sleep deprived'. Start: 'They may shop late because...'.",
+        "targetExpression": "be sleep deprived",
+        "gradingCriteria": "First decide whether the answer says these people may be awake late because they have not had enough sleep. Then check whether 'be sleep deprived' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words). Explain why tiredness can lead to poor online-shopping decisions. Use 'resist the urge'. You may use: 'advertising' or 'control spending impulses'.",
+        "targetExpression": "resist the urge",
+        "gradingCriteria": "First decide whether the answer explains that tiredness reduces control over spending impulses or makes advertising harder to resist. Then check whether 'resist the urge' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words). Rewrite without changing the main meaning: 'Because online shops never close, tired people can easily become involved in shopping and find it hard to stop.' Use 'get sucked into something'.",
+        "targetExpression": "get sucked into something",
+        "gradingCriteria": "First decide whether the answer preserves the ideas that online shops are always open and tired people can become involved in shopping and struggle to stop. Then check whether 'get sucked into something' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). Late at night, you see a large discount on a developer tool your team has not evaluated. Explain what you would do before buying it. Use one phrase from this bank: 'resist the urge', 'think straight', 'make a purchase you regret'.",
+        "targetExpression": "resist the urge",
+        "gradingCriteria": "First decide whether the answer gives a practical response to the stated purchase decision, such as waiting, checking the need or discussing it with the team. Then check whether at least one phrase from the bank is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences). Within the programme's topic, say whether online shops should do more to protect late-night shoppers and give one practical example. Naturally use at least one of today's target expressions.",
+        "targetExpression": "think straight",
+        "gradingCriteria": "First decide whether the answer gives a clear view on protection for late-night shoppers and one relevant practical example. Then check whether at least one target expression is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Retell the episode in 80-120 words without looking at the full transcript. Use this structure: (1) topic - what vampire shopping is and who may do it; (2) two key ideas - how tiredness affects judgement and spending control, and why a purchase may feel good at first; (3) conclusion or example - regret, returns or one way to avoid an impulsive purchase. Phrase bank: 'get sucked into something', 'be sleep deprived', 'resist the urge'. Use at least two phrases naturally. Simple, clear English is enough; advanced vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "Vampire shopping means shopping online late at night, when many other people are asleep.",
+      "Sleep-deprived parents, shift-workers, gamers and people with insomnia may be awake and tempted to shop.",
+      "Because online shops are open all day, tired people can get sucked into shopping and may not think straight.",
+      "Sleep deprivation and mental-health problems can reduce control over spending impulses and make advertising harder to resist.",
+      "Buying something can provide comfort or a short feel-good factor, but shoppers may later regret the purchase.",
+      "Research mentioned in the programme found that many people did not return the last online purchase they regretted."
+    ]
+  }
+}
