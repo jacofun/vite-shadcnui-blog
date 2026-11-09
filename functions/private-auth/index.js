@@ -1,6 +1,6 @@
 import { handlePublishing, PublishingError } from "./publishing.js";
 import { createPublicPublisher } from "./public-publishing.js";
-import { handleTrading } from "./trading.js";
+import { handleTrading, TradeError } from "./trading.js";
 import {
   createCipheriv,
   createDecipheriv,
@@ -3030,8 +3030,9 @@ export function createHandler({
         "set-cookie": clearCookie(config),
       });
     } catch (error) {
-      const statusCode = error instanceof HttpError ? error.statusCode : 500;
-      const code = error instanceof HttpError ? error.code : "INTERNAL_ERROR";
+      const knownError = error instanceof HttpError || error instanceof TradeError;
+      const statusCode = knownError ? error.statusCode : 500;
+      const code = knownError ? error.code : "INTERNAL_ERROR";
       const message = statusCode >= 500 ? "Private authentication service is unavailable" : error.message;
       const responseConfig = config || {
         expectedOrigin: env.WEBAUTHN_ORIGIN || "https://yanxiao.me",
