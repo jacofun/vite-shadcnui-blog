@@ -1,5 +1,6 @@
 import { handlePublishing, PublishingError } from "./publishing.js";
 import { createPublicPublisher } from "./public-publishing.js";
+import { handleTrading, TradeError } from "./trading.js";
 import {
   createCipheriv,
   createDecipheriv,
@@ -397,6 +398,9 @@ function routeName(path, cookiePath, persistent = false) {
     "collections/create", "collections/delete", "files/delete",
     "clipboard/get", "clipboard/save", "clipboard/delete",
     "just-write/list", "just-write/save", "just-write/delete", "just-write/teach",
+    "trading/list", "trading/get", "trading/save", "trading/confirm", "trading/revise",
+    "trading/execution/add", "trading/execution/update", "trading/skip", "trading/review",
+    "trading/image/init", "trading/image/complete",
     "assessment/grade", "assessment/result", "assessment/ask",
     "public/assistant/ask", "health", "public/content",
     "publishing/list", "publishing/save", "publishing/publish", "publishing/unpublish", "publishing/sync-public", "publishing/upload-init", "publishing/upload-complete",
@@ -410,7 +414,7 @@ function routeName(path, cookiePath, persistent = false) {
 }
 
 function usesPrivateContentStore(route) {
-  return ["publishing/", "uploads/", "collections/", "files/", "clipboard/", "assessment/", "just-write/"].some((prefix) => route.startsWith(prefix));
+  return ["publishing/", "uploads/", "collections/", "files/", "clipboard/", "assessment/", "just-write/", "trading/"].some((prefix) => route.startsWith(prefix));
 }
 
 function jsonResponse(config, statusCode, body, extraHeaders = {}) {
@@ -550,7 +554,7 @@ function normalizePrivateResourcePath(path, config) {
   return path;
 }
 
-function signNamedPaths(paths, config, nowSeconds, randomBytesImpl) {
+function signNamedPaths(paths, config, nowSeconds, randomBytesImpl, user) {
   if (!paths || typeof paths !== "object" || Array.isArray(paths)) {
     throw new HttpError(400, "INVALID_RESOURCE_REQUEST", "paths must be an object");
   }
@@ -562,16 +566,15 @@ function signNamedPaths(paths, config, nowSeconds, randomBytesImpl) {
     if (!RESOURCE_NAME_PATTERN.test(name)) {
       throw new HttpError(400, "INVALID_RESOURCE_NAME", "Private resource name is invalid");
     }
-    return [name, signCdnPath(
-      normalizePrivateResourcePath(path, config),
-      config,
-      nowSeconds,
-      randomBytesImpl,
-    )];
+    const normalized = normalizePrivateResourcePath(path, config);
+    if (normalized.startsWith(`${config.privateRoot}/trading/`) && user?.role !== "owner") {
+      throw new HttpError(403, "MISSING_PERMISSION", "Trading screenshots are owner-only");
+    }
+    return [name, signCdnPath(normalized, config, nowSeconds, randomBytesImpl)];
   }));
 }
 
-function signedResources(body, config, nowSeconds, randomBytesImpl) {
+function signedResources(body, config, nowSeconds, randomBytesImpl, user) {
   if (body.resource === "catalog" && body.paths === undefined && body.episodeId === undefined) {
     return {
       catalog: signCdnPath(`${config.privateRoot}/index.json`, config, nowSeconds, randomBytesImpl),
@@ -582,7 +585,7 @@ function signedResources(body, config, nowSeconds, randomBytesImpl) {
     if (body.resource !== undefined || body.episodeId !== undefined) {
       throw new HttpError(400, "INVALID_RESOURCE_REQUEST", "paths cannot be combined with legacy resource fields");
     }
-    return signNamedPaths(body.paths, config, nowSeconds, randomBytesImpl);
+    return signNamedPaths(body.paths, config, nowSeconds, randomBytesImpl, user);
   }
 
   if (body.resource === "index" && body.episodeId === undefined) {
@@ -2990,6 +2993,10 @@ export function createHandler({
             route, body, user, contentStore: privateContentStore, nowSeconds, randomBytesImpl, env, fetchImpl,
             signal: request.signal, stream: justWriteStream,
           })
+          : route.startsWith("trading/")
+          ? await handleTrading({
+            route, body, user, config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
+          })
           : route.startsWith("collections/")
           ? await handlePrivateResourceCollection({
             route, body, user, config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
@@ -3015,7 +3022,7 @@ export function createHandler({
         const body = parseJsonBody(request.body);
         return jsonResponse(config, 200, {
           expiresAt: nowSeconds + config.cdnUrlTtlSeconds,
-          resources: signedResources(body, config, nowSeconds, randomBytesImpl),
+          resources: signedResources(body, config, nowSeconds, randomBytesImpl, { role: "owner" }),
         });
       }
 
@@ -3023,8 +3030,9 @@ export function createHandler({
         "set-cookie": clearCookie(config),
       });
     } catch (error) {
-      const statusCode = error instanceof HttpError ? error.statusCode : 500;
-      const code = error instanceof HttpError ? error.code : "INTERNAL_ERROR";
+      const knownError = error instanceof HttpError || error instanceof TradeError;
+      const statusCode = knownError ? error.statusCode : 500;
+      const code = knownError ? error.code : "INTERNAL_ERROR";
       const message = statusCode >= 500 ? "Private authentication service is unavailable" : error.message;
       const responseConfig = config || {
         expectedOrigin: env.WEBAUTHN_ORIGIN || "https://yanxiao.me",
@@ -3644,7 +3652,7 @@ async function persistentRequest(options) {
     }
     return jsonResponse(config, 200, {
       expiresAt: nowSeconds + config.cdnUrlTtlSeconds,
-      resources: signedResources(body, config, nowSeconds, randomBytesImpl),
+      resources: signedResources(body, config, nowSeconds, randomBytesImpl, user),
     });
   }
   if (route.startsWith("uploads/")) {
@@ -3679,6 +3687,11 @@ async function persistentRequest(options) {
     const stream = route === "just-write/teach" && acceptsEventStream(request);
     const result = await handleJustWrite({ route, body, user, contentStore, nowSeconds, randomBytesImpl, env, fetchImpl, signal: request.signal, stream });
     return stream ? streamResponse(config, result) : jsonResponse(config, 200, result);
+  }
+  if (route.startsWith("trading/")) {
+    return jsonResponse(config, 200, await handleTrading({
+      route, body, user, config, contentStore, nowSeconds, randomBytesImpl,
+    }));
   }
   if (route.startsWith("assessment/")) {
     const stream = ["assessment/ask", "assessment/grade"].includes(route) && acceptsEventStream(request);
