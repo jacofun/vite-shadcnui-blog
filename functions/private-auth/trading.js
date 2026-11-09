@@ -188,10 +188,18 @@ export async function handleTrading({ route, body, user, config, contentStore, n
     if (!png && !jpg && !webp) throw new TradeError(400, "INVALID_IMAGE", "图片文件格式校验失败");
   }
   await contentStore.updateJson(path, { missing: emptyDocument(), validate: validDocument }, (document) => {
-    if (route === "trading/save" && !body.id) {
-      if (document.entries.length >= MAX_TRADES) throw new TradeError(409, "TRADE_LIMIT", "交易记录已达上限");
+    if (route === "trading/save" && body.revision === undefined) {
       const plan = planFrom(body.plan);
-      const id = randomBytesImpl(16).toString("hex");
+      const id = body.id === undefined ? randomBytesImpl(16).toString("hex") : demandId(body.id);
+      const previous = document.entries.find((entry) => entry.id === id);
+      if (previous) {
+        if (previous.status === "draft" && JSON.stringify(previous.plan) === JSON.stringify(plan)) {
+          output = withMetrics(previous);
+          return document;
+        }
+        throw new TradeError(409, "TRADE_CONFLICT", "此交易编号已被使用");
+      }
+      if (document.entries.length >= MAX_TRADES) throw new TradeError(409, "TRADE_LIMIT", "交易记录已达上限");
       const trade = { id, revision: 1, status: "draft", createdAt: at, updatedAt: at,
         plan, planHistory: [], executions: [], attachments: [], pendingImages: [], events: [{ type: "created", at }] };
       document.entries.push(trade);
@@ -223,29 +231,36 @@ export async function handleTrading({ route, body, user, config, contentStore, n
       if (trade.status === "draft") trade.status = "planned";
       recordEvent(trade, route === "trading/confirm" ? "plan_confirmed" : "plan_revised", at);
     } else if (route === "trading/execution/add" || route === "trading/execution/update") {
+      const execution = executionFrom(body.execution);
+      const found = trade.executions.findIndex((item) => item.id === execution.id);
+      if (route === "trading/execution/add" && found >= 0) {
+        if (JSON.stringify(trade.executions[found]) !== JSON.stringify(execution)) {
+          throw new TradeError(409, "EXECUTION_CONFLICT", "成交编号已经存在");
+        }
+        output = withMetrics(trade);
+        return document;
+      }
       requireRevision(trade, body.revision);
       if (trade.status === "draft" || trade.status === "skipped" || trade.plan.recordType === "observation") {
         throw new TradeError(409, "INVALID_STATE", "当前交易不能添加成交");
       }
-      const execution = executionFrom(body.execution);
-      const found = trade.executions.findIndex((item) => item.id === execution.id);
+      if (trade.status === "closed" && route === "trading/execution/add" && execution.action === "entry") {
+        throw new TradeError(409, "TRADE_CLOSED", "交易已经平仓，请创建新交易案例");
+      }
       if (route === "trading/execution/add") {
-        if (found >= 0) {
-          if (JSON.stringify(trade.executions[found]) !== JSON.stringify(execution)) {
-            throw new TradeError(409, "EXECUTION_CONFLICT", "成交编号已经存在");
-          }
-          output = withMetrics(trade);
-          return document;
-        }
         if (trade.executions.length >= MAX_EXECUTIONS) throw new TradeError(409, "EXECUTION_LIMIT", "成交笔数已达上限");
         trade.executions.push(execution);
-        try { calculateTrade(trade); } catch (error) { throw error; }
+        trade.executions.sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
+        calculateTrade(trade);
+        if (trade.review) delete trade.review;
         recordEvent(trade, "execution_added", at);
       } else {
         if (found < 0) throw new TradeError(404, "EXECUTION_NOT_FOUND", "成交记录不存在");
         const previous = trade.executions[found];
         trade.executions[found] = execution;
+        trade.executions.sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
         calculateTrade(trade);
+        if (trade.review) delete trade.review;
         recordEvent(trade, "execution_updated", at, previous);
       }
       trade.status = calculateTrade(trade).status;
