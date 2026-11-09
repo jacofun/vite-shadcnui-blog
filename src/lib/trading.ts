@@ -91,9 +91,13 @@ export interface ImageTicket {
 }
 
 export class TradingApiError extends Error {
-  constructor(readonly status: number, readonly code: string, message: string) {
+  readonly status: number;
+  readonly code: string;
+  constructor(status: number, code: string, message: string) {
     super(message);
     this.name = "TradingApiError";
+    this.status = status;
+    this.code = code;
   }
 }
 async function tradingRequest<T>(session: PrivateAuthSession, path: string, body: object, signal?: AbortSignal): Promise<T> {
