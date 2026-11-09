@@ -9,7 +9,7 @@ const RECORD_TYPES = ["live", "paper", "observation"];
 const ACTIONS = ["entry", "exit"];
 const IMAGE_TYPES = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 
-class TradeError extends Error {
+export class TradeError extends Error {
   constructor(statusCode, code, message) {
     super(message);
     this.statusCode = statusCode;
