@@ -80,6 +80,7 @@ export interface Trade {
   attachments: TradeAttachment[];
   events: Array<{ type: string; at: string; previous?: unknown }>;
   review?: TradeReview;
+  skip?: { kind: "abandoned" | "missed"; reason: string; at: string };
   metrics: TradeMetrics;
 }
 export interface ImageTicket {
@@ -130,8 +131,8 @@ export const reviseTrade = (session: PrivateAuthSession, trade: Trade, plan: Tra
 export const addTradeExecution = (session: PrivateAuthSession, trade: Trade, execution: TradeExecution, edit = false) =>
   tradingRequest<{ trade: Trade }>(session, edit ? "execution/update" : "execution/add",
     { id: trade.id, revision: trade.revision, execution });
-export const skipTrade = (session: PrivateAuthSession, trade: Trade) =>
-  tradingRequest<{ trade: Trade }>(session, "skip", { id: trade.id, revision: trade.revision });
+export const skipTrade = (session: PrivateAuthSession, trade: Trade, kind: "abandoned" | "missed", reason: string) =>
+  tradingRequest<{ trade: Trade }>(session, "skip", { id: trade.id, revision: trade.revision, kind, reason });
 export const reviewTrade = (session: PrivateAuthSession, trade: Trade, review: Omit<TradeReview, "updatedAt">) =>
   tradingRequest<{ trade: Trade }>(session, "review", { id: trade.id, revision: trade.revision, review });
 export const initTradeImage = (session: PrivateAuthSession, trade: Trade, params: { contentType: string; bytes: number; phase: TradePhase; caption: string }) =>
