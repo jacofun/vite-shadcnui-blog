@@ -135,10 +135,11 @@ export function calculateTrade(trade) {
   const risk = trade.planHistory[0]?.plan.plannedRisk ??
     ((trade.planHistory[0]?.plan.plannedQuantity ?? 0) *
       Math.abs((trade.planHistory[0]?.plan.entry ?? 0) - (trade.planHistory[0]?.plan.stop ?? 0)));
+  const realizedPnl = Math.round(realized * 1e8) / 1e8;
   return {
     remaining, averageEntry: remaining ? basis : null,
-    realizedPnl: Math.round(realized * 1e8) / 1e8,
-    initialRisk: risk || null, realizedR: risk > 0 ? realized / risk : null,
+    realizedPnl,
+    initialRisk: risk || null, realizedR: entries > 0 && risk > 0 ? realizedPnl / risk : null,
     status: trade.status === "draft" || trade.status === "skipped" ? trade.status :
       entries === 0 ? "planned" : remaining > 0 ? "open" : "closed",
   };
