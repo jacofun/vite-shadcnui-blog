@@ -222,7 +222,8 @@ export async function handleTrading({ route, body, user, config, contentStore, n
       const next = route === "trading/revise" ? planFrom(body.plan) : trade.plan;
       if (trade.executions.length &&
           (next.direction !== trade.plan.direction || next.symbol !== trade.plan.symbol ||
-           next.recordType !== trade.plan.recordType)) {
+           next.recordType !== trade.plan.recordType || next.market !== trade.plan.market ||
+           next.currency !== trade.plan.currency || next.account !== trade.plan.account)) {
         throw new TradeError(409, "IMMUTABLE_INSTRUMENT", "存在成交后不允许修改标的、方向或账户类型");
       }
       confirmable(next);
@@ -268,6 +269,10 @@ export async function handleTrading({ route, body, user, config, contentStore, n
     } else if (route === "trading/skip") {
       requireRevision(trade, body.revision);
       if (trade.status !== "planned" || trade.executions.length) throw new TradeError(409, "INVALID_STATE", "只有未成交的已确认计划才能终止");
+      const kind = choice(body.kind, ["abandoned", "missed"], "skip.kind");
+      const reason = text(body.reason ?? "", 1000);
+      if (!reason) invalid("skip.reason");
+      trade.skip = { kind, reason, at };
       trade.status = "skipped";
       recordEvent(trade, "skipped", at);
     } else if (route === "trading/review") {
