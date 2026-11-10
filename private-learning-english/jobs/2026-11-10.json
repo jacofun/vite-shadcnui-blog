@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-10",
+  "episodeId": "230817-are-you-unhappy-at-work",
+  "title": "Are you unhappy at work?",
+  "publishedAt": "2023-08-17",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2023/ep-230817",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230817_6_minute_english_unhappy_at_work_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230817_6_minute_english_unhappy_at_work.pdf",
+  "reason": "从昨日的消费与数字生活轮换到工作生活平衡和团队管理。节目用英国职场与建筑行业试验讨论工作强度、管理方式和任务制工作，贴合工程管理、项目交付和团队协作场景。练习围绕六个高频表达反复调用，从原文支撑的回忆逐步过渡到改写、受限项目场景应用和有限自由表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "工作生活平衡",
+    "团队管理",
+    "项目交付",
+    "职场沟通",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "get burned out",
+        "meaning": "lose energy or enthusiasm because of working too hard",
+        "usage": "Engineers can get burned out if urgent work continues for too long."
+      },
+      {
+        "expression": "meet a deadline",
+        "meaning": "finish required work by the agreed time or date",
+        "usage": "The team simplified the release scope to meet the deadline."
+      },
+      {
+        "expression": "breathe down someone's neck",
+        "meaning": "watch someone very closely and repeatedly check what they are doing",
+        "usage": "People may work less confidently when a manager is breathing down their neck."
+      },
+      {
+        "expression": "shift away from something",
+        "meaning": "move from one approach or habit towards a different one",
+        "usage": "The project shifted away from measuring hours and focused on completed tasks."
+      },
+      {
+        "expression": "on time and on budget",
+        "meaning": "by the planned date and without spending more than planned",
+        "usage": "Clear priorities helped us deliver the migration on time and on budget."
+      },
+      {
+        "expression": "a win-win",
+        "meaning": "a situation or result that benefits everyone involved",
+        "usage": "Flexible on-call scheduling can be a win-win for staff and the service."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "single-choice",
+        "prompt": "What does it mean when someone gets burned out at work?",
+        "targetExpression": "get burned out",
+        "options": [
+          {
+            "id": "a",
+            "text": "They lose energy or enthusiasm after working too hard."
+          },
+          {
+            "id": "b",
+            "text": "They finish every task earlier than planned."
+          },
+          {
+            "id": "c",
+            "text": "They change to a better-paid department."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript defines burnout as lacking energy or enthusiasm because of working too hard."
+      },
+      {
+        "id": "obj-02",
+        "type": "fill-blank",
+        "prompt": "Complete the reusable project expression: We reduced the scope so that we could ______.",
+        "targetExpression": "meet a deadline",
+        "answers": [
+          "meet the deadline",
+          "meet a deadline"
+        ],
+        "explanation": "The programme discusses pressure to meet deadlines; 'meet a deadline' means finish the required work by the agreed time."
+      },
+      {
+        "id": "obj-03",
+        "type": "single-choice",
+        "prompt": "If a supervisor is 'breathing down your neck', what are they doing?",
+        "targetExpression": "breathe down someone's neck",
+        "options": [
+          {
+            "id": "a",
+            "text": "Watching and checking your work very closely."
+          },
+          {
+            "id": "b",
+            "text": "Giving you complete control over your schedule."
+          },
+          {
+            "id": "c",
+            "text": "Helping you reduce your workload."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Neil explains that the idiom means someone is watching you very closely and checking everything you do."
+      },
+      {
+        "id": "obj-04",
+        "type": "fill-blank",
+        "prompt": "Complete Emma Stewart's change in approach: The trial tried to ______ presenteeism and towards task-based work.",
+        "targetExpression": "shift away from something",
+        "answers": [
+          "shift away from"
+        ],
+        "explanation": "Emma says the construction trial shifted away from presenteeism to an output-based, task-based way of working."
+      },
+      {
+        "id": "obj-05",
+        "type": "single-choice",
+        "prompt": "What happened to the construction projects under the task-based trial?",
+        "targetExpression": "on time and on budget",
+        "options": [
+          {
+            "id": "a",
+            "text": "They were delivered on time and on budget."
+          },
+          {
+            "id": "b",
+            "text": "They were stopped because workers went home earlier."
+          },
+          {
+            "id": "c",
+            "text": "They required more overtime and more money."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Emma reports that the projects were delivered on time and on budget while workers also reduced overtime."
+      },
+      {
+        "id": "obj-06",
+        "type": "fill-blank",
+        "prompt": "Complete the conclusion: Better delivery and improved work-life balance made the trial ______.",
+        "targetExpression": "a win-win",
+        "answers": [
+          "a win-win",
+          "win-win"
+        ],
+        "explanation": "The programme calls flexible, task-based working a win-win because it helps both project delivery and workers."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "Why does the programme criticise presenteeism?",
+        "targetExpression": "shift away from something",
+        "options": [
+          {
+            "id": "a",
+            "text": "Long hours used to show commitment are not necessarily an effective way to work."
+          },
+          {
+            "id": "b",
+            "text": "Workers are never allowed to finish tasks at home."
+          },
+          {
+            "id": "c",
+            "text": "Every task-based project goes over budget."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Beth says staying longer merely to show that you work hard is not effective, while the task-based approach achieved strong results."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete the workplace warning: Constant pressure and overtime can cause experienced staff to ______.",
+        "targetExpression": "get burned out",
+        "answers": [
+          "get burned out",
+          "become burned out",
+          "become burnt out"
+        ],
+        "explanation": "This is a natural transfer of the transcript's explanation that working too hard can leave people without energy or enthusiasm."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words). Why can working too much make a job unpleasant? Use 'get burned out'. Start: 'People may... because...'.",
+        "targetExpression": "get burned out",
+        "gradingCriteria": "First decide whether the answer says that working too hard can reduce energy or enthusiasm. Then check whether 'get burned out' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words). Explain why the construction trial was successful. Use 'on time and on budget'. You may use: 'less overtime' or 'better work-life balance'.",
+        "targetExpression": "on time and on budget",
+        "gradingCriteria": "First decide whether the answer explains that the projects were delivered on time and on budget while workers reduced overtime or improved work-life balance. Then check whether 'on time and on budget' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words). Rewrite without changing the main meaning: 'The trial stopped judging people mainly by long hours and started judging them by completed tasks.' Use 'shift away from something'.",
+        "targetExpression": "shift away from something",
+        "gradingCriteria": "First decide whether the answer preserves the change from judging long hours to judging completed tasks. Then check whether 'shift away from something' is used naturally and followed by an appropriate noun or -ing form. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). Your platform team has a tight release date, but repeated status checks are slowing people down. Explain how the manager should respond. Use one phrase from this bank: 'meet a deadline', 'breathe down someone's neck', 'on time and on budget'.",
+        "targetExpression": "meet a deadline",
+        "gradingCriteria": "First decide whether the answer gives a practical response to the stated release problem, such as clearer priorities, fewer interruptions or agreed checkpoints. Then check whether at least one phrase from the bank is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences). Within the programme's topic, say whether task-based working would improve your own kind of work and name one possible limitation. Naturally use at least one of today's target expressions.",
+        "targetExpression": "a win-win",
+        "gradingCriteria": "First decide whether the answer gives a clear view on task-based working and one relevant limitation, such as support duties, teamwork, quality or unpredictable incidents. Then check whether at least one target expression is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Retell the episode in 80-120 words without looking at the full transcript. Use this structure: (1) topic - why some jobs make people unhappy; (2) two key ideas - pressure and close supervision, then the construction industry's task-based trial; (3) conclusion or example - how flexible working affected delivery and workers. Phrase bank: 'get burned out', 'shift away from something', 'a win-win'. Use at least two phrases naturally. Simple, clear English is enough; advanced vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "People can be unhappy in jobs that are boring, badly paid or so demanding that they become burned out.",
+      "British work culture can emphasise fast pace, targets and deadlines, with supervisors closely checking workers.",
+      "A good job uses people's talents and gives them some choice over how and when they work.",
+      "The construction trial shifted away from presenteeism and used a task-based approach instead of measuring long hours.",
+      "Workers could go home after completing their agreed tasks well while still receiving the same daily pay.",
+      "The projects were delivered on time and on budget, overtime fell and work-life balance scores doubled."
+    ]
+  }
+}
