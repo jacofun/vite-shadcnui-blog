@@ -1,0 +1,234 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-11",
+  "episodeId": "230209-doomscrolling-why-do-we-do-it",
+  "title": "Doomscrolling: Why do we do it?",
+  "publishedAt": "2023-02-09",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2023/ep-230209",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230209_6_minute_english_doomscrolling_DOWNLOAD.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230209_6_minute_english_doomscrolling.pdf",
+  "reason": "从昨日的职场与团队管理轮换到软件和数字生活、生产力主题。节目解释人们为何会持续浏览负面信息，适合联系平台告警、行业资讯和信息过载等熟悉场景；练习反复调用六个高频表达，从原文支撑的回忆逐步过渡到改写、受限工作场景应用和有限自由表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "软件和数字生活",
+    "生产力",
+    "信息过载",
+    "数字习惯",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "feel compelled to",
+        "meaning": "feel a strong need or pressure to do something",
+        "usage": "During an incident, engineers may feel compelled to check every new alert."
+      },
+      {
+        "expression": "seek out",
+        "meaning": "actively look for something",
+        "usage": "Try to seek out reliable information before making a decision."
+      },
+      {
+        "expression": "on tap",
+        "meaning": "easily available whenever you want it",
+        "usage": "With notifications on tap, it is easy to keep checking your phone."
+      },
+      {
+        "expression": "pay attention to",
+        "meaning": "notice or concentrate on someone or something",
+        "usage": "A project lead should pay attention to risks without ignoring progress."
+      },
+      {
+        "expression": "make up for",
+        "meaning": "compensate for something bad or missing with something good",
+        "usage": "One quiet evening can help make up for a stressful day."
+      },
+      {
+        "expression": "romanticise something",
+        "meaning": "describe something as better or more attractive than it really is",
+        "usage": "We should not romanticise constant overtime as proof of commitment."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "single-choice",
+        "prompt": "In the programme, what does it mean to feel compelled to look at bad news?",
+        "targetExpression": "feel compelled to",
+        "options": [
+          {
+            "id": "a",
+            "text": "To feel a strong need or pressure to look at it."
+          },
+          {
+            "id": "b",
+            "text": "To be unable to understand it."
+          },
+          {
+            "id": "c",
+            "text": "To be paid to report it."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript says people feel compelled to look at and even seek out bad news, meaning they feel a strong urge to do it."
+      },
+      {
+        "id": "obj-02",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript-based phrase: Some people actively ______ bad news, even when it makes them feel worse.",
+        "targetExpression": "seek out",
+        "answers": [
+          "seek out",
+          "go searching out for"
+        ],
+        "explanation": "Neil says people may 'seek out' bad news, and Ella similarly says that people go searching out for it."
+      },
+      {
+        "id": "obj-03",
+        "type": "single-choice",
+        "prompt": "If news is 'on tap' on our phones, what does that mean?",
+        "targetExpression": "on tap",
+        "options": [
+          {
+            "id": "a",
+            "text": "It is easily available whenever we want it."
+          },
+          {
+            "id": "b",
+            "text": "It is checked by an editor once a week."
+          },
+          {
+            "id": "c",
+            "text": "It is limited to local events."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Sam defines 'on tap' as easily available in whatever amount you want, whenever you want."
+      },
+      {
+        "id": "obj-04",
+        "type": "fill-blank",
+        "prompt": "Complete the explanation of negativity bias: Humans naturally ______ the negative stuff.",
+        "targetExpression": "pay attention to",
+        "answers": [
+          "pay attention to"
+        ],
+        "explanation": "The transcript says humans naturally pay attention to negative information because recognising danger was vital to survival."
+      },
+      {
+        "id": "obj-05",
+        "type": "single-choice",
+        "prompt": "Why might humans naturally focus on negative information, according to the programme?",
+        "targetExpression": "pay attention to",
+        "options": [
+          {
+            "id": "a",
+            "text": "Noticing dangers helped our ancestors survive."
+          },
+          {
+            "id": "b",
+            "text": "Negative stories were easier to write."
+          },
+          {
+            "id": "c",
+            "text": "People in caves received global news alerts."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme links negativity bias to survival: our ancestors needed to know about dangers and avoid them."
+      },
+      {
+        "id": "obj-06",
+        "type": "fill-blank",
+        "prompt": "Complete Ella's point: The little good news we hear does not ______ all the depressing news.",
+        "targetExpression": "make up for",
+        "answers": [
+          "make up for",
+          "compensate for"
+        ],
+        "explanation": "Ella says the good news does not make up for the bad news; the programme defines the phrase as compensating for something bad with something good."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "What does Clara suggest society may do with traumatic experiences?",
+        "targetExpression": "romanticise something",
+        "options": [
+          {
+            "id": "a",
+            "text": "Make them sound better or more valuable than they really are."
+          },
+          {
+            "id": "b",
+            "text": "Remove them completely from the news."
+          },
+          {
+            "id": "c",
+            "text": "Treat them only as local information."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Clara says trauma is romanticised, and Sam explains that this means making something sound better than it really is."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete the reusable digital-habit sentence: With breaking news ______, it is easy to keep checking your phone.",
+        "targetExpression": "on tap",
+        "answers": [
+          "on tap",
+          "easily available"
+        ],
+        "explanation": "This lightly transfers the transcript's description of 24/7 news being on tap on our phones."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words). What kind of news do people sometimes actively look for? Use 'seek out'. Start: 'They may seek out...'.",
+        "targetExpression": "seek out",
+        "gradingCriteria": "First decide whether the answer says that people may actively look for bad or negative news. Then check whether 'seek out' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words). Explain why negativity bias may have helped early humans. Use 'pay attention to'. You may use: 'dangers' or 'survival'.",
+        "targetExpression": "pay attention to",
+        "gradingCriteria": "First decide whether the answer explains that paying attention to dangers helped early humans avoid threats and survive. Then check whether 'pay attention to' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words). Rewrite without changing the main meaning: 'Positive stories are too few to compensate for all the depressing stories.' Use 'make up for'.",
+        "targetExpression": "make up for",
+        "gradingCriteria": "First decide whether the answer preserves the idea that limited positive news cannot compensate for the large amount of depressing news. Then check whether 'make up for' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). Your platform team keeps checking every low-priority alert and loses focus. Suggest one practical change. Use one phrase from this bank: 'feel compelled to', 'on tap', 'pay attention to'.",
+        "targetExpression": "pay attention to",
+        "gradingCriteria": "First decide whether the answer gives a practical response to the stated alert-checking problem, such as prioritising alerts, limiting notifications or using scheduled checks. Then check whether at least one phrase from the bank is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences). Within the programme's topic, say whether easy access to news does more harm or good for you, and give one reason. Naturally use at least one of today's target expressions.",
+        "targetExpression": "on tap",
+        "gradingCriteria": "First decide whether the answer gives a clear personal view about easy access to news and one relevant reason. Then check whether at least one target expression is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Retell the episode in 80-120 words without looking at the full transcript. Use this structure: (1) topic - what doomscrolling is and why constant news makes it possible; (2) two key ideas - negativity bias and the difference between local news in the past and global news today; (3) conclusion or example - the emotional effect of too much bad news. Phrase bank: 'seek out', 'on tap', 'make up for'. Use at least two phrases naturally. Simple, clear English is enough; advanced vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "Doomscrolling means spending a lot of time reading negative news stories on a phone or computer.",
+      "People around the world may feel compelled to look at and even seek out bad news.",
+      "The internet and the non-stop news cycle make large amounts of news available on tap.",
+      "Negativity bias may come from human evolution because noticing danger was important for survival.",
+      "Early humans mainly knew local dangers, while people today receive bad news from all over the world.",
+      "The limited good news may not make up for depressing news, and romanticising trauma can strengthen the focus on negative experiences."
+    ]
+  }
+}
