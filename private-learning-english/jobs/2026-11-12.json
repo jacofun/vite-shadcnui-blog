@@ -1,0 +1,234 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-12",
+  "episodeId": "230914-making-male-friends",
+  "title": "Making male friends",
+  "publishedAt": "2023-09-14",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2023/ep-230914",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230914_6_minute_english_making_male_friends_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230914_6_minute_english_making_male_friends.pdf",
+  "reason": "从昨日的软件与数字生活主题轮换到日常生活和人际沟通。节目讨论维持友谊、在困难时期相互支持以及成年后关系逐渐疏远，适合联系远程协作、跨团队关系和工程管理中的支持网络；练习围绕六个高频表达重复调用，从原文支撑逐步过渡到改写、受限工作场景应用和有限自由表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "日常生活",
+    "人际沟通",
+    "团队协作",
+    "支持网络",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "share life's ups and downs",
+        "meaning": "experience and discuss both good and difficult times together",
+        "usage": "Close colleagues can share life's ups and downs during a long project."
+      },
+      {
+        "expression": "maintain strong friendships",
+        "meaning": "keep close relationships healthy over time",
+        "usage": "Regular contact helps people maintain strong friendships after moving away."
+      },
+      {
+        "expression": "when times are tough",
+        "meaning": "during periods of trouble, unhappiness or difficulty",
+        "usage": "A supportive team matters most when times are tough."
+      },
+      {
+        "expression": "get through",
+        "meaning": "manage to live or work through a difficult situation",
+        "usage": "Clear priorities helped the team get through a difficult release."
+      },
+      {
+        "expression": "drift away",
+        "meaning": "gradually become less close until a relationship weakens or ends",
+        "usage": "Friends may drift away if neither person makes time to stay in contact."
+      },
+      {
+        "expression": "a double-edged sword",
+        "meaning": "something that has both favourable and unfavourable consequences",
+        "usage": "Remote work can be a double-edged sword: it offers flexibility but may reduce informal contact."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "single-choice",
+        "prompt": "What does it mean to share life's ups and downs with a friend?",
+        "targetExpression": "share life's ups and downs",
+        "options": [
+          {
+            "id": "a",
+            "text": "To support each other through good and difficult experiences."
+          },
+          {
+            "id": "b",
+            "text": "To compete over who has the harder life."
+          },
+          {
+            "id": "c",
+            "text": "To meet only when everything is going well."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Beth says everyone needs friends to share life's ups and downs, meaning both positive and difficult experiences."
+      },
+      {
+        "id": "obj-02",
+        "type": "fill-blank",
+        "prompt": "Complete the reusable relationship phrase: Regular contact can help people ______ even when they live far apart.",
+        "targetExpression": "maintain strong friendships",
+        "answers": [
+          "maintain strong friendships",
+          "maintain their strong friendships"
+        ],
+        "explanation": "The programme discusses how people make and keep close friends; 'maintain strong friendships' means keep those relationships healthy over time."
+      },
+      {
+        "id": "obj-03",
+        "type": "single-choice",
+        "prompt": "According to Claudia Hammond, what do good friends often do when times are tough?",
+        "targetExpression": "when times are tough",
+        "options": [
+          {
+            "id": "a",
+            "text": "They listen, reassure and sometimes offer advice."
+          },
+          {
+            "id": "b",
+            "text": "They avoid every difficult conversation."
+          },
+          {
+            "id": "c",
+            "text": "They end the friendship until the problem is over."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Claudia says friends are there to listen, reassure and perhaps advise us during periods of trouble."
+      },
+      {
+        "id": "obj-04",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript-based idea: Friends can help us ______ difficult periods of life.",
+        "targetExpression": "get through",
+        "answers": [
+          "get through",
+          "get through the"
+        ],
+        "explanation": "Neil explains that friends help us get through difficult periods, meaning manage to live through them."
+      },
+      {
+        "id": "obj-05",
+        "type": "single-choice",
+        "prompt": "If two friends have drifted away, what has happened?",
+        "targetExpression": "drift away",
+        "options": [
+          {
+            "id": "a",
+            "text": "They have gradually become less close."
+          },
+          {
+            "id": "b",
+            "text": "They have immediately become business partners."
+          },
+          {
+            "id": "c",
+            "text": "They have planned a trip together."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript defines 'drift away' as gradually moving apart until the connection weakens or breaks."
+      },
+      {
+        "id": "obj-06",
+        "type": "fill-blank",
+        "prompt": "Complete Max's description: Being the public face of a book called 'Billy No-Mates' was ______.",
+        "targetExpression": "a double-edged sword",
+        "answers": [
+          "a double-edged sword",
+          "double-edged sword"
+        ],
+        "explanation": "Max uses this exact phrase because the memorable title brought both favourable and unfavourable consequences."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "Why can social media make loneliness feel worse for some younger men?",
+        "targetExpression": "a double-edged sword",
+        "options": [
+          {
+            "id": "a",
+            "text": "It can make it look as if everyone else is enjoying time with friends."
+          },
+          {
+            "id": "b",
+            "text": "It guarantees that users will maintain close friendships."
+          },
+          {
+            "id": "c",
+            "text": "It only shows information about elderly people."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Neil says social media can make it seem that everyone else is having a great time with their mates except you."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete the warning about relationships: Without regular contact, close friends can gradually ______.",
+        "targetExpression": "drift away",
+        "answers": [
+          "drift away"
+        ],
+        "explanation": "This lightly transfers the transcript's explanation that friends can gradually move apart until their connection breaks."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words). How can friends help during a difficult period? Use 'get through'. Start: 'Friends can help us...'.",
+        "targetExpression": "get through",
+        "gradingCriteria": "First decide whether the answer says that friends can help someone manage a difficult period by listening, reassuring or supporting them. Then check whether 'get through' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words). Explain one reason adult friendships may become weaker. Use 'drift away'. You may use: 'less contact' or 'not nurture the relationship'.",
+        "targetExpression": "drift away",
+        "gradingCriteria": "First decide whether the answer explains that reduced contact or failure to nurture a relationship can gradually make friends less close. Then check whether 'drift away' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words). Rewrite without changing the main meaning: 'The memorable book title gave Max useful publicity, but it also made him publicly associated with having no friends.' Use 'a double-edged sword'.",
+        "targetExpression": "a double-edged sword",
+        "gradingCriteria": "First decide whether the answer preserves both the favourable publicity and the unfavourable public association with having no friends. Then check whether 'a double-edged sword' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). A teammate has moved to another city and is losing contact with the project group. Suggest one specific way the team can support the relationship. Use one phrase from this bank: 'maintain strong friendships', 'share life's ups and downs', 'when times are tough'.",
+        "targetExpression": "maintain strong friendships",
+        "gradingCriteria": "First decide whether the answer gives a specific, realistic action for keeping the teammate connected, such as regular calls, informal check-ins or shared activities, and uses at least one phrase from the bank. Then check whether the selected phrase from the bank is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences). Within the programme's topic, say what matters most for keeping an adult friendship strong and give one reason. Naturally use at least one of today's target expressions.",
+        "targetExpression": "maintain strong friendships",
+        "gradingCriteria": "First decide whether the answer gives a clear view about what helps adult friendships remain strong and supports it with one relevant reason. Then check whether at least one of today's target expressions is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Retell the episode in 80-120 words without looking at the full transcript. Use this structure: (1) topic - why making and keeping close male friends can be difficult; (2) two key ideas - how friends help during hard times and how relationships can gradually weaken; (3) conclusion or example - Max Dickins's experience and one possible way to meet people. Phrase bank: 'when times are tough', 'drift away', 'a double-edged sword'. Use at least two phrases naturally. Simple, clear English is enough; advanced vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "Close friends are important for sharing both good and difficult experiences and supporting mental wellbeing.",
+      "Friends can listen, reassure and advise us, helping us get through difficult periods.",
+      "The programme discusses a stereotype that men may be less likely to nurture friendships and may gradually drift away from friends.",
+      "Max Dickins realised he had no close male friend to ask to be his best man and wrote the book 'Billy No-Mates'.",
+      "The book title was a double-edged sword because it was memorable but publicly connected Max with having no friends.",
+      "Max suggests meeting people in third spaces such as sports clubs or reading groups, separate from home and work."
+    ]
+  }
+}
