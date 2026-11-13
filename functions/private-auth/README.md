@@ -297,6 +297,8 @@ All paths are relative to `/api/private-auth/`.
 | `POST clipboard/save` / `POST clipboard/delete` | Add or remove clipboard entries; owner or write grant only |
 | `POST just-write/list` / `POST just-write/save` / `POST just-write/delete` | List, create, revise and delete personal English writing; owner only |
 | `POST just-write/teach` | Stream English Markdown advice with `Accept: text/event-stream`; owner only |
+| `POST trading/ai/parse` | Owner-only natural-language trade extraction; no storage mutation |
+| `POST trading/ai/apply` | Owner-only, revision-checked atomic note/execution/timeline/review persistence |
 | `POST assessment/grade` | Independently grade and persist a retelling or one AI short-answer question |
 | `POST assessment/result` | Return the latest retelling result, or a question result when `questionId` is supplied |
 | `POST assessment/ask` | Answer a question about the current episode through the shared assessment model |
@@ -319,6 +321,36 @@ and episode request formats remain supported while clients migrate. Owners, acco
 `private-resources` grant and accounts with the legacy `english-learning` grant may sign resources.
 Revocation stops new signed URLs but cannot invalidate a URL already issued before its CDN type-A
 expiry.
+
+
+### AI trading journal
+
+The trading journal uses the existing Function Compute authentication, private content store,
+`DASHSCOPE_API_KEY`, `DASHSCOPE_BASE_URL`, `ASSESSMENT_MODEL`, and
+`ASSESSMENT_TIMEOUT_MS` settings. No separate trading AI API key or additional infrastructure is needed.
+Unlike `assessment/ask` and `just-write/teach`, `trading/ai/parse` is intentionally excluded from
+the private AI rate-limit middleware; ordinary authenticated endpoint validation and model timeouts still apply.
+
+The React trade editor first calls `trading/ai/parse` with the natural-language text, current
+trade ID (optional), and a time zone (`Asia/Shanghai`, `Asia/Tokyo`, or `UTC`). The backend
+resolves today/yesterday/the day before and explicit hour/minute expressions against its current
+clock, then sends the annotated statement and existing trade context to the shared Qwen model.
+The model returns an untrusted proposal, normalized and validated by the server. There is no
+automatic mutation before the owner explicitly applies the preview.
+
+`trading/ai/apply` commits the original statement, generated summary, structured proposal,
+unfilled-field warnings, executions, non-execution timeline events, and any applicable review
+in a single content-store update. Repeated requests with the same note ID are idempotent.
+Previously confirmed plans remain immutable. Retrospective records are marked as such; later
+natural-language supplements to previously missing historical plan fields generate new
+revision snapshots without replacing the original. Unknown execution price, quantity, or
+timestamp is retained as narrative rather than fabricated. Unknown fees are tracked with
+`feesComplete=false` and shown as a warning when displaying realized results. R calculations
+are deterministic and are based on recorded initial risk, not on language-model arithmetic.
+
+The existing advanced form and screenshot workflow remain available. The AI feature only
+organizes privately supplied trade information; it does not access the trading exchange or
+verify that a historical fill actually happened.
 
 ### English assessment and episode assistant
 
