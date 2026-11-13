@@ -38,7 +38,7 @@ const tags = (input) => {
   if (!Array.isArray(input) || input.length > 12) invalid("tags");
   return [...new Set(input.map((tag) => text(tag, 32)).filter(Boolean))];
 };
-function planFrom(input) {
+export function planFrom(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) invalid("plan");
   return {
     symbol: text(input.symbol ?? "", 40).toUpperCase(),
@@ -65,7 +65,7 @@ function planFrom(input) {
     holdingPeriod: text(input.holdingPeriod ?? "", 60),
   };
 }
-function confirmable(plan) {
+export function confirmable(plan) {
   if (!plan.symbol || !plan.strategy || !plan.thesis || !plan.trigger || !plan.invalidation) {
     throw new TradeError(400, "INCOMPLETE_PLAN", "请填写标的、策略、交易逻辑、触发条件及失效条件");
   }
@@ -82,8 +82,8 @@ function confirmable(plan) {
     throw new TradeError(400, "INVALID_TARGET", "目标价必须位于交易方向的有利一侧");
   }
 }
-const emptyDocument = () => ({ schemaVersion: 1, entries: [] });
-function validDocument(document) {
+export const emptyDocument = () => ({ schemaVersion: 1, entries: [] });
+export function validDocument(document) {
   return document?.schemaVersion === 1 && Array.isArray(document.entries) && document.entries.length <= MAX_TRADES &&
     document.entries.every((trade) => typeof trade.id === "string" && ID.test(trade.id) &&
       Number.isSafeInteger(trade.revision) && trade.revision >= 1 &&
@@ -91,15 +91,15 @@ function validDocument(document) {
       Array.isArray(trade.attachments) && Array.isArray(trade.events));
 }
 const demandId = (id) => { if (typeof id !== "string" || !ID.test(id)) invalid("id"); return id; };
-function getTrade(document, id) {
+export function getTrade(document, id) {
   const trade = document.entries.find((item) => item.id === demandId(id));
   if (!trade) throw new TradeError(404, "TRADE_NOT_FOUND", "交易记录不存在");
   return trade;
 }
-function requireRevision(trade, revision) {
+export function requireRevision(trade, revision) {
   if (trade.revision !== revision) throw new TradeError(409, "STALE_REVISION", "记录已被其他操作修改，请刷新后重试");
 }
-function executionFrom(input) {
+export function executionFrom(input) {
   if (!input || typeof input !== "object") invalid("execution");
   return {
     id: demandId(input.id),
@@ -138,6 +138,7 @@ export function calculateTrade(trade) {
   const realizedPnl = Math.round(realized * 1e8) / 1e8;
   return {
     remaining, averageEntry: remaining ? basis : null,
+    feesComplete: trade.executions.every((e) => e.feeKnown !== false),
     realizedPnl,
     initialRisk: risk || null, realizedR: entries > 0 && risk > 0 ? realizedPnl / risk : null,
     status: trade.status === "draft" || trade.status === "skipped" ? trade.status :
@@ -146,7 +147,7 @@ export function calculateTrade(trade) {
 }
 function withMetrics(trade) { return { ...trade, metrics: calculateTrade(trade) }; }
 const nowIso = (nowSeconds) => new Date(nowSeconds * 1000).toISOString();
-const recordEvent = (trade, type, at, previous = null) => {
+export const recordEvent = (trade, type, at, previous = null) => {
   if (trade.events.length >= 300) throw new TradeError(409, "HISTORY_FULL", "修改历史已达上限");
   trade.events.push({ type, at, ...(previous === null ? {} : { previous }) });
   trade.updatedAt = at;
@@ -281,8 +282,8 @@ export async function handleTrading({ route, body, user, config, contentStore, n
       const input = body.review;
       if (!input || typeof input !== "object") invalid("review");
       const review = {
-        expectation: choice(input.expectation, ["yes", "partial", "no"], "expectation"),
-        discipline: choice(input.discipline, ["full", "partial", "violated"], "discipline"),
+        expectation: choice(input.expectation, ["yes", "partial", "no", "unknown"], "expectation"),
+        discipline: choice(input.discipline, ["full", "partial", "violated", "unknown"], "discipline"),
         score: input.score,
         emotions: tags(input.emotions ?? []),
         mistakes: tags(input.mistakes ?? []),
@@ -291,7 +292,7 @@ export async function handleTrading({ route, body, user, config, contentStore, n
         replay: text(input.replay ?? "", 3000),
         updatedAt: at,
       };
-      if (!Number.isInteger(review.score) || review.score < 1 || review.score > 5) invalid("score");
+      if (review.score !== null && (!Number.isInteger(review.score) || review.score < 1 || review.score > 5)) invalid("score");
       recordEvent(trade, "review_saved", at, trade.review ?? null);
       trade.review = review;
     } else if (route === "trading/image/init") {
