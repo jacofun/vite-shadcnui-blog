@@ -237,6 +237,7 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
         </header>
         {!loading && <TradingAiComposer session={session} trade={trade} onApplied={updated => {
           resetFromTrade(updated);
+          setReview(updated.review ?? newReview());
           if (!trade) {
             allowedToLeave.current = true;
             navigate(`/resources/trading/${updated.id}`, { replace: true });
