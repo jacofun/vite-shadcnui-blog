@@ -27,7 +27,7 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
   }, [session, refresh]);
   const filtered = useMemo(() => entries.filter((entry) =>
     (filter === "all" || entry.status === filter) &&
-    [entry.plan.symbol, entry.plan.name, entry.plan.strategy].some((v) => v.toLowerCase().includes(search.toLowerCase().trim())),
+    [entry.plan.symbol, entry.plan.name, entry.plan.strategy, ...(entry.notes ?? []).map(n => n.summary)].some((v) => v.toLowerCase().includes(search.toLowerCase().trim())),
   ), [entries, filter, search]);
   const finished = entries.filter((e) => e.status === "closed" && e.plan.recordType === "live");
   const reviewed = entries.filter((e) => e.review);
@@ -84,6 +84,8 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
                   {trade.review && <span className="text-xs text-emerald-300">已复盘</span>}
                 </div>
                 <p className="mt-2 text-sm text-slate-400">{[trade.plan.name, trade.plan.strategy, trade.plan.direction === "long" ? "做多" : "做空"].filter(Boolean).join(" · ")}</p>
+                {(trade.notes ?? []).length > 0 && <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-300">{trade.notes?.at(-1)?.summary}</p>}
+                {trade.metrics.feesComplete === false && <p className="mt-1 text-xs text-amber-200">部分手续费待核实</p>}
                 <p className="mt-2 text-xs text-slate-500">{new Date(trade.updatedAt).toLocaleString("zh-CN")}</p>
               </div>
               <div className="flex shrink-0 items-center gap-4">

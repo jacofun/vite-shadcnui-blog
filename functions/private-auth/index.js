@@ -1,6 +1,8 @@
 import { handlePublishing, PublishingError } from "./publishing.js";
 import { createPublicPublisher } from "./public-publishing.js";
 import { handleTrading, TradeError } from "./trading.js";
+import { parseTradingNarrative, TradingAiError } from "./trading-ai.js";
+import { applyAiTradingNarrative } from "./trading-ai-store.js";
 import {
   createCipheriv,
   createDecipheriv,
@@ -400,7 +402,7 @@ function routeName(path, cookiePath, persistent = false) {
     "just-write/list", "just-write/save", "just-write/delete", "just-write/teach",
     "trading/list", "trading/get", "trading/save", "trading/confirm", "trading/revise",
     "trading/execution/add", "trading/execution/update", "trading/skip", "trading/review",
-    "trading/image/init", "trading/image/complete",
+    "trading/image/init", "trading/image/complete", "trading/ai/parse", "trading/ai/apply",
     "assessment/grade", "assessment/result", "assessment/ask",
     "public/assistant/ask", "health", "public/content",
     "publishing/list", "publishing/save", "publishing/publish", "publishing/unpublish", "publishing/sync-public", "publishing/upload-init", "publishing/upload-complete",
@@ -411,6 +413,20 @@ function routeName(path, cookiePath, persistent = false) {
   );
   return knownRoutes.find((route) =>
     normalized === `/${route}` || normalized === `${apiPrefix}/${route}`);
+}
+
+async function handleTradingAiRoute({ route, body, user, config, contentStore, nowSeconds, randomBytesImpl, env, fetchImpl, signal }) {
+  if (user.role !== "owner") throw new TradeError(403, "MISSING_PERMISSION", "交易日志仅限所有者");
+  if (route === "trading/ai/apply") {
+    return applyAiTradingNarrative({ body, user, config, contentStore, nowSeconds, randomBytesImpl });
+  }
+  if (route !== "trading/ai/parse") throw new TradeError(404, "NOT_FOUND", "AI交易接口不存在");
+  const trade = body.id ? (await handleTrading({
+    route: "trading/get", body: { id: body.id }, user, config, contentStore, nowSeconds, randomBytesImpl,
+  })).trade : null;
+  return parseTradingNarrative({
+    body, trade, nowSeconds, modelConfig: loadAssessmentModelConfig(env), fetchImpl, signal,
+  });
 }
 
 function usesPrivateContentStore(route) {
@@ -2993,6 +3009,11 @@ export function createHandler({
             route, body, user, contentStore: privateContentStore, nowSeconds, randomBytesImpl, env, fetchImpl,
             signal: request.signal, stream: justWriteStream,
           })
+          : route.startsWith("trading/ai/")
+          ? await handleTradingAiRoute({
+            route, body, user, config, contentStore: privateContentStore, nowSeconds,
+            randomBytesImpl, env, fetchImpl, signal: request.signal,
+          })
           : route.startsWith("trading/")
           ? await handleTrading({
             route, body, user, config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
@@ -3030,7 +3051,7 @@ export function createHandler({
         "set-cookie": clearCookie(config),
       });
     } catch (error) {
-      const knownError = error instanceof HttpError || error instanceof TradeError;
+      const knownError = error instanceof HttpError || error instanceof TradeError || error instanceof TradingAiError;
       const statusCode = knownError ? error.statusCode : 500;
       const code = knownError ? error.code : "INTERNAL_ERROR";
       const message = statusCode >= 500 ? "Private authentication service is unavailable" : error.message;
@@ -3687,6 +3708,12 @@ async function persistentRequest(options) {
     const stream = route === "just-write/teach" && acceptsEventStream(request);
     const result = await handleJustWrite({ route, body, user, contentStore, nowSeconds, randomBytesImpl, env, fetchImpl, signal: request.signal, stream });
     return stream ? streamResponse(config, result) : jsonResponse(config, 200, result);
+  }
+  if (route.startsWith("trading/ai/")) {
+    return jsonResponse(config, 200, await handleTradingAiRoute({
+      route, body, user, config, contentStore, nowSeconds, randomBytesImpl,
+      env, fetchImpl, signal: request.signal,
+    }));
   }
   if (route.startsWith("trading/")) {
     return jsonResponse(config, 200, await handleTrading({
