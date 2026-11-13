@@ -136,3 +136,23 @@ test("stale revision and non-owner writes fail closed", async () => {
     e => e.code === "STALE_REVISION");
   await assert.rejects(apply(body(), { id: "member", role: "member" }), e => e.statusCode === 403);
 });
+
+test("retroactive follow-up can fill missing initial risk without rewriting its first snapshot", async () => {
+  const { apply } = harness();
+  const first = await apply(body(proposal({
+    plan: { symbol: "BTCUSDT", direction: "short" },
+  })));
+  assert.equal(first.trade.metrics.realizedR, null);
+  assert.equal(first.trade.planHistory[0].plan.plannedRisk, null);
+  const second = await apply({
+    ...body(proposal({
+      plan: { plannedRisk: 1, entry: 71500, stop: 72500, strategy: "趋势" },
+      executions: [], events: [], review: null,
+    }), "04"),
+    id: id("10"), revision: first.trade.revision,
+  });
+  assert.equal(second.trade.planHistory[0].plan.plannedRisk, null);
+  assert.equal(second.trade.plan.plannedRisk, 1);
+  assert.equal(second.trade.planHistory[1].origin, "retrospective_ai_supplement");
+  assert.equal(second.trade.metrics.realizedR, 2);
+});
