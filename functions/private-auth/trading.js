@@ -132,9 +132,16 @@ export function calculateTrade(trade) {
       if (remaining < 1e-8) { remaining = 0; basis = 0; }
     }
   }
-  const risk = trade.planHistory[0]?.plan.plannedRisk ??
-    ((trade.planHistory[0]?.plan.plannedQuantity ?? 0) *
-      Math.abs((trade.planHistory[0]?.plan.entry ?? 0) - (trade.planHistory[0]?.plan.stop ?? 0)));
+  const originalPlan = trade.planHistory[0]?.plan;
+  let risk = originalPlan?.plannedRisk ??
+    ((originalPlan?.plannedQuantity ?? 0) *
+      Math.abs((originalPlan?.entry ?? 0) - (originalPlan?.stop ?? 0)));
+  // Retrospectively imported trades may acquire missing original details later.
+  // The original import snapshot stays immutable and subsequent additions are versioned.
+  if (!risk && trade.planHistory[0]?.origin === "retrospective_ai_record") {
+    risk = trade.plan.plannedRisk ??
+      ((trade.plan.plannedQuantity ?? 0) * Math.abs((trade.plan.entry ?? 0) - (trade.plan.stop ?? 0)));
+  }
   const realizedPnl = Math.round(realized * 1e8) / 1e8;
   return {
     remaining, averageEntry: remaining ? basis : null,
