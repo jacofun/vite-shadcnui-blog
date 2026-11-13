@@ -156,3 +156,14 @@ test("retroactive follow-up can fill missing initial risk without rewriting its 
   assert.equal(second.trade.planHistory[1].origin, "retrospective_ai_supplement");
   assert.equal(second.trade.metrics.realizedR, 2);
 });
+
+test("repeat narration with a new note ID does not double count identical fills", async () => {
+  const { apply } = harness();
+  const one = proposal({ executions: [{ action: "entry", at: "2026-11-12T08:00:00Z",
+    price: 71500, quantity: 0.001, fee: 0, quantityMode: "explicit" }], review: null });
+  const first = await apply(body(one, "01"));
+  const second = await apply({ ...body(one, "02"), id: id("10"), revision: first.trade.revision });
+  assert.equal(second.trade.executions.length, 1);
+  assert.equal(second.trade.notes.length, 2);
+  assert.ok(second.missing.some(message => message.includes("重复计入")));
+});
