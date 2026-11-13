@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { Link, useBlocker, useNavigate, useParams } from "react-router-dom";
 
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
+import TradingAiComposer from "@/components/resources/TradingAiComposer";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
 import { signPrivateResourcePaths, type PrivateAuthSession } from "@/lib/privateAuth";
 import { uploadPrivateResourceFile } from "@/lib/privateResourceUpload";
@@ -66,6 +67,7 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [tab, setTab] = useState<Tab>("plan");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [execution, setExecution] = useState<TradeExecution>(newExecution);
   const [editExecution, setEditExecution] = useState(false);
   const [review, setReview] = useState<Omit<TradeReview, "updatedAt">>(newReview);
@@ -230,8 +232,21 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
             <p className="text-xs text-slate-500">已实现盈亏 · {trade.plan.currency}</p>
             <p className="mt-1 text-lg font-semibold tabular-nums">{formatPrice(trade.metrics.realizedPnl)}</p>
             <p className="text-xs text-slate-400">{trade.metrics.realizedR === null ? "暂无可计算 R" : `${formatPrice(trade.metrics.realizedR)}R`}</p>
+          {trade.metrics.feesComplete === false && <p className="mt-1 text-xs text-amber-200">部分手续费未知，净收益待核实</p>}
           </div>}
         </header>
+        {!loading && <TradingAiComposer session={session} trade={trade} onApplied={updated => {
+          resetFromTrade(updated);
+          if (!trade) {
+            allowedToLeave.current = true;
+            navigate(`/resources/trading/${updated.id}`, { replace: true });
+          }
+        }} />}
+        <button type="button" onClick={() => setShowAdvanced(value => !value)}
+          className="mt-5 rounded-xl border border-white/15 px-4 py-2.5 text-sm text-slate-300 hover:border-cyan-300/30">
+          {showAdvanced ? "收起高级表单" : "展开高级表单与行情截图"}
+        </button>
+        <div className={showAdvanced ? "" : "hidden"}>
         <div className="mt-7 grid grid-cols-3 gap-2">
           {([{ id: "plan", label: "01 交易计划" }, { id: "execution", label: "02 交易执行" }, { id: "review", label: "03 复盘总结" }] as const).map((item) =>
             <button key={item.id} type="button" disabled={!trade && item.id !== "plan"} onClick={() => setTab(item.id)}
@@ -360,7 +375,7 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
               <div className="grid gap-4 sm:grid-cols-3">
                 <InputField title="是否符合预期"><Select value={review.expectation} onChange={(v) => setReview((r) => ({ ...r, expectation: v as TradeReview["expectation"] }))} options={[{ label: "符合", value: "yes" }, { label: "部分符合", value: "partial" }, { label: "不符合", value: "no" }]} /></InputField>
                 <InputField title="计划执行纪律"><Select value={review.discipline} onChange={(v) => setReview((r) => ({ ...r, discipline: v as TradeReview["discipline"] }))} options={[{ label: "完全遵守", value: "full" }, { label: "部分偏离", value: "partial" }, { label: "明显违反", value: "violated" }]} /></InputField>
-                <InputField title="执行评分（1～5）"><Select value={String(review.score)} onChange={(v) => setReview((r) => ({ ...r, score: Number(v) }))} options={[1,2,3,4,5].map((v) => ({ label: String(v), value: String(v) }))} /></InputField>
+                <InputField title="执行评分（1～5）"><Select value={String(review.score ?? "")} onChange={(v) => setReview((r) => ({ ...r, score: v ? Number(v) : null }))} options={[{ label: "未评分", value: "" }, ...[1,2,3,4,5].map((v) => ({ label: String(v), value: String(v) }))]} /></InputField>
               </div>
               <div><p className="text-xs font-medium text-slate-300">情绪状态</p><TagChoices values={review.emotions} options={emotionOptions} onChange={(v) => setReview((r) => ({ ...r, emotions: v }))} /></div>
               <div><p className="text-xs font-medium text-slate-300">错误归因</p><TagChoices values={review.mistakes} options={mistakeOptions} onChange={(v) => setReview((r) => ({ ...r, mistakes: v }))} /></div>
@@ -390,6 +405,7 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
           </button>
         </section>}
         {trade && <p className="mt-6 text-xs leading-6 text-slate-500">计划首次确认后保留原版，后续修订和成交通知写入历史。该模块仅供私人交易记录与复盘使用。</p>}
+        </div>
       </div>
     </main>
   );
