@@ -42,9 +42,9 @@ export interface TradeExecution {
   note: string;
 }
 export interface TradeReview {
-  expectation: "yes" | "partial" | "no";
-  discipline: "full" | "partial" | "violated";
-  score: number;
+  expectation: "yes" | "partial" | "no" | "unknown";
+  discipline: "full" | "partial" | "violated" | "unknown";
+  score: number | null;
   emotions: string[];
   mistakes: string[];
   outcome: string;
@@ -67,6 +67,7 @@ export interface TradeMetrics {
   initialRisk: number | null;
   realizedR: number | null;
   status: TradeStatus;
+  feesComplete?: boolean;
 }
 export interface Trade {
   id: string;
@@ -79,10 +80,58 @@ export interface Trade {
   executions: TradeExecution[];
   attachments: TradeAttachment[];
   events: Array<{ type: string; at: string; previous?: unknown }>;
+  notes?: TradeAiNote[];
+  timeline?: TradeAiTimelineEvent[];
   review?: TradeReview;
   skip?: { kind: "abandoned" | "missed"; reason: string; at: string };
   metrics: TradeMetrics;
 }
+
+export interface TradeAiNote {
+  id: string;
+  raw: string;
+  summary: string;
+  phase: "plan" | "execution" | "review" | "mixed" | "note";
+  referenceAt: string;
+  timezone: string;
+  createdAt: string;
+  missing: string[];
+  warnings: string[];
+}
+export interface TradeAiTimelineEvent {
+  id: string;
+  noteId: string;
+  type: string;
+  at: string | null;
+  summary: string;
+  recordedAt: string;
+}
+export interface TradeAiProposal {
+  phase: TradeAiNote["phase"];
+  summary: string;
+  plan: Partial<TradePlan>;
+  executions: Array<{
+    action: "entry" | "exit";
+    at: string | null;
+    price: number | null;
+    quantity: number | null;
+    quantityMode: "explicit" | "all" | "half" | "unknown";
+    fee: number | null;
+    note: string;
+  }>;
+  events: Array<{ kind: string; at: string | null; summary: string }>;
+  review: Omit<TradeReview, "updatedAt"> | null;
+  missing: string[];
+  warnings: string[];
+}
+export interface TradeAiParseResponse {
+  proposal: TradeAiProposal;
+  referenceAt: string;
+  timezone: string;
+  mentions: Array<{ original: string; resolved: string }>;
+  model: string;
+}
+
 export interface ImageTicket {
   imageId: string;
   path: string;
@@ -139,6 +188,31 @@ export const initTradeImage = (session: PrivateAuthSession, trade: Trade, params
   tradingRequest<ImageTicket>(session, "image/init", { id: trade.id, revision: trade.revision, ...params });
 export const completeTradeImage = (session: PrivateAuthSession, trade: Trade, imageId: string) =>
   tradingRequest<{ trade: Trade }>(session, "image/complete", { id: trade.id, revision: trade.revision, imageId });
+
+
+export const parseTradingNarrative = (
+  session: PrivateAuthSession,
+  text: string,
+  timezone: string,
+  id?: string,
+) => tradingRequest<TradeAiParseResponse>(session, "ai/parse", { text, timezone, ...(id ? { id } : {}) });
+
+export const applyTradingNarrative = (
+  session: PrivateAuthSession,
+  input: {
+    id?: string;
+    revision?: number;
+    createId: string;
+    noteId: string;
+    raw: string;
+    referenceAt: string;
+    timezone: string;
+    proposal: TradeAiProposal;
+    defaultRisk?: number;
+  },
+) => tradingRequest<{ trade: Trade; applied: { executions: number; events: number; duplicate: boolean }; missing: string[] }>(
+  session, "ai/apply", input,
+);
 
 export function createDraftPlan(): TradePlan {
   return {
