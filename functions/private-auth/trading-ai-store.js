@@ -23,11 +23,13 @@ export async function applyAiTradingNarrative({ body, user, config, contentStore
   const path = config.privateRoot + "/.trading/owner/entries.json";
   let result;
   await contentStore.updateJson(path, { missing: emptyDocument(), validate: validDocument }, document => {
-    const existing = body.id ? getTrade(document, body.id) : null;
+    const existing = body.id ? getTrade(document, body.id) :
+      (isId(body.createId) ? document.entries.find(t => t.id === body.createId) : null);
     if (existing?.notes?.some(n => n.id === body.noteId)) {
       result = { trade: metrics(existing), applied: { executions: 0, events: 0, duplicate: true }, missing: [] };
       return document;
     }
+    if (existing && !body.id) error("TRADE_CONFLICT", "交易创建编号已存在，请刷新记录", 409);
     if (existing) requireRevision(existing, body.revision);
     let trade = existing;
     const isRetroactive = proposal.executions.length > 0;
