@@ -63,6 +63,31 @@ export async function applyAiTradingNarrative({ body, user, config, contentStore
       trade.plan = planFrom({ ...trade.plan, ...proposal.plan });
       recordEvent(trade, "ai_draft_updated", now);
     }
+    let blockedPlanChanges = false;
+    if (existing && existing.status !== "draft" && Object.keys(proposal.plan).length) {
+      const retrospective = trade.planHistory[0]?.origin === "retrospective_ai_record";
+      const supplement = { ...trade.plan };
+      let supplemented = false;
+      for (const [key, value] of Object.entries(proposal.plan)) {
+        if (JSON.stringify(trade.plan[key]) === JSON.stringify(value)) continue;
+        const oldValue = trade.plan[key];
+        const blank = oldValue === null || oldValue === undefined || oldValue === "" ||
+          (Array.isArray(oldValue) && oldValue.length === 0);
+        if (retrospective && blank && key !== "direction" && key !== "symbol") {
+          supplement[key] = value;
+          supplemented = true;
+        } else {
+          blockedPlanChanges = true;
+        }
+      }
+      if (supplemented) {
+        if (trade.planHistory.length >= 30) error("HISTORY_FULL", "计划修订数量达到上限", 409);
+        trade.plan = planFrom(supplement);
+        trade.planHistory.push({ version: trade.planHistory.length + 1, confirmedAt: now,
+          plan: structuredClone(trade.plan), origin: "retrospective_ai_supplement" });
+        recordEvent(trade, "retrospective_plan_supplemented", now);
+      }
+    }
     if (trade.plan.entry && trade.plan.stop &&
         (trade.plan.direction === "long" ? trade.plan.stop >= trade.plan.entry : trade.plan.stop <= trade.plan.entry)) {
       error("INVALID_STOP", "止损位置与交易方向不符");
@@ -148,8 +173,8 @@ export async function applyAiTradingNarrative({ body, user, config, contentStore
     } else if (proposal.review) {
       missing.push("尚未结束交易，复盘描述已保存到自然语言记录");
     }
-    if (existing && existing.status !== "draft" && Object.keys(proposal.plan).length) {
-      missing.push("原交易计划已锁定；新的计划描述仅作为笔记保存，需使用计划修订功能正式变更");
+    if (blockedPlanChanges) {
+      missing.push("已确认的原计划不可覆盖；与原计划冲突的内容已保留在原始记录中");
     }
     note.missing = [...new Set([...note.missing, ...missing])].slice(0, 20);
     recordEvent(trade, "ai_narrative_saved", now);
