@@ -142,6 +142,11 @@ export async function applyAiTradingNarrative({ body, user, config, contentStore
         missing.push("有一笔平仓数量超过已登记持仓，未计入盈亏");
         continue;
       }
+      if (trade.executions.some(e => e.action === proposed.action && e.at === proposed.at &&
+          Math.abs(e.price - proposed.price) < 1e-8 && Math.abs(e.quantity - qty) < 1e-8)) {
+        missing.push("同一时间、价格与数量的成交已经存在，本次未重复计入");
+        continue;
+      }
       if (trade.executions.length >= 150) error("EXECUTION_LIMIT", "成交笔数达到上限", 409);
       const execution = executionFrom({
         id: randomBytesImpl(16).toString("hex"),
