@@ -118,7 +118,8 @@ test("unknown execution times are preserved as notes but not booked as fills", a
 
 test("AI cannot overwrite a previously confirmed plan", async () => {
   const { apply } = harness();
-  const initial = await apply(body(proposal({ executions: [] }), "01"));
+  const initial = await apply(body(proposal({ executions: [], plan: { symbol: "BTCUSDT", direction: "short", strategy: "趋势", thesis: "顺势做空", trigger: "跌破关键位", invalidation: "结构反转", entry: 71500, stop: 72500, plannedRisk: 1 } }), "01"));
+  assert.equal(initial.trade.status, "planned");
   const original = initial.trade.plan.entry;
   const changed = await apply({
     ...body(proposal({ executions: [], plan: { entry: 80000, direction: "long" } }), "02"),
