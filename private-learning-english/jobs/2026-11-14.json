@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-14",
+  "episodeId": "230615-the-benefits-of-doing-nothing",
+  "title": "The benefits of doing nothing",
+  "publishedAt": "2023-06-15",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2023/ep-230615",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230615_6min_english_nothing_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230615_6min_english_nothing.pdf",
+  "reason": "从昨日的金融科技与能源决策主题轮换到生产力和工作生活平衡。节目讨论休息、团队协作、备用能力与注意力恢复，适合联系平台值班、故障响应、项目节奏和工程团队韧性；练习围绕六个高频表达重复调用，从原文支撑逐步过渡到改写、受限工作场景应用和有限自由表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "生产力",
+    "工作生活平衡",
+    "团队协作",
+    "团队韧性",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "kick back",
+        "meaning": "stop doing things and relax completely",
+        "usage": "After the release, the team took an evening to kick back."
+      },
+      {
+        "expression": "at any given time",
+        "meaning": "at any particular moment",
+        "usage": "At any given time, one engineer is available to handle urgent incidents."
+      },
+      {
+        "expression": "work together",
+        "meaning": "cooperate with other people to achieve a shared result",
+        "usage": "Developers and operations staff work together during a major outage."
+      },
+      {
+        "expression": "ready to step in",
+        "meaning": "prepared to help or take action when needed",
+        "usage": "A backup engineer is ready to step in if the primary responder is unavailable."
+      },
+      {
+        "expression": "teach someone a thing or two",
+        "meaning": "show someone useful lessons based on knowledge or experience",
+        "usage": "A small pilot can teach us a thing or two about the real operational risks."
+      },
+      {
+        "expression": "switch off",
+        "meaning": "stop worrying or thinking about work and relax",
+        "usage": "It can be difficult to switch off after a stressful production incident."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "single-choice",
+        "prompt": "What does Beth mean when she says she is 'kicking back'?",
+        "targetExpression": "kick back",
+        "options": [
+          {
+            "id": "a",
+            "text": "She is stopping work and relaxing completely."
+          },
+          {
+            "id": "b",
+            "text": "She is beginning a difficult new task."
+          },
+          {
+            "id": "c",
+            "text": "She is exercising as quickly as possible."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The vocabulary review defines 'kick back' as stopping what you are doing and relaxing completely."
+      },
+      {
+        "id": "obj-02",
+        "type": "fill-blank",
+        "prompt": "Complete the transcript-based description: Roughly half of the ant colony is inactive ______.",
+        "targetExpression": "at any given time",
+        "answers": [
+          "at any given time",
+          "at a given time"
+        ],
+        "explanation": "Professor Dan Charbonneau says that roughly half the colony is inactive at any given time, meaning at any particular moment."
+      },
+      {
+        "id": "obj-03",
+        "type": "single-choice",
+        "prompt": "Why might some inactive ants still be useful to the colony?",
+        "targetExpression": "ready to step in",
+        "options": [
+          {
+            "id": "a",
+            "text": "They may be ready to help if disease or disaster strikes."
+          },
+          {
+            "id": "b",
+            "text": "They permanently prevent every other ant from working."
+          },
+          {
+            "id": "c",
+            "text": "They leave the colony whenever work becomes difficult."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme suggests that inactive ants may form a reserve that can help when disease or disaster affects the colony."
+      },
+      {
+        "id": "obj-04",
+        "type": "fill-blank",
+        "prompt": "Complete the reusable support phrase: A reserve worker can stay ______ if the team suddenly needs help.",
+        "targetExpression": "ready to step in",
+        "answers": [
+          "ready to step in"
+        ],
+        "explanation": "This lightly transfers the transcript's description of reserve ants prepared to take action when trouble occurs."
+      },
+      {
+        "id": "obj-05",
+        "type": "single-choice",
+        "prompt": "If ants can 'teach us a thing or two' about relaxing, what does the phrase suggest?",
+        "targetExpression": "teach someone a thing or two",
+        "options": [
+          {
+            "id": "a",
+            "text": "Their behaviour may give humans some useful lessons."
+          },
+          {
+            "id": "b",
+            "text": "They can formally examine human students."
+          },
+          {
+            "id": "c",
+            "text": "They prove that humans should never work."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Neil uses the phrase to suggest that ant behaviour may offer humans useful lessons about rest."
+      },
+      {
+        "id": "obj-06",
+        "type": "fill-blank",
+        "prompt": "Complete the collaboration phrase from the transcript: Ants appear to ______ for the good of the group.",
+        "targetExpression": "work together",
+        "answers": [
+          "work together"
+        ],
+        "explanation": "The programme describes the idealised view of ants as a society whose members cooperate for the group."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "In a world of constant stimulation, what does it mean to 'switch off'?",
+        "targetExpression": "switch off",
+        "options": [
+          {
+            "id": "a",
+            "text": "To stop worrying or thinking about things and relax."
+          },
+          {
+            "id": "b",
+            "text": "To search continuously for the next new thing."
+          },
+          {
+            "id": "c",
+            "text": "To increase the amount of work you are doing."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The transcript explains 'switch off' as stopping worry or thought for a while so that you can relax."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete the advice based on the programme: Instead of constantly swiping and scrolling, allow yourself time to ______.",
+        "targetExpression": "switch off",
+        "answers": [
+          "switch off"
+        ],
+        "explanation": "The programme contrasts constant stimulation with allowing time to stop worrying, thinking and seeking the next new thing."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words). Why might inactive ants still help their colony? Use 'ready to step in'. Start: 'They may be ready to step in when...'.",
+        "targetExpression": "ready to step in",
+        "gradingCriteria": "First decide whether the answer says that inactive ants may act as a reserve when disease or disaster strikes. Then check whether 'ready to step in' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words). Explain how the ant colony challenges the idea that every member must always be busy. Use 'at any given time'. You may use: 'half the colony' and 'still functions'.",
+        "targetExpression": "at any given time",
+        "gradingCriteria": "First decide whether the answer explains that around half the colony can be inactive at a particular moment while the colony still operates. Then check whether 'at any given time' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words). Rewrite without changing the main meaning: 'Humans may learn useful lessons about relaxing from animals.' Use 'teach someone a thing or two'.",
+        "targetExpression": "teach someone a thing or two",
+        "gradingCriteria": "First decide whether the answer preserves the idea that animal behaviour may provide humans with useful lessons about rest. Then check whether 'teach someone a thing or two' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). Your platform team has finished a stressful release. Suggest one limited way to recover without neglecting urgent support. Use one phrase from this bank: 'kick back', 'ready to step in', 'switch off'.",
+        "targetExpression": "switch off",
+        "gradingCriteria": "First decide whether the answer suggests a specific recovery action while keeping reasonable cover for urgent support and uses at least one phrase from the bank. Then check whether 'switch off' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences). Within the programme's topic, say whether short periods of boredom or inactivity can improve people's work and give one reason. Naturally use at least one of today's target expressions.",
+        "targetExpression": "kick back",
+        "gradingCriteria": "First decide whether the answer gives a clear view about whether short periods of boredom or inactivity can help work, supports it with one relevant reason and naturally uses at least one of today's target expressions. Then check whether 'kick back' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Retell the episode in 80-120 words without looking at the full transcript. Use this structure: (1) topic - why doing nothing may have benefits; (2) two key ideas - inactive ants as a reserve and boredom as a source of curiosity; (3) conclusion or example - how people can make space to relax. Phrase bank: 'at any given time', 'ready to step in', 'switch off'. Use at least two phrases naturally. Simple, clear English is enough; advanced vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "Even animals known for being busy spend significant periods doing nothing.",
+      "Research on rock ants suggests that roughly half of a colony is inactive at any given time.",
+      "One possible explanation is that inactive ants form a reserve ready to help if disease or disaster strikes.",
+      "Psychologist Sandi Mann argues that productivity is overrated and boredom can encourage curiosity and invention.",
+      "Constant stimulation, swiping and scrolling make it harder for people to relax and tolerate boredom.",
+      "The programme suggests that switching off and slowing down can help people experience the benefits of boredom."
+    ]
+  }
+}
