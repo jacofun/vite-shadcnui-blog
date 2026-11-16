@@ -43,6 +43,63 @@
 .home-feature-image {
   height: clamp(375px, 39vw, 435px);
 }
+/* Match the final feature dimensions while waiting for the public OSS snapshot.
+   Showing local text content here would cause a visible hero replacement. */
+.home-feature-loading {
+  height: clamp(375px, 39vw, 435px);
+  background: linear-gradient(135deg, #14252e, #10191f 70%);
+  border: 1px solid var(--home-border);
+}
+.home-feature-loading-copy {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 35px 38px;
+  width: 100%;
+}
+.home-skeleton {
+  display: block;
+  border-radius: 5px;
+  background: linear-gradient(110deg, #263741 10%, #344751 50%, #263741 90%);
+  background-size: 200% 100%;
+  animation: home-skeleton-shimmer 1.8s ease-in-out infinite;
+}
+.home-skeleton-eyebrow {
+  width: 96px;
+  height: 12px;
+  margin-bottom: 22px;
+}
+.home-skeleton-title {
+  width: min(72%, 540px);
+  height: 34px;
+}
+.home-skeleton-title-short {
+  width: min(45%, 330px);
+  height: 34px;
+  margin-top: 12px;
+}
+.home-skeleton-description {
+  width: min(68%, 530px);
+  height: 14px;
+  margin-top: 30px;
+}
+.home-skeleton-selected-meta {
+  width: 75px;
+  height: 11px;
+}
+.home-skeleton-selected-title {
+  width: 90%;
+  height: 18px;
+  margin-top: 13px;
+}
+.home-skeleton-selected-title-short {
+  width: 62%;
+  height: 18px;
+  margin-top: 10px;
+}
+@keyframes home-skeleton-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
 .home-feature-image > img {
   position: absolute;
   inset: 0;
@@ -317,6 +374,16 @@
   .home-feature-image {
     height: 390px;
   }
+  .home-feature-loading {
+    height: 390px;
+  }
+  .home-feature-loading-copy {
+    padding: 26px;
+  }
+  .home-skeleton-title,
+  .home-skeleton-title-short {
+    height: 26px;
+  }
   .home-feature h1 {
     font-size: 31px;
     line-height: 1.35;
@@ -382,11 +449,18 @@
   .home-feature-image .home-feature-copy {
     padding: 23px;
   }
+  .home-feature-loading-copy {
+    padding: 23px;
+  }
   .home-feature-text .home-feature-copy {
     padding: 29px 23px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .home-skeleton {
+    animation: none;
+    background: #2a3d47;
+  }
   .home-feature-image > img {
     transition: none;
   }
