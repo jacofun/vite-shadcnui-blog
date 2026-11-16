@@ -24,10 +24,33 @@ function datetime(value: string | null | undefined, timezone = "Asia/Shanghai"):
 const phaseLabels: Record<string, string> = {
   plan: "交易计划", execution: "执行过程", review: "交易复盘", mixed: "完整交易", note: "行情观察",
 };
-const textBox = "w-full resize-y rounded-xl border border-white/15 bg-slate-950/60 px-4 py-3 text-sm leading-7 text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/60";
+const textBox = "mt-3 w-full resize-y rounded-xl border border-white/15 bg-slate-950/60 px-4 py-3 text-sm leading-7 text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/60";
+type QuestionKey = "reason" | "process" | "change";
+const questions: Array<{ key: QuestionKey; title: string; helper: string; placeholder: string; maxLength: number }> = [
+  {
+    key: "reason", title: "开仓时，我为什么认为这笔交易值得做？",
+    helper: "记录当时的判断，不需要事后证明它正确。新交易请注明标的及做多或做空。",
+    placeholder: "例如：BTCUSDT 做空。日线下行，4小时均线空头排列，1小时反弹后再次转弱。我当时认为……若只是凭感觉，也如实写下。",
+    maxLength: 1700,
+  },
+  {
+    key: "process", title: "这笔交易实际发生了什么？",
+    helper: "尽量包含每次开仓、减仓、平仓的时间、成交价、数量和手续费；尚未成交可留空。",
+    placeholder: "例如：昨天晚上10点20分，71500开空0.001 BTC，手续费0.04 USDT；今天上午69500全部平仓，手续费0.04 USDT。中途将止损移至……",
+    maxLength: 2200,
+  },
+  {
+    key: "change", title: "如果重新交易一次，我会改变什么？",
+    helper: "没有结论也可以写“暂时不知道，需要更多样本”，不强迫每笔交易得出经验。",
+    placeholder: "例如：我会保留入场判断，但不在1R提前平仓。暂时还不能判断这种调整是否更有利。",
+    maxLength: 800,
+  },
+];
 
 export default function TradingAiComposer({ session, trade, onApplied }: Props): JSX.Element {
-  const [raw, setRaw] = useState("");
+  const [answers, setAnswers] = useState<Record<QuestionKey, string>>({ reason: "", process: "", change: "" });
+  const raw = questions.filter(question => answers[question.key].trim())
+    .map(question => `【${question.title}】\n${answers[question.key].trim()}`).join("\n\n");
   const [timezone, setTimezone] = useState("Asia/Shanghai");
   const [pending, setPending] = useState<{ raw: string; parsed: TradeAiParseResponse; noteId: string } | null>(null);
   const [busy, setBusy] = useState<"parse" | "apply" | "">("");
@@ -38,6 +61,10 @@ export default function TradingAiComposer({ session, trade, onApplied }: Props):
 
   async function parse(): Promise<void> {
     if (!raw.trim() || busy) return;
+    if (raw.length > 5000) {
+      setError("三项回答合计不能超过5000字，请精简后重试");
+      return;
+    }
     setBusy("parse"); setError(""); setSuccess(""); setPending(null);
     try {
       const parsed = await parseTradingNarrative(session, raw.trim(), timezone, trade?.id);
@@ -67,7 +94,7 @@ export default function TradingAiComposer({ session, trade, onApplied }: Props):
         result.applied.events ? "记录事件" + result.applied.events + "条" : "",
         result.missing.length ? "部分数据等待补充：" + result.missing.join("；") : "",
       ].filter(Boolean).join(" · "));
-      setRaw(""); setPending(null); setShowHistory(true);
+      setAnswers({ reason: "", process: "", change: "" }); setPending(null); setShowHistory(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存失败，请重试；重复提交不会重复创建成交");
     } finally {
@@ -82,19 +109,43 @@ export default function TradingAiComposer({ session, trade, onApplied }: Props):
     <section className="mt-7 space-y-5 rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.035] p-5 sm:p-6">
       <div className="flex items-center gap-2">
         <Sparkles className="size-5 text-cyan-300" />
-        <h2 className="text-lg font-semibold">AI 自然语言交易日志</h2>
+        <h2 className="text-lg font-semibold">三个问题，记录一笔交易</h2>
       </div>
       <p className="text-sm leading-7 text-slate-400">
-        直接描述交易计划、实际成交、移动止损和复盘感受。AI整理后确认写入；未提供的成交价格、数量或时间不会自动编造。
+        按当时真实的想法记录，三个问题不要求一次答完。AI 负责整理事实与成交数据，确认后才会写入；没有提供的价格、数量和时间不会补造。
       </p>
-      <textarea
-        aria-label="自然语言交易记录"
-        className={textBox} rows={5} maxLength={5000}
-        placeholder="例如：昨天晚上10点20分我在71500开空BTCUSDT，数量0.001 BTC。此前4小时均线空头排列，70000附近存在多头强平区……"
-        value={raw}
-        onChange={e => { setRaw(e.target.value); setPending(null); setError(""); }}
-        disabled={Boolean(busy)}
-      />
+      <div className="grid gap-4">
+        {questions.map((question, index) => (
+          <label key={question.key} className="block rounded-xl border border-white/10 bg-white/[0.025] p-4 sm:p-5">
+            <span className="flex items-start gap-3">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-cyan-300/10 text-xs font-semibold text-cyan-200">0{index + 1}</span>
+              <span>
+                <span className="block text-sm font-semibold leading-6 text-white">{question.title}</span>
+                <span className="mt-1 block text-xs leading-5 text-slate-400">{question.helper}</span>
+              </span>
+            </span>
+            <textarea
+              aria-label={question.title} className={textBox} rows={index === 1 ? 4 : 3}
+              maxLength={question.maxLength} placeholder={question.placeholder}
+              value={answers[question.key]}
+              onChange={event => {
+                setAnswers(current => ({ ...current, [question.key]: event.target.value }));
+                setPending(null); setError(""); setSuccess("");
+              }}
+              disabled={Boolean(busy)}
+            />
+          </label>
+        ))}
+      </div>
+      <p className="text-xs leading-6 text-slate-500">
+        统计所需的数据：标的、方向、每笔成交的时间、价格、数量、手续费以及是否全部平仓。未提供的数据会提示补充，不能用计划价格代替真实成交。
+      </p>
+      {trade && <div className="grid gap-3 rounded-xl border border-white/10 p-4 text-xs text-slate-300 sm:grid-cols-3">
+        <p>已录入成交 <strong className="ml-1 text-white">{trade.executions.length}</strong> 笔</p>
+        <p>已实现盈亏 <strong className="ml-1 text-white">{formatPrice(trade.metrics.realizedPnl)} {trade.plan.currency}</strong></p>
+        <p>已实现 R <strong className="ml-1 text-white">{formatPrice(trade.metrics.realizedR)}</strong></p>
+        {trade.metrics.feesComplete === false && <p className="text-amber-200 sm:col-span-3">手续费尚未补齐，该笔交易暂不计入净收益统计样本。</p>}
+      </div>}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <label className="flex items-center gap-2 text-xs text-slate-400">
           交易时区
@@ -105,10 +156,10 @@ export default function TradingAiComposer({ session, trade, onApplied }: Props):
             <option value="UTC">UTC</option>
           </select>
         </label>
-        <button type="button" disabled={!raw.trim() || Boolean(busy)} onClick={() => void parse()}
+        <button type="button" disabled={!raw.trim() || raw.length > 5000 || Boolean(busy)} onClick={() => void parse()}
           className="inline-flex items-center gap-2 rounded-xl bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-40">
           {busy === "parse" ? <LoaderCircle className="size-4 animate-spin" /> : <Send className="size-4" />}
-          AI整理记录
+          AI整理三个问题
         </button>
       </div>
       {error && <p role="alert" className="rounded-xl border border-rose-400/25 bg-rose-400/[0.08] p-3 text-sm text-rose-200">{error}</p>}
@@ -169,7 +220,7 @@ export default function TradingAiComposer({ session, trade, onApplied }: Props):
         </div>}
         <div className="flex flex-wrap justify-end gap-2">
           <button type="button" disabled={Boolean(busy)} onClick={() => setPending(null)}
-            className="rounded-xl border border-white/15 px-4 py-2 text-sm text-slate-300">修改原文</button>
+            className="rounded-xl border border-white/15 px-4 py-2 text-sm text-slate-300">修改回答</button>
           <button type="button" disabled={Boolean(busy)} onClick={() => void apply()}
             className="inline-flex items-center gap-2 rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">
             {busy === "apply" ? <LoaderCircle className="size-4 animate-spin" /> : <Check className="size-4" />}
