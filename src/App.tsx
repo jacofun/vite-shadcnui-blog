@@ -16,7 +16,7 @@ function App() {
   const isWedding = pathname.startsWith("/wedding");
   const isHome = pathname === "/";
   const showHeader = !isWedding;
-  const items = useHomeContent(showHeader);
+  const { items, ready: homeContentReady } = useHomeContent(showHeader);
   const showAiDisclaimer =
     showHeader && pathname.startsWith("/notes");
   const showFooter =
@@ -129,7 +129,7 @@ function App() {
           <div className="h-full w-1/3 animate-[route-loading_1s_ease-in-out_infinite] bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-400" />
         </div>
       )}
-      <Outlet context={items} />
+      <Outlet context={{ items, homeContentReady }} />
       {showFooter && <Footer compact={isHome} />}
     </div>
   );
