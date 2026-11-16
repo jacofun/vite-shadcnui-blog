@@ -85,7 +85,6 @@ export default function TradingAiComposer({ session, trade, onApplied }: Props):
         createId: createId.current, noteId: pending.noteId, raw: pending.raw,
         referenceAt: pending.parsed.referenceAt,
         timezone: pending.parsed.timezone, proposal: pending.parsed.proposal,
-        defaultRisk: 1,
       });
       onApplied(result.trade);
       setSuccess([
