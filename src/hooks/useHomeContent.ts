@@ -4,14 +4,20 @@ import { buildHomeContent } from "@/lib/homeContent";
 import { notes } from "@/lib/notes";
 import { getPublicContent, type PublishingEntry } from "@/lib/publishing";
 
-// Share the same public snapshots between the header search and homepage.
+// Do not select a temporary text-only feature while public image content is still loading.
+// Keep the same public snapshot for the header search and the homepage.
 export function useHomeContent(enabled: boolean) {
-  const [published, setPublished] = useState<PublishingEntry[]>([]);
+  const [published, setPublished] = useState<PublishingEntry[] | null>(null);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || published !== null) return;
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 10_000);
+    const timeout = window.setTimeout(() => {
+      // An unavailable public snapshot must not leave the homepage in loading state.
+      setPublished((current) => current ?? []);
+      controller.abort();
+    }, 10_000);
+
     getPublicContent(controller.signal)
       .then((entries) => {
         if (!controller.signal.aborted) {
@@ -19,14 +25,19 @@ export function useHomeContent(enabled: boolean) {
         }
       })
       .catch(() => {
-        // Local notes remain searchable when the public snapshot is unavailable.
+        // Keep local notes usable when public OSS content cannot be fetched.
+        if (!controller.signal.aborted) setPublished([]);
       })
       .finally(() => window.clearTimeout(timeout));
+
     return () => {
       controller.abort();
       window.clearTimeout(timeout);
     };
-  }, [enabled]);
+  }, [enabled, published]);
 
-  return useMemo(() => buildHomeContent(notes, published), [published]);
+  return useMemo(() => ({
+    items: buildHomeContent(notes, published ?? []),
+    ready: published !== null,
+  }), [published]);
 }
