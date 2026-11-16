@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-16",
+  "episodeId": "230608-the-art-of-subtitling",
+  "title": "The art of subtitling",
+  "publishedAt": "2023-06-08",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2023/ep-230608",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230608_6_minute_english_subtitles_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/230608_6min_english_subtitles.pdf",
+  "reason": "从周六的生产力与工作生活平衡主题轮换到软件、无障碍设计和数字沟通。节目讨论字幕如何服务听障用户、实时处理为何容易出错，以及团队怎样选择准确而有感染力的描述，适合联系界面文案、系统提示、国际化、本地化和故障沟通；练习围绕六个高频表达重复调用，从原文支撑逐步过渡到改写、受限工程场景应用和有限自由表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "软件与数字生活",
+    "无障碍设计",
+    "数字沟通",
+    "团队协作",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "hard of hearing",
+        "meaning": "not able to hear well, though not necessarily completely deaf",
+        "usage": "Captions make video instructions easier to follow for people who are hard of hearing."
+      },
+      {
+        "expression": "ahead of time",
+        "meaning": "before a particular event or deadline",
+        "usage": "The release notes were prepared ahead of time."
+      },
+      {
+        "expression": "in the moment",
+        "meaning": "while something is happening, without much time to prepare",
+        "usage": "During an incident, engineers often have to make decisions in the moment."
+      },
+      {
+        "expression": "lead to mistakes",
+        "meaning": "cause errors or make errors more likely",
+        "usage": "Unclear requirements can lead to mistakes during implementation."
+      },
+      {
+        "expression": "as close as possible",
+        "meaning": "with the smallest achievable difference from something",
+        "usage": "The test environment should be as close as possible to production."
+      },
+      {
+        "expression": "come up with",
+        "meaning": "think of or produce an idea, answer or solution",
+        "usage": "The team came up with a clearer error message."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "single-choice",
+        "prompt": "Who does 'hard of hearing' describe?",
+        "targetExpression": "hard of hearing",
+        "options": [
+          {
+            "id": "a",
+            "text": "Someone who cannot hear well."
+          },
+          {
+            "id": "b",
+            "text": "Someone who cannot read quickly."
+          },
+          {
+            "id": "c",
+            "text": "Someone who dislikes television."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme explains that subtitles are essential for people who are deaf or hard of hearing, meaning they have difficulty hearing."
+      },
+      {
+        "id": "obj-02",
+        "type": "fill-blank",
+        "prompt": "Complete the contrast from the programme: Movie subtitles are written ______, before viewers watch the film.",
+        "targetExpression": "ahead of time",
+        "answers": [
+          "ahead of time"
+        ],
+        "explanation": "The transcript says movie subtitles can be prepared before the film is shown, unlike subtitles for live television."
+      },
+      {
+        "id": "obj-03",
+        "type": "single-choice",
+        "prompt": "What does a live subtitler have to do 'in the moment'?",
+        "targetExpression": "in the moment",
+        "options": [
+          {
+            "id": "a",
+            "text": "Write captions while the person is speaking."
+          },
+          {
+            "id": "b",
+            "text": "Finish every caption several weeks earlier."
+          },
+          {
+            "id": "c",
+            "text": "Remove all spoken dialogue from the programme."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Live television has to be subtitled as speech happens, leaving little time to prepare or correct the wording."
+      },
+      {
+        "id": "obj-04",
+        "type": "fill-blank",
+        "prompt": "Complete the cause-and-effect phrase: Working quickly with little preparation can ______.",
+        "targetExpression": "lead to mistakes",
+        "answers": [
+          "lead to mistakes",
+          "lead to a mistake"
+        ],
+        "explanation": "The transcript says that subtitling live speech in the moment can cause errors, including funny misheard captions."
+      },
+      {
+        "id": "obj-05",
+        "type": "single-choice",
+        "prompt": "What is Karli's team trying to achieve when they make descriptions 'as close as possible' to the sounds?",
+        "targetExpression": "as close as possible",
+        "options": [
+          {
+            "id": "a",
+            "text": "Make the wording match the sound and atmosphere accurately."
+          },
+          {
+            "id": "b",
+            "text": "Use the same adjective for every type of programme."
+          },
+          {
+            "id": "c",
+            "text": "Avoid describing sounds that contain no dialogue."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Karli's team chooses descriptive language that represents both the sound and the emotion of the scene as accurately as they can."
+      },
+      {
+        "id": "obj-06",
+        "type": "fill-blank",
+        "prompt": "Complete the idea-generation phrase: Karli's colleague managed to ______ the description 'gobsmacked silence'.",
+        "targetExpression": "come up with",
+        "answers": [
+          "come up with"
+        ],
+        "explanation": "The transcript says her colleague produced this creative description for a silent but shocked atmosphere."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "Which sentence uses 'in the moment' naturally?",
+        "targetExpression": "in the moment",
+        "options": [
+          {
+            "id": "a",
+            "text": "The live captioner corrected the wording in the moment."
+          },
+          {
+            "id": "b",
+            "text": "The captioner finished the work in the moment last month before filming began."
+          },
+          {
+            "id": "c",
+            "text": "The subtitles were stored inside the moment."
+          }
+        ],
+        "answer": "a",
+        "explanation": "'In the moment' means acting while an event is happening, which fits live captioning."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete the reusable accuracy phrase: Keep the translated message ______ to the original meaning.",
+        "targetExpression": "as close as possible",
+        "answers": [
+          "as close as possible"
+        ],
+        "explanation": "This is a correct transfer of the transcript phrase: the goal is to minimise the difference between the new wording and the original meaning."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words). Why can live television subtitles contain mistakes? Use 'in the moment'. Start: 'They can contain mistakes because...'.",
+        "targetExpression": "in the moment",
+        "gradingCriteria": "First decide whether the answer says that live captions are written while the person is speaking, leaving little time to prepare or correct them. Then check whether 'in the moment' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words). Explain how Karli's team chooses a description for a sound or silence. Use 'as close as possible'. You may use: 'genre' and 'atmosphere'.",
+        "targetExpression": "as close as possible",
+        "gradingCriteria": "First decide whether the answer explains that the team considers the programme's genre, sound and atmosphere to make the wording accurately match the scene. Then check whether 'as close as possible' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words). Rewrite without changing the main meaning: 'Unlike live captions, film subtitles can be prepared before the film is shown.' Use 'ahead of time'.",
+        "targetExpression": "ahead of time",
+        "gradingCriteria": "First decide whether the answer preserves the contrast that film subtitles can be prepared before showing while live captions are produced as speech happens. Then check whether 'ahead of time' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). During a production incident, your team must publish a clear status update quickly. Explain one way to reduce wording errors. Use one phrase from this bank: 'in the moment', 'lead to mistakes', 'come up with'.",
+        "targetExpression": "lead to mistakes",
+        "gradingCriteria": "First decide whether the answer suggests a specific way to reduce errors in a fast incident update, such as a short review, a template or confirming the key facts, and uses at least one phrase from the bank. Then check whether 'lead to mistakes' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences). Within the programme's topic, say why captions matter for digital products and give one practical example. Naturally use at least one of today's target expressions.",
+        "targetExpression": "hard of hearing",
+        "gradingCriteria": "First decide whether the answer gives a clear reason captions matter and one relevant practical example, while naturally using at least one of today's target expressions. Then check whether 'hard of hearing' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Retell the episode in 80-120 words without looking at the full transcript. Use this structure: (1) topic - who subtitles help and what they describe; (2) two key ideas - film versus live subtitling and how Karli's team chooses creative descriptions; (3) conclusion or example - the 'gobsmacked silence' success or the Batman mistake. Phrase bank: 'ahead of time', 'in the moment', 'as close as possible'. Use at least two phrases naturally. Simple, clear English is enough; advanced vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "Subtitles help people who are deaf or hard of hearing and can also support foreign-language learning.",
+      "Captions describe dialogue as well as non-verbal sounds and the atmosphere of a scene.",
+      "Film subtitles can be written ahead of time, but live captions must be produced while someone is speaking.",
+      "Working in the moment can lead to errors, such as hearing 'that man' as 'Batman'.",
+      "Karli's team considers the genre and tries to make each description closely match the sound and emotion.",
+      "The phrase 'gobsmacked silence' accurately described a shocked atmosphere and became widely used."
+    ]
+  }
+}
