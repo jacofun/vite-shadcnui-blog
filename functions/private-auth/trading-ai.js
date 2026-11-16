@@ -89,6 +89,8 @@ const SYSTEM = [
   "executions是实际成交事件数组，每项包含action(entry/exit),at(ISO8601或null),price(数字或null),quantity(数字或null),quantityMode(explicit/all/half/unknown),fee(数字或null),note。计划入场不等于实际成交；全部平仓quantityMode=all，平半仓为half。",
   "events是非成交事件数组，每项kind(stop_moved/target_moved/emotion/market/other),at(ISO8601或null),summary。",
   "review为null或对象，字段expectation(yes/partial/no/unknown),discipline(full/partial/violated/unknown),score(1到5或null),emotions,mistakes,outcome,learning,replay。没有证据不得评分或者断言纪律违规。",
+  "用户可能按【开仓时，我为什么认为这笔交易值得做？】【这笔交易实际发生了什么？】【如果重新交易一次，我会改变什么？】三个问题作答。第一问只表示当时主观理由；第二问提取真实成交、数量、手续费和时间；第三问只表示事后反思，不得当成已执行指令或已确认的原始计划。",
+  "缺少标的、方向或真实成交字段时在missing说明，不推测费用为零；没有初始止损或风险金额不要编造R。",
   "missing和warnings是字符串数组。描述是回忆时不可冒充事前确认的计划。系统标注的[日期校准]为权威参考，没有具体时分就不要补造。",
 ].join("\n");
 export async function parseTradingNarrative({ body, trade, nowSeconds, modelConfig, fetchImpl, signal }) {
