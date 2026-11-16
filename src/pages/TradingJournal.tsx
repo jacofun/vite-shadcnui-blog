@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
 import { formatPrice, listTrades, type Trade, type TradeStatus } from "@/lib/trading";
+import { calculateTradingStatistics } from "@/lib/tradingStatistics";
 
 const statusLabels: Record<TradeStatus, string> = {
   draft: "草稿", planned: "待入场", open: "持仓中", closed: "已平仓", skipped: "未成交",
@@ -14,6 +15,7 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
   const [entries, setEntries] = useState<Trade[]>([]);
   const [filter, setFilter] = useState<"all" | TradeStatus>("all");
   const [search, setSearch] = useState("");
+  const [currency, setCurrency] = useState("");
   const [loading, setLoading] = useState(true);
   const [refresh, setRefresh] = useState(0);
   const [error, setError] = useState("");
@@ -29,10 +31,13 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
     (filter === "all" || entry.status === filter) &&
     [entry.plan.symbol, entry.plan.name, entry.plan.strategy, ...(entry.notes ?? []).map(n => n.summary)].some((v) => v.toLowerCase().includes(search.toLowerCase().trim())),
   ), [entries, filter, search]);
-  const finished = entries.filter((e) => e.status === "closed" && e.plan.recordType === "live");
-  const reviewed = entries.filter((e) => e.review);
-  const withR = finished.filter((e) => e.metrics.realizedR !== null);
-  const meanR = withR.length ? withR.reduce((sum, t) => sum + (t.metrics.realizedR ?? 0), 0) / withR.length : null;
+  const currencies = useMemo(() => [...new Set(entries
+    .filter(e => e.status === "closed" && e.plan.recordType === "live")
+    .map(e => e.plan.currency).filter(Boolean))].sort(), [entries]);
+  const activeCurrency = currencies.includes(currency) ? currency : currencies[0] ?? "";
+  const stats = useMemo(() => calculateTradingStatistics(entries, activeCurrency), [entries, activeCurrency]);
+  const percent = (value: number | null) => value === null ? "—" : `${(value * 100).toFixed(2)}%`;
+  const signed = (value: number) => `${value > 0 ? "+" : ""}${formatPrice(value)}`;
   return (
     <main className="min-h-[calc(100svh-var(--site-header-height))] bg-[#070a12] px-5 py-10 text-slate-100 sm:px-8 sm:py-16">
       <Helmet><title>交易日志 · 私人资源</title><meta name="robots" content="noindex,nofollow" /></Helmet>
@@ -42,20 +47,43 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-cyan-300">PRIVATE / TRADING JOURNAL</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white sm:text-5xl">交易日志</h1>
-            <p className="mt-4 text-sm leading-7 text-slate-400">记录交易前的判断、实际成交与事后复盘。收益与执行纪律分别评价。</p>
+            <p className="mt-4 text-sm leading-7 text-slate-400">只回答三个问题，忠实记录自己的判断与实际执行；成交数据独立保存，用于胜率和收益统计。</p>
           </div>
           <Link className="inline-flex items-center gap-2 rounded-xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-200" to="/resources/trading/new"><Plus className="size-4" />新建交易</Link>
         </header>
-        <div className="mt-9 grid gap-3 sm:grid-cols-3">
-          {[
-            { label: "全部案例", value: String(entries.length), hint: "包括草稿和观察机会" },
-            { label: "已完成复盘", value: String(reviewed.length), hint: "已填写执行与经验评价" },
-            { label: "实盘平均已实现 R", value: meanR === null ? "—" : `${meanR >= 0 ? "+" : ""}${meanR.toFixed(2)}R`, hint: `${withR.length} 笔已平仓且有初始风险的记录` },
-          ].map((item) => <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
-            <p className="text-xs text-slate-400">{item.label}</p><p className="mt-3 text-3xl font-semibold tabular-nums">{item.value}</p>
-            <p className="mt-2 text-xs text-slate-500">{item.hint}</p>
-          </div>)}
-        </div>
+        <section className="mt-9 space-y-4" aria-label="交易表现统计">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div><h2 className="text-xl font-semibold">交易表现</h2>
+              <p className="mt-2 text-xs leading-6 text-slate-400">只统计手续费已知、全部平仓的实盘交易；不同结算币种不合并。</p></div>
+            {currencies.length > 0 && <label className="flex items-center gap-2 text-xs text-slate-300">
+              结算币种
+              <select aria-label="统计结算币种" className="rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-white"
+                value={activeCurrency} onChange={event => setCurrency(event.target.value)}>
+                {currencies.map(item => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </label>}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { label: "有效样本", value: String(stats.samples), hint: `已平仓 ${stats.closed} 笔，排除 ${stats.excluded} 笔` },
+              { label: "胜率", value: percent(stats.winRate), hint: `${stats.wins} 盈 / ${stats.losses} 亏 / ${stats.flat} 平` },
+              { label: "累计净盈亏", value: stats.samples ? `${signed(stats.totalPnl)} ${activeCurrency}` : "—", hint: "成交盈亏扣除已记录手续费" },
+              { label: "名义成交额收益率", value: percent(stats.turnoverReturn), hint: "累计净盈亏 ÷ 累计开仓名义金额" },
+              { label: "平均盈利", value: stats.averageWin === null ? "—" : `${formatPrice(stats.averageWin)} ${activeCurrency}`, hint: `${stats.wins} 笔盈利交易` },
+              { label: "平均亏损", value: stats.averageLoss === null ? "—" : `${formatPrice(stats.averageLoss)} ${activeCurrency}`, hint: `${stats.losses} 笔亏损交易的绝对金额` },
+              { label: "平均盈亏比", value: stats.payoffRatio === null ? "—" : stats.payoffRatio.toFixed(2), hint: "平均盈利 ÷ 平均亏损" },
+              { label: "平均已实现 R", value: stats.meanR === null ? "—" : `${stats.meanR >= 0 ? "+" : ""}${stats.meanR.toFixed(2)}R`, hint: `${stats.rSamples} 笔具备初始风险金额` },
+            ].map(item => <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+              <p className="text-xs text-slate-400">{item.label}</p>
+              <p className="mt-3 break-words text-2xl font-semibold tabular-nums">{item.value}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">{item.hint}</p>
+            </div>)}
+          </div>
+          <p className="text-xs leading-6 text-slate-500">
+            名义成交额收益率不是保证金收益率或账户收益率，未考虑杠杆、合约乘数及跨币种折算；仅用于价格和数量口径一致的交易。
+            手续费未知、未平仓和模拟交易均不进入上述业绩样本，不能将未知费用视为零。
+          </p>
+        </section>
         <section className="mt-10">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-semibold">交易记录</h2>
@@ -74,7 +102,7 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
           {loading && <p className="mt-8 text-sm text-slate-400">正在读取交易记录…</p>}
           {!loading && !error && filtered.length === 0 && <div className="mt-5 rounded-2xl border border-dashed border-white/15 px-6 py-14 text-center">
             <BookOpenText className="mx-auto size-8 text-slate-500" /><p className="mt-4 text-sm text-slate-300">{entries.length ? "没有符合条件的记录" : "还没有交易记录"}</p>
-            <p className="mt-2 text-xs text-slate-500">从一份交易计划开始，保存当时的判断。</p>
+            <p className="mt-2 text-xs text-slate-500">从三个问题开始，保存当时真实的判断和成交事实。</p>
           </div>}
           <div className="mt-5 space-y-3">
             {!loading && filtered.map((trade) => <Link key={trade.id} to={`/resources/trading/${trade.id}`} className="group flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.035] p-5 transition hover:border-cyan-300/30">
