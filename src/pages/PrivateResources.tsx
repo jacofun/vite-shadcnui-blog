@@ -1,4 +1,4 @@
-import { ArrowRight, Clipboard, FolderLock, FolderPlus, Headphones, LogOut, PenLine, Play, RefreshCw, ShieldCheck, UploadCloud, Video } from "lucide-react";
+import { ArrowRight, BookOpenText, Clipboard, FilePenLine, FolderLock, FolderPlus, Headphones, LogOut, PenLine, Play, RefreshCw, ShieldCheck, UploadCloud, Video } from "lucide-react";
 import { useEffect, useRef, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
@@ -68,8 +68,35 @@ export default function PrivateResources(): JSX.Element {
     return <PrivateResourceAccessState error={access.error} status={access.status} />;
   }
 
-  const canUpload = access.session?.user.role === "owner" ||
+  const isOwner = access.session?.user.role === "owner";
+  const canUpload = isOwner ||
     access.session?.user.permissions.includes("private-resources-write") === true;
+  const quickActions = [
+    ...(isOwner ? [
+      { to: "/resources/trading", title: "交易日志", description: "记录判断、成交和复盘", icon: BookOpenText,
+        tone: "border-sky-300/20 from-sky-400/[0.12] to-sky-400/[0.025] hover:border-sky-300/45 hover:from-sky-400/[0.18]",
+        iconTone: "bg-sky-300/15 text-sky-200", arrowTone: "text-sky-200/80" },
+      { to: "/resources/just-write", title: "Just Write", description: "用英语写下今天的想法", icon: PenLine,
+        tone: "border-emerald-300/20 from-emerald-400/[0.12] to-emerald-400/[0.025] hover:border-emerald-300/45 hover:from-emerald-400/[0.18]",
+        iconTone: "bg-emerald-300/15 text-emerald-200", arrowTone: "text-emerald-200/80" },
+      { to: "/resources/publish", title: "内容发布", description: "编辑文章，管理公开内容", icon: FilePenLine,
+        tone: "border-violet-300/20 from-violet-400/[0.12] to-violet-400/[0.025] hover:border-violet-300/45 hover:from-violet-400/[0.18]",
+        iconTone: "bg-violet-300/15 text-violet-200", arrowTone: "text-violet-200/80" },
+    ] : []),
+    ...(canUpload ? [
+      { to: "/resources/upload", title: "上传资源", description: "上传文件、音频与视频", icon: UploadCloud,
+        tone: "border-cyan-300/20 from-cyan-400/[0.12] to-cyan-400/[0.025] hover:border-cyan-300/45 hover:from-cyan-400/[0.18]",
+        iconTone: "bg-cyan-300/15 text-cyan-200", arrowTone: "text-cyan-200/80" },
+    ] : []),
+    ...(isOwner ? [
+      { to: "/resources/new", title: "新建合集", description: "分类整理私人资源", icon: FolderPlus,
+        tone: "border-amber-300/20 from-amber-400/[0.12] to-amber-400/[0.025] hover:border-amber-300/45 hover:from-amber-400/[0.18]",
+        iconTone: "bg-amber-300/15 text-amber-200", arrowTone: "text-amber-200/80" },
+    ] : []),
+    { to: "/resources/clipboard", title: "文本剪贴板", description: "保存和整理临时文本", icon: Clipboard,
+      tone: "border-fuchsia-300/20 from-fuchsia-400/[0.12] to-fuchsia-400/[0.025] hover:border-fuchsia-300/45 hover:from-fuchsia-400/[0.18]",
+      iconTone: "bg-fuchsia-300/15 text-fuchsia-200", arrowTone: "text-fuchsia-200/80" },
+  ];
   const roleLabel = access.session?.user.role === "owner" ? "站点所有者" : "受邀成员";
   const continueParts = continueEntry?.route.split("/").filter(Boolean) ?? [];
   const continueCollectionId = continueParts[1] ?? "";
@@ -127,13 +154,6 @@ export default function PrivateResources(): JSX.Element {
                 </section>
               )}
 
-              <div className="mt-7 flex flex-wrap gap-3">
-                {access.session?.user.role === "owner" && <Link className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/25 bg-cyan-300/[0.07] px-4 py-2.5 text-sm font-medium text-cyan-200 transition hover:border-cyan-300/45" to="/resources/trading"><PenLine className="size-4" />交易日志</Link>}
-                {access.session?.user.role === "owner" && <Link className="rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-4 py-2.5 text-sm text-cyan-200" to="/resources/publish">内容发布</Link>}
-                {canUpload && <Link className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-2.5 text-sm font-medium text-cyan-200 transition hover:border-cyan-300/40 hover:bg-cyan-300/[0.12]" to="/resources/upload"><UploadCloud className="size-4" />上传资源</Link>}
-                {access.session?.user.role === "owner" && <Link className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07]" to="/resources/new"><FolderPlus className="size-4" />新建合集</Link>}
-                <Link className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.07]" to="/resources/clipboard"><Clipboard className="size-4" />文本剪贴板</Link>
-              </div>
             </header>
 
             {access.session && (
@@ -149,15 +169,30 @@ export default function PrivateResources(): JSX.Element {
             )}
           </div>
 
-          {access.session?.user.role === "owner" && (
-            <Link className="group mt-9 flex max-w-3xl items-center justify-between gap-4 rounded-2xl border border-emerald-300/25 bg-gradient-to-r from-emerald-300/[0.13] to-cyan-300/[0.04] p-5 transition hover:border-emerald-300/45 hover:bg-emerald-300/[0.14] sm:p-6" to="/resources/just-write">
-              <span className="flex min-w-0 items-center gap-4">
-                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-emerald-300/15 text-emerald-200"><PenLine className="size-5" /></span>
-                <span className="min-w-0"><span className="block text-xl font-semibold tracking-tight text-white">Just Write</span><span className="mt-1 block text-sm text-slate-400">用英语记下今天，随时续写。</span></span>
-              </span>
-              <ArrowRight className="size-5 shrink-0 text-emerald-200 transition group-hover:translate-x-1" />
-            </Link>
-          )}
+          <section aria-label="私人资源快捷功能" className="mt-10">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold tracking-tight text-white">快捷功能</h2>
+              <span className="text-xs text-slate-500">根据账户权限显示</span>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
+              {quickActions.map(({ to, title, description, icon: Icon, tone, iconTone, arrowTone }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`group flex min-h-[122px] items-center gap-4 rounded-2xl border bg-gradient-to-br p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/75 motion-reduce:transform-none ${tone}`}
+                >
+                  <span className={`grid size-12 shrink-0 place-items-center rounded-xl ${iconTone}`}>
+                    <Icon className="size-5" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-base font-semibold text-white">{title}</span>
+                    <span className="mt-1.5 block text-xs leading-5 text-slate-400">{description}</span>
+                  </span>
+                  <ArrowRight aria-hidden="true" className={`size-4 shrink-0 transition-transform group-hover:translate-x-1 motion-reduce:transform-none ${arrowTone}`} />
+                </Link>
+              ))}
+            </div>
+          </section>
 
           {continueEntry && (
             <section aria-label="继续播放" className="mt-12 max-w-3xl">
