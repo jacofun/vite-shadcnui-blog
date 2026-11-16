@@ -110,6 +110,36 @@ function Featured({ item }: { item: HomeContent }) {
   );
 }
 
+function LoadingFeatured() {
+  return (
+    <section className="home-feature home-feature-loading" aria-label="正在加载首页推荐内容" role="status">
+      <div className="home-feature-loading-copy" aria-hidden="true">
+        <span className="home-skeleton home-skeleton-eyebrow" />
+        <span className="home-skeleton home-skeleton-title" />
+        <span className="home-skeleton home-skeleton-title-short" />
+        <span className="home-skeleton home-skeleton-description" />
+      </div>
+    </section>
+  );
+}
+
+function LoadingSelected() {
+  return (
+    <div className="home-selected-grid" aria-label="正在加载最近的内容" role="status">
+      {[0, 1].map((index) => (
+        <div className="home-selected-item" key={index} aria-hidden="true">
+          <span className="home-selected-image home-skeleton" />
+          <div className="home-selected-copy">
+            <span className="home-skeleton home-skeleton-selected-meta" />
+            <span className="home-skeleton home-skeleton-selected-title" />
+            <span className="home-skeleton home-skeleton-selected-title-short" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Selected({ item }: { item: HomeContent }) {
   const [failedImages, setFailedImages] = useState<string[]>([]);
   const image = item.media.find(
@@ -157,7 +187,10 @@ function Selected({ item }: { item: HomeContent }) {
 }
 
 export default function Home(): JSX.Element {
-  const items = useOutletContext<HomeContent[]>();
+  const { items, homeContentReady } = useOutletContext<{
+    items: HomeContent[];
+    homeContentReady: boolean;
+  }>();
   const { featured, selected } = selectHomeContent(
     items,
     siteHome.featuredHref,
@@ -181,7 +214,9 @@ export default function Home(): JSX.Element {
               <p>{siteHome.description}</p>
               <span>PERSONAL JOURNAL</span>
             </div>
-            {featured ? (
+            {!homeContentReady ? (
+              <LoadingFeatured />
+            ) : featured ? (
               <Featured key={featured.key} item={featured} />
             ) : (
               <section className="home-feature home-feature-text">
@@ -194,23 +229,27 @@ export default function Home(): JSX.Element {
                 </div>
               </section>
             )}
-            {selected.length > 0 && (
+            {(!homeContentReady || selected.length > 0) && (
               <section
                 className="home-selection"
                 aria-labelledby="home-selection-heading"
               >
                 <div className="home-section-heading">
                   <h2 id="home-selection-heading">最近留下的</h2>
-                  <Link to="/notes">
-                    全部笔记
-                    <ArrowRight size={15} aria-hidden="true" />
-                  </Link>
+                  {homeContentReady && (
+                    <Link to="/notes">
+                      全部笔记
+                      <ArrowRight size={15} aria-hidden="true" />
+                    </Link>
+                  )}
                 </div>
-                <div className="home-selected-grid">
-                  {selected.map((item) => (
-                    <Selected key={item.key} item={item} />
-                  ))}
-                </div>
+                {!homeContentReady ? <LoadingSelected /> : (
+                  <div className="home-selected-grid">
+                    {selected.map((item) => (
+                      <Selected key={item.key} item={item} />
+                    ))}
+                  </div>
+                )}
               </section>
             )}
           </main>
