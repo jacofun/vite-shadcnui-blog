@@ -549,7 +549,7 @@ static manifest and media URLs anonymously; confirm your CDN cache rules separat
 | `BINANCE_SYNC_KEY_ID` | `trade-sync-v1`，须匹配首尔 JWKS 的 `kid` |
 | `BINANCE_SYNC_ISSUER` | `https://www.yanxiao.me` |
 | `BINANCE_SYNC_AUDIENCE` | `binance-trade-sync` |
-| `BINANCE_SYNC_URL` | `https://www.yanxiao.me/trade/api`，网站同源 HTTPS 反向代理地址 |
+| `BINANCE_SYNC_URL` | `https://yanxiao.me/trade/api`，首尔服务的 HTTPS 反向代理地址；与北京 API 域名独立 |
 
 除私钥外均提供表内默认值，首尔签发者与受众必须一致。私钥缺失或配置无效只会使本接口返回 `503 BINANCE_SYNC_UNAVAILABLE`，不影响原登录和交易日志。不得将私钥放入 `VITE_*`、前端源码、GitHub 仓库或日志。
 
@@ -558,3 +558,8 @@ static manifest and media URLs anonymously; confirm your CDN cache rules separat
 密钥生成、首尔新增环境变量、FC 原生 JWT 触发器、CDN 透传及轮换步骤见 [binance-trade-sync README](https://github.com/jacofun/binance-trade-sync#6-登录后前端直连首尔)。部署 ZIP 已包含 `binance-sync-token.js`，工作流不写入签名私钥。
 
 验证命令：`npm test --prefix functions/private-auth`、`pnpm test:client`（包含直接同步时的 Cookie/CSRF 隔离、过期令牌、错误目标和中断不重试测试）、`pnpm lint`、`pnpm build`。
+
+
+同步端点默认是 `https://yanxiao.me/trade/api`，获取凭证的北京 API 仍是 `https://www.yanxiao.me/api/private-auth/trading/binance/token`。前端允许受控的 `yanxiao.me` 和 `www.yanxiao.me` 的 `/trade/api`，不要求同步端点与北京 API 同源。**已有 FC 环境变量优先于默认值**：若北京此前配置了带 www 的 `BINANCE_SYNC_URL`，请手工改成 `https://yanxiao.me/trade/api`。无需重新生成密钥，`BINANCE_SYNC_ISSUER` 和首尔 `SYNC_JWT_ISSUER` 保持原先一致的值。
+
+是否跨域由浏览器页面的 Origin 决定：使用 `https://yanxiao.me` 打开网站时，同步为同源请求；页面位于 `https://www.yanxiao.me` 时，同步才需要首尔入口的 CORS。若保留 www 页面，需在 CDN/网关处理无 JWT 的 OPTIONS 预检，并允许 `Origin: https://www.yanxiao.me`、`POST`、`Authorization` 和 `Content-Type`，POST 仍执行 JWT 校验。不要假定放开前端地址校验就完成了网关 CORS 配置。

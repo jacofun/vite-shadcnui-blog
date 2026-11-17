@@ -2,6 +2,8 @@ import type { PrivateAuthSession } from "@/lib/privateAuth";
 import { PRIVATE_AUTH_API_BASE } from "@/lib/privateAuthApi";
 import { notifyPrivateAuthInvalidated } from "@/lib/privateAuthEvents";
 
+const SYNC_ORIGINS = new Set(["https://yanxiao.me", "https://www.yanxiao.me"]);
+
 export interface BinanceSyncResult {
   status: "completed";
   requestId: string;
@@ -25,8 +27,8 @@ export async function syncBinanceRecords(session: PrivateAuthSession): Promise<B
     throw new Error("同步凭证格式无效");
   }
   const url = new URL(ticket.syncUrl);
-  if (url.protocol !== "https:" || url.origin !== new URL(PRIVATE_AUTH_API_BASE).origin ||
-    url.username || url.password || url.search || url.hash) throw new Error("同步地址必须使用网站同源的 HTTPS 反向代理");
+  if (url.protocol !== "https:" || !SYNC_ORIGINS.has(url.origin) ||
+    url.username || url.password || url.search || url.hash || url.pathname !== "/trade/api") throw new Error("同步地址必须为 yanxiao.me 或 www.yanxiao.me 的 /trade/api HTTPS 地址");
 
   // A single foreground request. The short JWT stays in this call's memory.
   // Do not automatically retry: an interrupted response can still mean FC is running.

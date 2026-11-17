@@ -411,7 +411,7 @@ test("persistent Binance tickets require active owner session, CSRF and origin w
   assert.equal(response.headers["cache-control"], "no-store");
   const ticket = json(response);
   assert.equal(ticket.expiresAt, START + 120);
-  assert.equal(ticket.syncUrl, "https://www.yanxiao.me/trade/api");
+  assert.equal(ticket.syncUrl, "https://yanxiao.me/trade/api");
   const claims = JSON.parse(Buffer.from(ticket.token.split(".")[1], "base64url"));
   assert.equal(claims.scope, "trading:sync");
   assert.equal(claims.sub, owner.user.id);
