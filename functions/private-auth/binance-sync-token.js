@@ -1,0 +1,38 @@
+import { createPrivateKey, randomUUID, sign } from "node:crypto";
+
+export class BinanceSyncTokenError extends Error {
+  constructor(statusCode, code, message) {
+    super(message);
+    this.statusCode = statusCode;
+    this.code = code;
+  }
+}
+
+// This credential authorizes only a brief trade-sync request, never a site session.
+export function issueBinanceSyncToken({ user, env, nowSeconds }) {
+  if (user?.role !== "owner") {
+    throw new BinanceSyncTokenError(403, "MISSING_PERMISSION", "只有站点所有者可以同步币安记录");
+  }
+  try {
+    const key = createPrivateKey((env.BINANCE_SYNC_PRIVATE_KEY || "").replace(/\\n/g, "\n"));
+    const kid = env.BINANCE_SYNC_KEY_ID?.trim() || "trade-sync-v1";
+    const issuer = env.BINANCE_SYNC_ISSUER?.trim() || "https://www.yanxiao.me";
+    const audience = env.BINANCE_SYNC_AUDIENCE?.trim() || "binance-trade-sync";
+    const url = new URL(env.BINANCE_SYNC_URL?.trim() || "https://www.yanxiao.me/trade/api");
+    if (key.asymmetricKeyType !== "rsa" || key.asymmetricKeyDetails.modulusLength < 2048 ||
+      !/^[A-Za-z0-9_-]{1,80}$/.test(kid) || issuer.length > 256 || audience.length > 128 ||
+      url.protocol !== "https:" || url.username || url.password || url.search || url.hash || !user.id) {
+      throw new Error("Invalid signing settings");
+    }
+    const expiresAt = nowSeconds + 120;
+    const encode = value => Buffer.from(JSON.stringify(value)).toString("base64url");
+    const header = encode({ alg: "RS256", typ: "JWT", kid });
+    const payload = encode({ iss: issuer, aud: audience, sub: user.id, scope: "trading:sync",
+      iat: nowSeconds, exp: expiresAt, jti: randomUUID() });
+    const data = `${header}.${payload}`;
+    const signature = sign("RSA-SHA256", Buffer.from(data), key).toString("base64url");
+    return { token: `${data}.${signature}`, expiresAt, syncUrl: url.href };
+  } catch {
+    throw new BinanceSyncTokenError(503, "BINANCE_SYNC_UNAVAILABLE", "币安同步签名尚未配置，请检查北京函数的 BINANCE_SYNC 配置");
+  }
+}

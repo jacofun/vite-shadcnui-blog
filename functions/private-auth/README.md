@@ -536,3 +536,25 @@ older manifest referring to removed media until synchronization is retried. Fron
 never deletes the `published/` prefix. Do not add an empty build-time manifest over this live data.
 Before switching an existing deployment's frontend, complete the FC migration and verify the
 static manifest and media URLs anonymously; confirm your CDN cache rules separately.
+
+## 币安同步短期凭证
+
+前端通过现有登录 Cookie、Origin 和 CSRF 校验调用 `POST /api/private-auth/trading/binance/token`。只有 `owner` 可以领取有效期 120 秒、用途为 `trading:sync` 的 RS256 JWT；OSS 注册表模式继续检查会话撤销、账号状态与权限。该接口不创建交易内容存储，也不访问首尔或币安。
+
+北京 FC 新增以下环境变量，现有登录/存储配置全部保留：
+
+| 变量 | 值 |
+| --- | --- |
+| `BINANCE_SYNC_PRIVATE_KEY` | 仅北京保存的 PKCS#8 RSA PEM 私钥，至少 2048 位；接受换行或字面量 `\n` |
+| `BINANCE_SYNC_KEY_ID` | `trade-sync-v1`，须匹配首尔 JWKS 的 `kid` |
+| `BINANCE_SYNC_ISSUER` | `https://www.yanxiao.me` |
+| `BINANCE_SYNC_AUDIENCE` | `binance-trade-sync` |
+| `BINANCE_SYNC_URL` | `https://www.yanxiao.me/trade/api`，网站同源 HTTPS 反向代理地址 |
+
+除私钥外均提供表内默认值，首尔签发者与受众必须一致。私钥缺失或配置无效只会使本接口返回 `503 BINANCE_SYNC_UNAVAILABLE`，不影响原登录和交易日志。不得将私钥放入 `VITE_*`、前端源码、GitHub 仓库或日志。
+
+前端拿到凭证后经 `/trade/api` 直接调用首尔；北京不代理同步。同步结果只反映原始成交/资金流水写入，暂不将它们自动生成交易日志或纳入网站统计。前端不持久化令牌、不自动重试长请求；注销阻止领取新凭证，已签发凭证在最长 120 秒有效期内仍可用，已开始的任务继续运行。
+
+密钥生成、首尔新增环境变量、FC 原生 JWT 触发器、CDN 透传及轮换步骤见 [binance-trade-sync README](https://github.com/jacofun/binance-trade-sync#6-登录后前端直连首尔)。部署 ZIP 已包含 `binance-sync-token.js`，工作流不写入签名私钥。
+
+验证命令：`npm test --prefix functions/private-auth`、`pnpm test:client`（包含直接同步时的 Cookie/CSRF 隔离、过期令牌、错误目标和中断不重试测试）、`pnpm lint`、`pnpm build`。

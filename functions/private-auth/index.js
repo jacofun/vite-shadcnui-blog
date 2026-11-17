@@ -1,3 +1,4 @@
+import { issueBinanceSyncToken, BinanceSyncTokenError } from "./binance-sync-token.js";
 import { handlePublishing, PublishingError } from "./publishing.js";
 import { createPublicPublisher } from "./public-publishing.js";
 import { handleTrading, TradeError } from "./trading.js";
@@ -402,7 +403,7 @@ function routeName(path, cookiePath, persistent = false) {
     "just-write/list", "just-write/save", "just-write/delete", "just-write/teach",
     "trading/list", "trading/get", "trading/save", "trading/confirm", "trading/revise",
     "trading/execution/add", "trading/execution/update", "trading/skip", "trading/review",
-    "trading/image/init", "trading/image/complete", "trading/ai/parse", "trading/ai/apply",
+    "trading/binance/token", "trading/image/init", "trading/image/complete", "trading/ai/parse", "trading/ai/apply",
     "assessment/grade", "assessment/result", "assessment/ask",
     "public/assistant/ask", "health", "public/content",
     "publishing/list", "publishing/save", "publishing/publish", "publishing/unpublish", "publishing/sync-public", "publishing/upload-init", "publishing/upload-complete",
@@ -430,6 +431,7 @@ async function handleTradingAiRoute({ route, body, user, config, contentStore, n
 }
 
 function usesPrivateContentStore(route) {
+  if (route === "trading/binance/token") return false;
   return ["publishing/", "uploads/", "collections/", "files/", "clipboard/", "assessment/", "just-write/", "trading/"].some((prefix) => route.startsWith(prefix));
 }
 
@@ -2987,6 +2989,12 @@ export function createHandler({
       const session = requireSession(request, config, nowSeconds);
       requireCsrf(request, session);
 
+      if (route === "trading/binance/token") {
+        return jsonResponse(config, 200, issueBinanceSyncToken({
+          user: { id: "owner", role: "owner" }, env, nowSeconds,
+        }));
+      }
+
       if (usesPrivateContentStore(route)) {
         const privateContentStore = contentStore || await createPrivateResourceContentStore({
           env,
@@ -3051,10 +3059,11 @@ export function createHandler({
         "set-cookie": clearCookie(config),
       });
     } catch (error) {
-      const knownError = error instanceof HttpError || error instanceof TradeError || error instanceof TradingAiError;
+      const knownError = error instanceof HttpError || error instanceof BinanceSyncTokenError || error instanceof TradeError || error instanceof TradingAiError;
       const statusCode = knownError ? error.statusCode : 500;
       const code = knownError ? error.code : "INTERNAL_ERROR";
-      const message = statusCode >= 500 ? "Private authentication service is unavailable" : error.message;
+      const message = error instanceof BinanceSyncTokenError ? error.message
+        : statusCode >= 500 ? "Private authentication service is unavailable" : error.message;
       const responseConfig = config || {
         expectedOrigin: env.WEBAUTHN_ORIGIN || "https://yanxiao.me",
       };
@@ -3664,6 +3673,9 @@ async function persistentRequest(options) {
 
   const state = await store.read();
   const { user } = persistedSession(state, auth, config, nowSeconds);
+  if (route === "trading/binance/token") {
+    return jsonResponse(config, 200, issueBinanceSyncToken({ user, env, nowSeconds }));
+  }
   await limitPrivateAiRequest({ route, user, config, contentStore, nowSeconds, env });
   if (route.startsWith("publishing/")) return jsonResponse(config, 200, await publishingRequest({ route, body, user, config, contentStore, nowSeconds }));
   if (route === "session") return jsonResponse(config, 200, sessionResult(auth, user));

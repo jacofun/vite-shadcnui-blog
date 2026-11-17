@@ -68,6 +68,7 @@ jobs:
           cp "${SOURCE_DIR}/index.js" "${PACKAGE_DIR}/index.js"
           cp "${SOURCE_DIR}/publishing.js" "${PACKAGE_DIR}/publishing.js"
           cp "${SOURCE_DIR}/public-publishing.js" "${PACKAGE_DIR}/public-publishing.js"
+          cp "${SOURCE_DIR}/binance-sync-token.js" "${PACKAGE_DIR}/binance-sync-token.js"
           cp "${SOURCE_DIR}/trading.js" "${PACKAGE_DIR}/trading.js"
           cp "${SOURCE_DIR}/trading-ai.js" "${PACKAGE_DIR}/trading-ai.js"
           cp "${SOURCE_DIR}/trading-ai-store.js" "${PACKAGE_DIR}/trading-ai-store.js"
@@ -77,12 +78,13 @@ jobs:
 
           (
             cd "${PACKAGE_DIR}"
-            zip -q -r "${ZIP_PATH}" server.js index.js publishing.js public-publishing.js trading.js trading-ai.js trading-ai-store.js package.json package-lock.json node_modules
+            zip -q -r "${ZIP_PATH}" server.js index.js publishing.js public-publishing.js trading.js trading-ai.js trading-ai-store.js binance-sync-token.js package.json package-lock.json node_modules
           )
 
           unzip -t "${ZIP_PATH}" >/dev/null
           unzip -Z1 "${ZIP_PATH}" | grep -Fx 'server.js' >/dev/null
           unzip -Z1 "${ZIP_PATH}" | grep -Fx 'index.js' >/dev/null
+          unzip -Z1 "${ZIP_PATH}" | grep -Fx 'binance-sync-token.js' >/dev/null
           unzip -Z1 "${ZIP_PATH}" | grep -Fx 'trading.js' >/dev/null
           unzip -Z1 "${ZIP_PATH}" | grep -Fx 'trading-ai.js' >/dev/null
           unzip -Z1 "${ZIP_PATH}" | grep -Fx 'trading-ai-store.js' >/dev/null

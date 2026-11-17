@@ -33,12 +33,12 @@ function memoryStore() {
   return { store, conflict: (count) => { conflicts = count; }, dropRegistration: () => { dropRegistration = true; } };
 }
 
-function harness({ real = false, storage = memoryStore() } = {}) {
+function harness({ real = false, storage = memoryStore(), tokenEnv = {} } = {}) {
   let time = START;
   let fail = false;
   const store = storage.store;
   const handler = createHandler({
-    env, store, now: () => time,
+    env: { ...env, ...tokenEnv }, store, now: () => time,
     ...(!real ? {
       generateRegistrationOptionsImpl: async (options) => ({ challenge: randomBytes(32).toString("base64url"), user: { id: Buffer.from(options.userID).toString("base64url") } }),
       generateAuthenticationOptionsImpl: async (options) => {
@@ -392,4 +392,30 @@ test("real WebAuthn registration and login reject wrong origin, missing UV, bad 
   assert.equal((await h.call("verify", input)).statusCode, 200);
   const next = await h.call("challenge");
   assert.equal((await h.call("verify", { cookies: [cookie(next)], body: { credential: key.login(json(next).publicKey, userId) } })).statusCode, 401);
+});
+
+
+test("persistent Binance tickets require active owner session, CSRF and origin without a content store", async () => {
+  const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const h = harness({ tokenEnv: { BINANCE_SYNC_PRIVATE_KEY: privateKey.export({ type: "pkcs8", format: "pem" }) } });
+  const owner = await h.register(await h.admin("bootstrap"));
+  const member = await h.register(await h.admin("invite"));
+  const route = "trading/binance/token";
+  assert.equal((await h.call(route)).statusCode, 401);
+  assert.equal((await h.call(route, { ...owner, csrf: "wrong" })).statusCode, 403);
+  assert.equal((await h.call(route, { ...owner, origin: "https://evil.test" })).statusCode, 403);
+  assert.equal((await h.call(route, member)).statusCode, 403);
+  assert.equal((await h.call(route, { ...owner, method: "GET" })).statusCode, 405);
+  const response = await h.call(route, owner);
+  assert.equal(response.statusCode, 200, response.body);
+  assert.equal(response.headers["cache-control"], "no-store");
+  const ticket = json(response);
+  assert.equal(ticket.expiresAt, START + 120);
+  assert.equal(ticket.syncUrl, "https://www.yanxiao.me/trade/api");
+  const claims = JSON.parse(Buffer.from(ticket.token.split(".")[1], "base64url"));
+  assert.equal(claims.scope, "trading:sync");
+  assert.equal(claims.sub, owner.user.id);
+  assert.equal("csrfToken" in claims, false);
+  await h.call("logout", owner);
+  assert.equal((await h.call(route, owner)).statusCode, 401);
 });

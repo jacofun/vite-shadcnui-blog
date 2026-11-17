@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, BookOpenText, Filter, Plus, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpenText, Download, Filter, LoaderCircle, Plus, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
@@ -6,12 +6,30 @@ import { Link } from "react-router-dom";
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
 import { formatPrice, listTrades, type Trade, type TradeStatus } from "@/lib/trading";
+import { syncBinanceRecords } from "@/lib/binanceSync";
 import { calculateTradingStatistics } from "@/lib/tradingStatistics";
 
 const statusLabels: Record<TradeStatus, string> = {
   draft: "草稿", planned: "待入场", open: "持仓中", closed: "已平仓", skipped: "未成交",
 };
 function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivateResourceSession>["session"]> }): JSX.Element {
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
+  const [syncError, setSyncError] = useState("");
+  async function syncRecords() {
+    if (syncing) return;
+    setSyncing(true);
+    setSyncMessage("");
+    setSyncError("");
+    try {
+      const result = await syncBinanceRecords(session);
+      setSyncMessage(`同步完成，新增成交 ${result.newRecords.trades} 条、资金流水 ${result.newRecords.income} 条，已保存至私有存储。`);
+    } catch (failure) {
+      setSyncError(failure instanceof Error ? failure.message : "同步失败");
+    } finally {
+      setSyncing(false);
+    }
+  }
   const [entries, setEntries] = useState<Trade[]>([]);
   const [filter, setFilter] = useState<"all" | TradeStatus>("all");
   const [search, setSearch] = useState("");
@@ -49,8 +67,21 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white sm:text-5xl">交易日志</h1>
             <p className="mt-4 text-sm leading-7 text-slate-400">只回答三个问题，忠实记录自己的判断与实际执行；成交数据独立保存，用于胜率和收益统计。</p>
           </div>
-          <Link className="inline-flex items-center gap-2 rounded-xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-200" to="/resources/trading/new"><Plus className="size-4" />新建交易</Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" disabled={syncing} onClick={() => void syncRecords()}
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-4 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-300/20 disabled:cursor-wait disabled:opacity-60">
+              {syncing ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />}
+              {syncing ? "正在同步币安记录…" : "同步币安记录"}
+            </button>
+            <Link className="inline-flex items-center gap-2 rounded-xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-200" to="/resources/trading/new"><Plus className="size-4" />新建交易</Link>
+          </div>
         </header>
+        <div className="mt-5 space-y-2 text-xs leading-6">
+          <p className="text-slate-500">币安成交与资金流水同步后独立保存，暂不自动生成交易日志或计入本页统计。</p>
+          {syncing && <p role="status" className="text-emerald-200">正在读取并保存记录，请保持页面打开。</p>}
+          {syncMessage && <p role="status" className="text-emerald-200">{syncMessage}</p>}
+          {syncError && <p role="alert" className="rounded-xl border border-rose-400/25 bg-rose-400/[0.06] p-4 text-sm text-rose-200">{syncError}</p>}
+        </div>
         <section className="mt-9 space-y-4" aria-label="交易表现统计">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div><h2 className="text-xl font-semibold">交易表现</h2>
