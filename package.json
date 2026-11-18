@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "node scripts/generate-public-meta.mjs && tsc -b && vite build && node scripts/generate-route-shells.mjs",
     "lint": "eslint .",
-    "test:client": "node --test scripts/test-upload-reliability.mjs scripts/test-binance-sync.mjs",
+    "test:client": "node --test scripts/test-upload-reliability.mjs scripts/test-binance-sync.mjs scripts/test-binance-import.mjs",
     "check": "pnpm lint && pnpm build",
     "preview": "vite preview"
   },

@@ -572,3 +572,45 @@ static manifest and media URLs anonymously; confirm your CDN cache rules separat
 后续云函数沿用这套流程：北京先通过现有登录态、CSRF 和业务权限签发短期 RS256 凭证，前端将凭证放在 `X-JWT-Token` 中直连目标函数，目标函数使用可信公钥校验。私钥仅留在北京，目标函数只持有公钥；可以复用 issuer、受信公钥和密钥轮换机制，每个业务分别限制 audience 与 scope，并校验最长 120 秒有效期。新业务在北京添加明确的服务端签发路由和权限规则，不开放由客户端任意选择 audience/scope 的通用签发接口。当前币安凭证仍只授权 `aud=binance-trade-sync`、`scope=trading:sync`，不能作为其他云函数的通用通行证。
 
 代码部署后，需在首尔 HTTP 触发器或实际回源自定义域名的 JWT 设置中手工将 Header 名称从 `Authorization`（或排查时的临时名称）改为 `X-JWT-Token`。若 CDN/网关另有 CORS 配置，也须允许新请求头。无需更换现有签名密钥或调整函数环境变量，工作流不会替你修改平台鉴权设置。
+
+## 勾选币安成交并创建交易日志
+
+交易日志增加“币安实盘 · 勾选成交”。浏览器使用网站原有登录 Cookie 和 CSRF 调用北京的 `POST trading/binance/list`、`preview`、`import`；仅 owner 可操作。首尔的同步接口和 `X-JWT-Token` 方案继续沿用，读取数据和打包日志不再调用币安或首尔。
+
+北京函数需读取首尔写入的私有 OSS 目录。可配置以下环境变量；Bucket、地域和端点未填写时复用 `OSS_CONTENT_BUCKET`、`OSS_CONTENT_REGION`、`OSS_CONTENT_ENDPOINT`，目录默认 `fc/binance-sync/owner`：
+
+```json
+{
+  "BINANCE_DATA_OSS_BUCKET": "首尔同步使用的 OSS_BUCKET",
+  "BINANCE_DATA_OSS_REGION": "oss-cn-beijing",
+  "BINANCE_DATA_OSS_ENDPOINT": "https://oss-cn-beijing-internal.aliyuncs.com",
+  "BINANCE_DATA_OSS_PREFIX": "fc/binance-sync/owner"
+}
+```
+
+若北京函数不具备同地域内网访问条件，端点使用 `https://oss-cn-beijing.aliyuncs.com`。这些值配置在北京网站 FC，不是 GitHub Secrets；同步目录必须与首尔的 `OSS_PREFIX` 完全一致。现有部署保留这些环境变量。
+
+使用网站现有 OSS 凭据来源（FC 调用临时凭据或 `ALIBABA_CLOUD_ACCESS_KEY_ID/SECRET`，与原 content store 一致），为对应角色/账号追加同步目录的只读权限即可，无需复制首尔的币安 API Key 或新增部署密钥：
+
+```json
+{
+  "Version": "1",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["oss:GetObject"],
+    "Resource": ["acs:oss:*:*:YOUR_BUCKET/fc/binance-sync/owner/*"]
+  }]
+}
+```
+
+将 Bucket 和目录替换为实际值，追加到现有授权而非覆盖原策略。跨账号 Bucket 还需配置资源侧授权。本功能不需要 ListObjects、写入或删除原始成交的权限。读取仅允许固定 state 和按交易对/月组织的成交路径，客户端不能指定 Bucket 或任意对象名；权限、JSON 或账户绑定异常会报错，不按空记录处理。
+
+列表按北京时间筛选、转换为 UTC 月分区读取，每次最多 93 天、每页 50 条。已落盘的历史月份可持续查看，不受币安在线历史接口窗口限制；最多勾选 150 条成交。前端只提交成交编号，后端重新读取原始价格、数量、费用与盈亏。支持跨页选择、创建新日志、补充同账户/交易对/持仓方向的待补全或持仓中币安日志，日志更新与重复关联检查在既有 entries.json 更新锁内完成；相同请求可重试，不会重复创建或导入。
+
+原计划的入场价、止损和计划数量不从实际成交反推，留待本人补充；成交均价在预览中单独展示。记录保留 binding、原始成交/订单编号和十进制字段作为来源。账目金额通过 18 位定点十进制相加，日志净成交损益采用币安 realizedPnl 减已知的同结算币种 commission，不额外叠加 income 流水，不分摊资金费。异币种费用保留原币种与数值，不做隐式换汇，标记费用不完整并排除业绩统计。API Key 轮换会改变同步 binding；需要迁移历史时，先核对来源关系，不应把同账户旧成交当作新账户重新导入。
+
+用户须明确确认“从开仓开始至今的成交均已选齐”。未确认、起始仓位不明、反手或缺少开仓时保存为“待补全”，不进入胜率/R 统计；新增的更早开仓或后续平仓可补充到同一日志。确认完整且数量归零时才是已平仓。单向持仓需选择多空；双向持仓的 LONG/SHORT 与方向必须一致，不能混合打包。一个交易对内多轮独立开平仓应由用户分别打包。
+
+币安执行时间轴只读，手工更正/新增接口不会改写已关联成交。AI 继续保存三个问题的原文、总结和复盘，也可补充原计划中空缺的风险字段；文字中再次提及成交时不重复新增执行。净成交损益不等同于包含资金费的账户收益；缺少初始风险时 R 保持为空。
+
+验证：`npm test --prefix functions/private-auth` 覆盖服务端原件读取、北京时间跨月、长 ID、精确费用、重复/并发导入、补充成交、方向与完整性、权限及来源只读；`npm run test:client`、`npm run lint`、`npm run build` 验证原前端流程和类型/构建。功能上线后需用 owner 登录验证实际 OSS 读取权限与目录。

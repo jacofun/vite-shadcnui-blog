@@ -1,3 +1,4 @@
+import { parseDecimal, formatDecimal } from "./trading-decimal.js";
 const MAX_TRADES = 300;
 const MAX_EXECUTIONS = 150;
 const MAX_ATTACHMENTS = 20;
@@ -112,6 +113,23 @@ export function executionFrom(input) {
   };
 }
 export function calculateTrade(trade) {
+  if (trade.binance) {
+    let pnl = 0n;
+    let fees = 0n;
+    for (const e of trade.executions) {
+      pnl += parseDecimal(e.source.realizedPnl);
+      if (e.feeKnown !== false) fees += parseDecimal(e.source.commission);
+    }
+    const risk = trade.planHistory[0]?.plan.plannedRisk || trade.plan.plannedRisk ||
+      (trade.plan.entry !== null && trade.plan.stop !== null ? (trade.plan.plannedQuantity || 0) * Math.abs(trade.plan.entry - trade.plan.stop) : 0) || null;
+    const realizedPnl = Number(formatDecimal(pnl - fees));
+    const historyComplete = trade.binance.completeHistory === true && trade.binance.positionKnown === true;
+    const remaining = Math.max(0, Number(trade.binance.remaining));
+    return { remaining, averageEntry: null, realizedPnl, initialRisk: risk,
+      realizedR: risk && historyComplete && trade.executions.every(e => e.feeKnown !== false) ? realizedPnl / risk : null,
+      feesComplete: trade.executions.every(e => e.feeKnown !== false), historyComplete,
+      positionKnown: trade.binance.positionKnown, status: historyComplete ? remaining > 0 ? "open" : "closed" : "incomplete" };
+  }
   let remaining = 0;
   let basis = 0;
   let realized = 0;
@@ -138,7 +156,7 @@ export function calculateTrade(trade) {
       Math.abs((originalPlan?.entry ?? 0) - (originalPlan?.stop ?? 0)));
   // Retrospectively imported trades may acquire missing original details later.
   // The original import snapshot stays immutable and subsequent additions are versioned.
-  if (!risk && trade.planHistory[0]?.origin === "retrospective_ai_record") {
+  if (!risk && ["retrospective_ai_record", "retrospective_binance_record"].includes(trade.planHistory[0]?.origin)) {
     risk = trade.plan.plannedRisk ??
       ((trade.plan.plannedQuantity ?? 0) * Math.abs((trade.plan.entry ?? 0) - (trade.plan.stop ?? 0)));
   }
@@ -241,6 +259,7 @@ export async function handleTrading({ route, body, user, config, contentStore, n
       if (trade.status === "draft") trade.status = "planned";
       recordEvent(trade, route === "trading/confirm" ? "plan_confirmed" : "plan_revised", at);
     } else if (route === "trading/execution/add" || route === "trading/execution/update") {
+      if (trade.binance) throw new TradeError(409, "BINANCE_EXECUTION_READ_ONLY", "币安成交来自原始记录，请从币安实盘页面选择补充，不能手工改写");
       const execution = executionFrom(body.execution);
       const found = trade.executions.findIndex((item) => item.id === execution.id);
       if (route === "trading/execution/add" && found >= 0) {

@@ -1,7 +1,8 @@
 import { ArrowLeft, ArrowRight, BookOpenText, Download, Filter, LoaderCircle, Plus, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import BinanceTradePicker from "@/components/trading/BinanceTradePicker";
 
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
@@ -10,9 +11,11 @@ import { syncBinanceRecords } from "@/lib/binanceSync";
 import { calculateTradingStatistics } from "@/lib/tradingStatistics";
 
 const statusLabels: Record<TradeStatus, string> = {
-  draft: "草稿", planned: "待入场", open: "持仓中", closed: "已平仓", skipped: "未成交",
+  incomplete: "待补全", draft: "草稿", planned: "待入场", open: "持仓中", closed: "已平仓", skipped: "未成交",
 };
 function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivateResourceSession>["session"]> }): JSX.Element {
+  const [params, setParams] = useSearchParams();
+  const view = params.get("view") === "binance" ? "binance" : "journal";
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState("");
   const [syncError, setSyncError] = useState("");
@@ -24,6 +27,7 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
     try {
       const result = await syncBinanceRecords(session);
       setSyncMessage(`同步完成，新增成交 ${result.newRecords.trades} 条、资金流水 ${result.newRecords.income} 条，已保存至私有存储。`);
+      setRefresh(v => v + 1);
     } catch (failure) {
       setSyncError(failure instanceof Error ? failure.message : "同步失败");
     } finally {
@@ -77,11 +81,20 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
           </div>
         </header>
         <div className="mt-5 space-y-2 text-xs leading-6">
-          <p className="text-slate-500">币安成交与资金流水同步后独立保存，暂不自动生成交易日志或计入本页统计。</p>
+          <p className="text-slate-500">同步后切换到“币安实盘”，勾选成交组成一笔交易，再补充计划与复盘。</p>
           {syncing && <p role="status" className="text-emerald-200">正在读取并保存记录，请保持页面打开。</p>}
           {syncMessage && <p role="status" className="text-emerald-200">{syncMessage}</p>}
           {syncError && <p role="alert" className="rounded-xl border border-rose-400/25 bg-rose-400/[0.06] p-4 text-sm text-rose-200">{syncError}</p>}
         </div>
+        <div className="mt-7 inline-flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1" role="tablist" aria-label="交易数据视图">
+          {([{ value: "journal", label: "交易日志" }, { value: "binance", label: "币安实盘 · 勾选成交" }] as const).map(item => <button key={item.value} role="tab" aria-selected={view === item.value}
+            className={`rounded-lg px-4 py-2.5 text-sm transition ${view === item.value ? "bg-cyan-300/15 text-cyan-200" : "text-slate-400 hover:text-white"}`}
+            onClick={() => setParams(item.value === "binance" ? { view: "binance" } : {})}>{item.label}</button>)}
+        </div>
+        {view === "binance" && !loading && <BinanceTradePicker session={session} entries={entries} refresh={refresh} initialTarget={params.get("target") || undefined}
+          onImported={trade => setEntries(previous => [trade, ...previous.filter(t => t.id !== trade.id)])} />}
+        {view === "binance" && loading && <p className="mt-8 text-sm text-slate-400">正在读取日志关联…</p>}
+        {view === "journal" && <>
         <section className="mt-9 space-y-4" aria-label="交易表现统计">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div><h2 className="text-xl font-semibold">交易表现</h2>
@@ -112,7 +125,7 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
           </div>
           <p className="text-xs leading-6 text-slate-500">
             名义成交额收益率不是保证金收益率或账户收益率，未考虑杠杆、合约乘数及跨币种折算；仅用于价格和数量口径一致的交易。
-            手续费未知、未平仓和模拟交易均不进入上述业绩样本，不能将未知费用视为零。
+            手续费未知、待补全、未平仓和模拟交易均不进入上述业绩样本，不能将未知费用视为零。
           </p>
         </section>
         <section className="mt-10">
@@ -157,6 +170,7 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
             </Link>)}
           </div>
         </section>
+        </>}
       </div>
     </main>
   );

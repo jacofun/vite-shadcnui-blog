@@ -5,7 +5,7 @@ import type { PrivateAuthSession } from "@/lib/privateAuth";
 export type Market = "cn" | "hk" | "us" | "crypto" | "other";
 export type TradeDirection = "long" | "short";
 export type TradeRecordType = "live" | "paper" | "observation";
-export type TradeStatus = "draft" | "planned" | "open" | "closed" | "skipped";
+export type TradeStatus = "draft" | "planned" | "open" | "closed" | "skipped" | "incomplete";
 export type TradePhase = "plan" | "execution" | "review";
 
 export interface TradePlan {
@@ -40,6 +40,9 @@ export interface TradeExecution {
   quantity: number;
   fee: number;
   note: string;
+  feeKnown?: boolean;
+  source?: { kind: "binance"; tradeId: string; orderId: string; quantity: string; price: string;
+    realizedPnl: string; commission: string; commissionAsset: string };
 }
 export interface TradeReview {
   expectation: "yes" | "partial" | "no" | "unknown";
@@ -68,6 +71,8 @@ export interface TradeMetrics {
   realizedR: number | null;
   status: TradeStatus;
   feesComplete?: boolean;
+  historyComplete?: boolean;
+  positionKnown?: boolean;
 }
 export interface Trade {
   id: string;
@@ -76,6 +81,8 @@ export interface Trade {
   createdAt: string;
   updatedAt: string;
   plan: TradePlan;
+  binance?: { binding: string; symbol: string; positionSide: string; recordIds: string[];
+    completeHistory: boolean; positionKnown: boolean; remaining: string; importedAt: string };
   planHistory: Array<{ version: number; confirmedAt: string; plan: TradePlan }>;
   executions: TradeExecution[];
   attachments: TradeAttachment[];
@@ -150,7 +157,7 @@ export class TradingApiError extends Error {
     this.code = code;
   }
 }
-async function tradingRequest<T>(session: PrivateAuthSession, path: string, body: object, signal?: AbortSignal): Promise<T> {
+export async function tradingRequest<T>(session: PrivateAuthSession, path: string, body: object, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`${PRIVATE_AUTH_API_BASE}/trading/${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRF-Token": session.csrfToken },

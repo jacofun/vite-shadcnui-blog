@@ -63,9 +63,13 @@ export async function applyAiTradingNarrative({ body, user, config, contentStore
       trade.plan = planFrom({ ...trade.plan, ...proposal.plan });
       recordEvent(trade, "ai_draft_updated", now);
     }
+    if (trade.binance && proposal.executions.length) {
+      proposal.executions = [];
+      proposal.warnings.push("币安成交已从原始记录带入，本次文字仅保存说明，不重复新增成交。");
+    }
     let blockedPlanChanges = false;
     if (existing && existing.status !== "draft" && Object.keys(proposal.plan).length) {
-      const retrospective = trade.planHistory[0]?.origin === "retrospective_ai_record";
+      const retrospective = ["retrospective_ai_record", "retrospective_binance_record"].includes(trade.planHistory[0]?.origin);
       const supplement = { ...trade.plan };
       let supplemented = false;
       for (const [key, value] of Object.entries(proposal.plan)) {

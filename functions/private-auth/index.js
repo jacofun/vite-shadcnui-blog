@@ -1,3 +1,4 @@
+import { createBinanceSource, handleBinanceImport } from "./binance-import.js";
 import { issueBinanceSyncToken, BinanceSyncTokenError } from "./binance-sync-token.js";
 import { handlePublishing, PublishingError } from "./publishing.js";
 import { createPublicPublisher } from "./public-publishing.js";
@@ -403,7 +404,7 @@ function routeName(path, cookiePath, persistent = false) {
     "just-write/list", "just-write/save", "just-write/delete", "just-write/teach",
     "trading/list", "trading/get", "trading/save", "trading/confirm", "trading/revise",
     "trading/execution/add", "trading/execution/update", "trading/skip", "trading/review",
-    "trading/binance/token", "trading/image/init", "trading/image/complete", "trading/ai/parse", "trading/ai/apply",
+    "trading/binance/token", "trading/binance/list", "trading/binance/preview", "trading/binance/import", "trading/image/init", "trading/image/complete", "trading/ai/parse", "trading/ai/apply",
     "assessment/grade", "assessment/result", "assessment/ask",
     "public/assistant/ask", "health", "public/content",
     "publishing/list", "publishing/save", "publishing/publish", "publishing/unpublish", "publishing/sync-public", "publishing/upload-init", "publishing/upload-complete",
@@ -414,6 +415,14 @@ function routeName(path, cookiePath, persistent = false) {
   );
   return knownRoutes.find((route) =>
     normalized === `/${route}` || normalized === `${apiPrefix}/${route}`);
+}
+
+async function handleBinanceRoute(args) {
+  if (args.user?.role !== "owner") throw new TradeError(403, "MISSING_PERMISSION", "币安成交仅限所有者");
+  const source = args.binanceSource || await createBinanceSource({
+    env: args.env, credentials: contentCredentials(args.env, args.request.credentials),
+  });
+  return handleBinanceImport({ ...args, source });
 }
 
 async function handleTradingAiRoute({ route, body, user, config, contentStore, nowSeconds, randomBytesImpl, env, fetchImpl, signal }) {
@@ -2837,6 +2846,7 @@ export function createHandler({
   verifyRegistrationResponseImpl = verifyRegistrationResponse,
   store,
   contentStore,
+  binanceSource,
   fetchImpl = globalThis.fetch,
 } = {}) {
   return async function privateAuthHandler(input) {
@@ -2906,7 +2916,7 @@ export function createHandler({
           : contentStore;
         return await persistentRequest({
           request, route, config, store: persistentStore, contentStore: privateContentStore,
-          nowSeconds, randomBytesImpl, env, fetchImpl,
+          nowSeconds, randomBytesImpl, env, fetchImpl, binanceSource,
           generateAuthenticationOptionsImpl, verifyAuthenticationResponseImpl,
           generateRegistrationOptionsImpl, verifyRegistrationResponseImpl,
         });
@@ -3017,6 +3027,9 @@ export function createHandler({
             route, body, user, contentStore: privateContentStore, nowSeconds, randomBytesImpl, env, fetchImpl,
             signal: request.signal, stream: justWriteStream,
           })
+          : route.startsWith("trading/binance/")
+          ? await handleBinanceRoute({ route, body, user, config, contentStore: privateContentStore,
+            nowSeconds, env, request, binanceSource })
           : route.startsWith("trading/ai/")
           ? await handleTradingAiRoute({
             route, body, user, config, contentStore: privateContentStore, nowSeconds,
@@ -3062,7 +3075,7 @@ export function createHandler({
       const knownError = error instanceof HttpError || error instanceof BinanceSyncTokenError || error instanceof TradeError || error instanceof TradingAiError;
       const statusCode = knownError ? error.statusCode : 500;
       const code = knownError ? error.code : "INTERNAL_ERROR";
-      const message = error instanceof BinanceSyncTokenError ? error.message
+      const message = error instanceof BinanceSyncTokenError || error instanceof TradeError && (error.code.startsWith("BINANCE_DATA") || error.code === "INVALID_BINANCE_DATA") ? error.message
         : statusCode >= 500 ? "Private authentication service is unavailable" : error.message;
       const responseConfig = config || {
         expectedOrigin: env.WEBAUTHN_ORIGIN || "https://yanxiao.me",
@@ -3463,7 +3476,7 @@ function revokeUser(state, user) {
 async function persistentRequest(options) {
   const {
     request, route, config, store, contentStore, nowSeconds, randomBytesImpl,
-    env, fetchImpl,
+    env, fetchImpl, binanceSource,
     generateAuthenticationOptionsImpl, verifyAuthenticationResponseImpl,
     generateRegistrationOptionsImpl, verifyRegistrationResponseImpl,
   } = options;
@@ -3676,6 +3689,9 @@ async function persistentRequest(options) {
   if (route === "trading/binance/token") {
     return jsonResponse(config, 200, issueBinanceSyncToken({ user, env, nowSeconds }));
   }
+  if (route.startsWith("trading/binance/")) return jsonResponse(config, 200, await handleBinanceRoute({
+    route, body, user, config, contentStore, nowSeconds, env, request, binanceSource,
+  }));
   await limitPrivateAiRequest({ route, user, config, contentStore, nowSeconds, env });
   if (route.startsWith("publishing/")) return jsonResponse(config, 200, await publishingRequest({ route, body, user, config, contentStore, nowSeconds }));
   if (route === "session") return jsonResponse(config, 200, sessionResult(auth, user));

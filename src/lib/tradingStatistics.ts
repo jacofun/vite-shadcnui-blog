@@ -8,7 +8,7 @@ import type { Trade } from "@/lib/trading";
 export function calculateTradingStatistics(trades: Trade[], currency: string) {
   const closed = trades.filter(t => t.status === "closed" && t.plan.recordType === "live");
   const eligible = closed.filter(t => t.plan.currency === currency &&
-    t.metrics.feesComplete !== false &&
+    t.metrics.feesComplete !== false && t.metrics.historyComplete !== false &&
     t.executions.some(e => e.action === "entry") &&
     t.executions.some(e => e.action === "exit") &&
     Number.isFinite(t.metrics.realizedPnl) &&

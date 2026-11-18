@@ -25,7 +25,7 @@ const markets: UiOption[] = [
 const signalOptions = ["缩量下跌", "放量上涨", "长下影线", "均线拐头", "颈线支撑", "背离", "结构突破", "回踩确认"];
 const mistakeOptions = ["提前入场", "扩大止损", "过早止盈", "冲动追单", "过度交易", "仓位过大", "未按计划减仓"];
 const emotionOptions = ["冷静", "恐惧", "贪婪", "急躁", "犹豫", "自信"];
-const statusLabels = { draft: "草稿", planned: "等待入场", open: "持仓中", closed: "已平仓", skipped: "未成交" };
+const statusLabels = { incomplete: "待补全", draft: "草稿", planned: "等待入场", open: "持仓中", closed: "已平仓", skipped: "未成交" };
 const newExecution = (): TradeExecution => ({
   id: crypto.randomUUID(), action: "entry", at: new Date().toISOString(), price: 0, quantity: 0, fee: 0, note: "",
 });
@@ -235,6 +235,11 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
           {trade.metrics.feesComplete === false && <p className="mt-1 text-xs text-amber-200">部分手续费未知，净收益待核实</p>}
           </div>}
         </header>
+        {trade?.binance && <aside className="mt-5 rounded-xl border border-emerald-300/20 bg-emerald-300/5 p-4 text-sm leading-7 text-slate-300">
+          <p>已关联 {trade.binance.recordIds.length} 条币安成交，实际执行已带入；在下面继续写计划、执行说明和复盘。</p>
+          {trade.metrics.historyComplete === false && <p className="text-xs text-amber-200">记录待补全，尚不计入胜率与 R 统计。</p>}
+          {trade.status !== "closed" && <Link className="mt-1 inline-block text-cyan-300" to={`/resources/trading?view=binance&target=${trade.id}`}>勾选补充成交 / 确认完整性 →</Link>}
+        </aside>}
         {!loading && <TradingAiComposer session={session} trade={trade} onApplied={updated => {
           resetFromTrade(updated);
           setReview(updated.review ?? newReview());
@@ -337,17 +342,18 @@ function Editor({ session }: { session: PrivateAuthSession }): JSX.Element {
           {!canExecute && <p className="mt-4 text-sm text-slate-400">请先确认交易计划。仅观察记录不允许新增成交。</p>}
           {trade && <div className="mt-5 grid gap-3 sm:grid-cols-3">
             {[
-              { label: "当前持仓数量", value: formatPrice(trade.metrics.remaining) },
+              { label: "当前持仓数量", value: trade.metrics.positionKnown === false ? "待核实" : formatPrice(trade.metrics.remaining) },
               { label: "持仓均价（含入场费用）", value: formatPrice(trade.metrics.averageEntry) },
               { label: "已实现盈亏", value: formatPrice(trade.metrics.realizedPnl) + " " + trade.plan.currency },
             ].map((item) => <div className="rounded-xl bg-white/[0.04] p-4" key={item.label}><p className="text-xs text-slate-500">{item.label}</p><p className="mt-2 text-xl font-semibold tabular-nums">{item.value}</p></div>)}
           </div>}
           <div className="mt-5 space-y-3">{trade?.executions.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 p-4">
             <div><p className="text-sm font-medium">{item.action === "entry" ? "开仓" : "平仓"} · {formatPrice(item.quantity)} @ {formatPrice(item.price)}</p>
-              <p className="mt-1 text-xs text-slate-500">{new Date(item.at).toLocaleString("zh-CN")} · 手续费 {formatPrice(item.fee)} · {item.note || "无备注"}</p></div>
-            <button disabled={actionsDisabled} onClick={() => { setExecution(item); setEditExecution(true); }} className="text-xs text-cyan-300 disabled:opacity-50">更正</button>
+              <p className="mt-1 text-xs text-slate-500">{new Date(item.at).toLocaleString("zh-CN")} · 手续费 {item.source ? `${item.source.commission} ${item.source.commissionAsset}` : formatPrice(item.fee)} · {item.note || "无备注"}</p></div>
+            {!item.source && <button disabled={actionsDisabled} onClick={() => { setExecution(item); setEditExecution(true); }} className="text-xs text-cyan-300 disabled:opacity-50">更正</button>}
           </div>)}</div>
-          {canExecute && <div className="mt-6 border-t border-white/10 pt-6">
+          {trade?.binance && <div className="mt-5 rounded-xl border border-emerald-300/20 bg-emerald-300/5 p-4 text-sm leading-7 text-slate-300"><p>币安成交来自同步原件，执行价格和数量只读；文字说明可以继续补充，不会重复计入成交。</p>{trade.status !== "closed" && <Link className="mt-2 inline-block text-cyan-300" to={`/resources/trading?view=binance&target=${trade.id}`}>勾选补充成交 / 确认完整性 →</Link>}{trade.metrics.historyComplete === false && <p className="mt-2 text-xs text-amber-200">此交易尚待核对完整性，不计入胜率和 R 统计。</p>}<p className="mt-2 text-xs text-slate-500">损益扣除已知成交手续费，未分摊资金费。异币种费用保留原值，暂不折算。</p></div>}
+          {canExecute && !trade?.binance && <div className="mt-6 border-t border-white/10 pt-6">
             <h3 className="font-medium">{editExecution ? "更正成交（保留原版本）" : "新增成交"}</h3>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <InputField title="操作"><Select value={execution.action} options={[{ label: "开仓 / 加仓", value: "entry" }, { label: "平仓 / 减仓", value: "exit" }]} onChange={(v) => setExecution((p) => ({ ...p, action: v as TradeExecution["action"] }))} /></InputField>
