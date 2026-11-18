@@ -33,7 +33,8 @@ test("browser gets a CSRF-protected ticket then calls Seoul proxy without site c
   assert.equal(calls[1].url, "https://yanxiao.me/trade/api");
   assert.equal(calls[1].options.credentials, "omit");
   assert.equal(calls[1].options.redirect, "error");
-  assert.equal(calls[1].options.headers.Authorization, "Bearer short-lived-jwt");
+  assert.equal(calls[1].options.headers["X-JWT-Token"], "Bearer short-lived-jwt");
+  assert.equal(calls[1].options.headers.Authorization, undefined);
   assert.equal(calls[1].options.headers["X-CSRF-Token"], undefined);
   assert.deepEqual(JSON.parse(calls[1].options.body), { action: "sync" });
 });

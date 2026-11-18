@@ -39,7 +39,7 @@ export async function syncBinanceRecords(session: PrivateAuthSession): Promise<B
       credentials: "omit",
       cache: "no-store",
       redirect: "error",
-      headers: { Authorization: `Bearer ${ticket.token}`, "Content-Type": "application/json", Accept: "application/json" },
+      headers: { "X-JWT-Token": `Bearer ${ticket.token}`, "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ action: "sync" }),
       signal: AbortSignal.timeout(310_000),
     });

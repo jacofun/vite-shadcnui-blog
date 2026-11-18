@@ -562,4 +562,13 @@ static manifest and media URLs anonymously; confirm your CDN cache rules separat
 
 同步端点默认是 `https://yanxiao.me/trade/api`，获取凭证的北京 API 仍是 `https://www.yanxiao.me/api/private-auth/trading/binance/token`。前端允许受控的 `yanxiao.me` 和 `www.yanxiao.me` 的 `/trade/api`，不要求同步端点与北京 API 同源。**已有 FC 环境变量优先于默认值**：若北京此前配置了带 www 的 `BINANCE_SYNC_URL`，请手工改成 `https://yanxiao.me/trade/api`。无需重新生成密钥，`BINANCE_SYNC_ISSUER` 和首尔 `SYNC_JWT_ISSUER` 保持原先一致的值。
 
-是否跨域由浏览器页面的 Origin 决定：使用 `https://yanxiao.me` 打开网站时，同步为同源请求；页面位于 `https://www.yanxiao.me` 时，同步才需要首尔入口的 CORS。若保留 www 页面，需在 CDN/网关处理无 JWT 的 OPTIONS 预检，并允许 `Origin: https://www.yanxiao.me`、`POST`、`Authorization` 和 `Content-Type`，POST 仍执行 JWT 校验。不要假定放开前端地址校验就完成了网关 CORS 配置。
+是否跨域由浏览器页面的 Origin 决定：使用 `https://yanxiao.me` 打开网站时，同步为同源请求；页面位于 `https://www.yanxiao.me` 时，同步才需要首尔入口的 CORS。若保留 www 页面，需在 CDN/网关处理无 JWT 的 OPTIONS 预检，并允许 `Origin: https://www.yanxiao.me`、`POST`、`X-JWT-Token` 和 `Content-Type`，POST 仍执行 JWT 校验。不要假定放开前端地址校验就完成了网关 CORS 配置。
+
+
+### 后续云函数的统一 JWT 请求头
+
+同步前端使用 `X-JWT-Token: Bearer <JWT>`，首尔代码和 FC 平台 JWT 的 Header 参数名也必须为 `X-JWT-Token`。保留 `Bearer ` 前缀的末尾空格；CORS 允许 `X-JWT-Token`、`Content-Type`，CDN 透传该请求头。业务 JWT 不再通过 `Authorization` 传递，避免与 CDN 的 OSS 回源签名共用字段；首尔也不会从旧请求头回退读取凭证。
+
+后续云函数沿用这套流程：北京先通过现有登录态、CSRF 和业务权限签发短期 RS256 凭证，前端将凭证放在 `X-JWT-Token` 中直连目标函数，目标函数使用可信公钥校验。私钥仅留在北京，目标函数只持有公钥；可以复用 issuer、受信公钥和密钥轮换机制，每个业务分别限制 audience 与 scope，并校验最长 120 秒有效期。新业务在北京添加明确的服务端签发路由和权限规则，不开放由客户端任意选择 audience/scope 的通用签发接口。当前币安凭证仍只授权 `aud=binance-trade-sync`、`scope=trading:sync`，不能作为其他云函数的通用通行证。
+
+代码部署后，需在首尔 HTTP 触发器或实际回源自定义域名的 JWT 设置中手工将 Header 名称从 `Authorization`（或排查时的临时名称）改为 `X-JWT-Token`。若 CDN/网关另有 CORS 配置，也须允许新请求头。无需更换现有签名密钥或调整函数环境变量，工作流不会替你修改平台鉴权设置。
