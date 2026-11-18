@@ -18,7 +18,7 @@ export function issueBinanceSyncToken({ user, env, nowSeconds }) {
     const kid = env.BINANCE_SYNC_KEY_ID?.trim() || "trade-sync-v1";
     const issuer = env.BINANCE_SYNC_ISSUER?.trim() || "https://www.yanxiao.me";
     const audience = env.BINANCE_SYNC_AUDIENCE?.trim() || "binance-trade-sync";
-    const url = new URL(env.BINANCE_SYNC_URL?.trim() || "https://yanxiao.me/trade/api");
+    const url = new URL(env.BINANCE_SYNC_URL?.trim() || "https://yanxiao.me/trade/api/sync");
     if (key.asymmetricKeyType !== "rsa" || key.asymmetricKeyDetails.modulusLength < 2048 ||
       !/^[A-Za-z0-9_-]{1,80}$/.test(kid) || issuer.length > 256 || audience.length > 128 ||
       url.protocol !== "https:" || url.username || url.password || url.search || url.hash || !user.id) {

@@ -15,7 +15,7 @@ test("tickets use RS256, unique IDs and only the sync scope for 120 seconds", ()
   const [header, payload, signature] = first.token.split(".");
   assert.deepEqual(JSON.parse(Buffer.from(header, "base64url")), { alg: "RS256", typ: "JWT", kid: "trade-sync-v1" });
   const claims = JSON.parse(Buffer.from(payload, "base64url"));
-  assert.equal(first.syncUrl, "https://yanxiao.me/trade/api");
+  assert.equal(first.syncUrl, "https://yanxiao.me/trade/api/sync");
   assert.equal(claims.exp - claims.iat, 120);
   assert.equal(claims.scope, "trading:sync");
   assert.equal(claims.aud, "binance-trade-sync");
@@ -54,7 +54,7 @@ test("legacy environment sessions still require cookie, CSRF and origin for tick
 
 
 test("sync URL override is independent of JWT issuer and audience", () => {
-  for (const syncUrl of ["https://yanxiao.me/trade/api", "https://www.yanxiao.me/trade/api"]) {
+  for (const syncUrl of ["https://yanxiao.me/trade/api/sync", "https://www.yanxiao.me/trade/api/sync"]) {
     const ticket = issueBinanceSyncToken({ user, env: { ...env, BINANCE_SYNC_URL: syncUrl }, nowSeconds });
     assert.equal(ticket.syncUrl, syncUrl);
     const claims = JSON.parse(Buffer.from(ticket.token.split(".")[1], "base64url"));

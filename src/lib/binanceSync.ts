@@ -28,7 +28,7 @@ export async function syncBinanceRecords(session: PrivateAuthSession): Promise<B
   }
   const url = new URL(ticket.syncUrl);
   if (url.protocol !== "https:" || !SYNC_ORIGINS.has(url.origin) ||
-    url.username || url.password || url.search || url.hash || url.pathname !== "/trade/api") throw new Error("同步地址必须为 yanxiao.me 或 www.yanxiao.me 的 /trade/api HTTPS 地址");
+    url.username || url.password || url.search || url.hash || url.pathname !== "/trade/api/sync") throw new Error("同步地址必须为 yanxiao.me 或 www.yanxiao.me 的 /trade/api/sync HTTPS 地址");
 
   // A single foreground request. The short JWT stays in this call's memory.
   // Do not automatically retry: an interrupted response can still mean FC is running.

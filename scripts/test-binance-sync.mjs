@@ -9,7 +9,7 @@ const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.Scri
   .replace('"@/lib/privateAuthEvents"', '"data:text/javascript,export function notifyPrivateAuthInvalidated() {globalThis.invalidations++}"');
 const { syncBinanceRecords } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const session = { csrfToken: "csrf-only-for-beijing" };
-const ticket = () => ({ token: "short-lived-jwt", syncUrl: "https://yanxiao.me/trade/api", expiresAt: Math.floor(Date.now() / 1000) + 120 });
+const ticket = () => ({ token: "short-lived-jwt", syncUrl: "https://yanxiao.me/trade/api/sync", expiresAt: Math.floor(Date.now() / 1000) + 120 });
 const result = { status: "completed", requestId: "request-id", newRecords: { trades: 2, income: 3 } };
 const response = (body, status = 200) => new Response(JSON.stringify(body), { status });
 
@@ -30,7 +30,7 @@ test("browser gets a CSRF-protected ticket then calls Seoul proxy without site c
   assert.equal(calls[0].url, "https://www.yanxiao.me/api/private-auth/trading/binance/token");
   assert.equal(calls[0].options.credentials, "include");
   assert.equal(calls[0].options.headers["X-CSRF-Token"], session.csrfToken);
-  assert.equal(calls[1].url, "https://yanxiao.me/trade/api");
+  assert.equal(calls[1].url, "https://yanxiao.me/trade/api/sync");
   assert.equal(calls[1].options.credentials, "omit");
   assert.equal(calls[1].options.redirect, "error");
   assert.equal(calls[1].options.headers["X-JWT-Token"], "Bearer short-lived-jwt");
@@ -45,10 +45,11 @@ test("logged-out sessions, wrong destinations and expired tickets never reach Se
   await assert.rejects(syncBinanceRecords(session), /登录已过期/);
   assert.equal(globalThis.invalidations, 1);
   status = 200;
-  for (const delta of [{ syncUrl: "https://evil.test/trade/api" },
-    { syncUrl: "https://yanxiao.me.evil.test/trade/api" }, { syncUrl: "http://yanxiao.me/trade/api" },
-    { syncUrl: "https://yanxiao.me:444/trade/api" }, { syncUrl: "https://user:password@yanxiao.me/trade/api" },
-    { syncUrl: "https://yanxiao.me/api/private-auth" }, { syncUrl: "https://yanxiao.me/trade/api?token=bad" }, { expiresAt: 1 }, { token: null }]) {
+  for (const delta of [{ syncUrl: "https://yanxiao.me/trade/api" },
+    { syncUrl: "https://yanxiao.me/trade/api/analyze" }, { syncUrl: "https://evil.test/trade/api/sync" },
+    { syncUrl: "https://yanxiao.me.evil.test/trade/api/sync" }, { syncUrl: "http://yanxiao.me/trade/api/sync" },
+    { syncUrl: "https://yanxiao.me:444/trade/api/sync" }, { syncUrl: "https://user:password@yanxiao.me/trade/api/sync" },
+    { syncUrl: "https://yanxiao.me/api/private-auth" }, { syncUrl: "https://yanxiao.me/trade/api/sync?token=bad" }, { expiresAt: 1 }, { token: null }]) {
     payload = { ...ticket(), ...delta };
     const count = calls.length;
     await assert.rejects(syncBinanceRecords(session));
@@ -75,12 +76,12 @@ test("sync auth errors preserve site login; interrupted calls and incomplete res
 
 
 test("sync destination can use either trusted domain independently of the Beijing API", async t => {
-  let syncUrl = "https://yanxiao.me/trade/api";
+  let syncUrl = "https://yanxiao.me/trade/api/sync";
   const calls = setup(t, n => response(n % 2 === 1 ? { ...ticket(), syncUrl } : result));
   await syncBinanceRecords(session);
   assert.equal(calls[0].url, "https://www.yanxiao.me/api/private-auth/trading/binance/token");
-  assert.equal(calls[1].url, "https://yanxiao.me/trade/api");
-  syncUrl = "https://www.yanxiao.me/trade/api";
+  assert.equal(calls[1].url, "https://yanxiao.me/trade/api/sync");
+  syncUrl = "https://www.yanxiao.me/trade/api/sync";
   await syncBinanceRecords(session);
   assert.equal(calls[3].url, syncUrl);
 });
