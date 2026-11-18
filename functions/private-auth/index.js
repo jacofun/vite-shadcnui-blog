@@ -3,6 +3,7 @@ import { issueBinanceSyncToken, BinanceSyncTokenError } from "./binance-sync-tok
 import { handlePublishing, PublishingError } from "./publishing.js";
 import { createPublicPublisher } from "./public-publishing.js";
 import { handleTrading, TradeError } from "./trading.js";
+import { handleMarketSignalHistory } from "./market-signal-history.js";
 import { parseTradingNarrative, TradingAiError } from "./trading-ai.js";
 import { applyAiTradingNarrative } from "./trading-ai-store.js";
 import {
@@ -403,6 +404,7 @@ function routeName(path, cookiePath, persistent = false) {
     "clipboard/get", "clipboard/save", "clipboard/delete",
     "just-write/list", "just-write/save", "just-write/delete", "just-write/teach",
     "trading/list", "trading/get", "trading/save", "trading/confirm", "trading/revise",
+    "trading/signals/save", "trading/signals/list", "trading/signals/get",
     "trading/execution/add", "trading/execution/update", "trading/skip", "trading/review",
     "trading/binance/token", "trading/binance/list", "trading/binance/preview", "trading/binance/import", "trading/image/init", "trading/image/complete", "trading/ai/parse", "trading/ai/apply",
     "assessment/grade", "assessment/result", "assessment/ask",
@@ -848,6 +850,16 @@ export async function createPrivateResourceContentStore({ env = process.env, cre
 
   return {
     syncPublished,
+    async listJsonPaths(pathPrefix, { cursor, limit }) {
+      const prefix = objectName(pathPrefix);
+      const result = await oss.listV2({ prefix, "max-keys": limit, continuationToken: cursor });
+      return {
+        paths: (result.objects || []).map(item => item.name)
+          .filter(name => name.startsWith(prefix) && name.endsWith(".json"))
+          .map(name => `/${name}`),
+        nextCursor: result.isTruncated ? result.nextContinuationToken : null,
+      };
+    },
     async readJson(path, { missing } = {}) {
       try {
         const result = await oss.get(objectName(path));
@@ -3035,6 +3047,8 @@ export function createHandler({
             route, body, user, config, contentStore: privateContentStore, nowSeconds,
             randomBytesImpl, env, fetchImpl, signal: request.signal,
           })
+          : route.startsWith("trading/signals/")
+          ? await handleMarketSignalHistory({ route, body, user, config, contentStore: privateContentStore })
           : route.startsWith("trading/")
           ? await handleTrading({
             route, body, user, config, contentStore: privateContentStore, nowSeconds, randomBytesImpl,
@@ -3742,6 +3756,9 @@ async function persistentRequest(options) {
       route, body, user, config, contentStore, nowSeconds, randomBytesImpl,
       env, fetchImpl, signal: request.signal,
     }));
+  }
+  if (route.startsWith("trading/signals/")) {
+    return jsonResponse(config, 200, await handleMarketSignalHistory({ route, body, user, config, contentStore }));
   }
   if (route.startsWith("trading/")) {
     return jsonResponse(config, 200, await handleTrading({

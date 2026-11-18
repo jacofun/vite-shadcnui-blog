@@ -33,12 +33,12 @@ function memoryStore() {
   return { store, conflict: (count) => { conflicts = count; }, dropRegistration: () => { dropRegistration = true; } };
 }
 
-function harness({ real = false, storage = memoryStore(), tokenEnv = {} } = {}) {
+function harness({ real = false, storage = memoryStore(), tokenEnv = {}, contentStore } = {}) {
   let time = START;
   let fail = false;
   const store = storage.store;
   const handler = createHandler({
-    env: { ...env, ...tokenEnv }, store, now: () => time,
+    env: { ...env, ...tokenEnv }, store, contentStore, now: () => time,
     ...(!real ? {
       generateRegistrationOptionsImpl: async (options) => ({ challenge: randomBytes(32).toString("base64url"), user: { id: Buffer.from(options.userID).toString("base64url") } }),
       generateAuthenticationOptionsImpl: async (options) => {
@@ -418,4 +418,21 @@ test("persistent Binance tickets require active owner session, CSRF and origin w
   assert.equal("csrfToken" in claims, false);
   await h.call("logout", owner);
   assert.equal((await h.call(route, owner)).statusCode, 401);
+});
+
+test("analysis history routes require the owner session before touching OSS", async () => {
+  let lists = 0;
+  const h = harness({ contentStore: { async listJsonPaths() { lists++; return { paths: [], nextCursor: null }; } } });
+  const owner = await h.register(await h.admin("bootstrap"));
+  const member = await h.register(await h.admin("invite"));
+  for (const route of ["trading/signals/list", "trading/signals/get", "trading/signals/save"]) {
+    assert.equal((await h.call(route)).statusCode, 401);
+    assert.equal((await h.call(route, member)).statusCode, 403);
+    assert.equal((await h.call(route, { ...owner, csrf: "wrong" })).statusCode, 403);
+  }
+  assert.equal(lists, 0);
+  const result = await h.call("trading/signals/list", owner);
+  assert.equal(result.statusCode, 200, result.body);
+  assert.deepEqual(json(result), { entries: [], nextCursor: null });
+  assert.equal(lists, 1);
 });

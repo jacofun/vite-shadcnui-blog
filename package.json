@@ -31,6 +31,7 @@
     "embla-carousel-fade": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.20",
+    "lightweight-charts": "^5.3.0",
     "lucide-react": "^0.544.0",
     "media-chrome": "^4.19.2",
     "mpegts.js": "1.8.2",

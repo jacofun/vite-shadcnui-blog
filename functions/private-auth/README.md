@@ -191,6 +191,12 @@ and index updates use the internal endpoint. Configure the content bucket CORS r
 `PUT` from `https://yanxiao.me`, allow `Content-Type` and `x-oss-forbid-overwrite`, and expose
 `ETag`.
 
+### Market signal history
+
+The trading page sends the completed result and the three closed-candle series to owner-only `trading/signals/save`. `trading/signals/list` returns paginated summaries and `trading/signals/get` returns the original snapshot. These routes use the existing session and CSRF checks. Records and listing entries use write-once objects under `private/.trading/owner/market-signals/`, with retries keyed by `analysisId`.
+
+Use the same private content bucket and allow `oss:ListObjects` on the bucket for the `private/.trading/owner/market-signals/index/` prefix. Object read and write use the existing content-store credentials. Deploy the signal response containing `market.chart` and these routes before enabling the chart and automatic archive in the website.
+
 Because the bucket's `/fc` prefix is mounted at `/home/fc`, the default objects appear at:
 
 | OSS object | Mounted view | Purpose |

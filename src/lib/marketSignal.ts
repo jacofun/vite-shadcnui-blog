@@ -3,6 +3,9 @@ import { getTradingFunctionTicket } from "@/lib/binanceSync";
 
 export type SignalStyle = "trend" | "reversal" | "neutral";
 export type SignalStatus = "candidate" | "watch" | "none" | "expired";
+export type SignalInterval = "4h" | "1h" | "15m";
+export type SignalCandle = [openTimeMs: number, open: number, high: number, low: number, close: number, volume: number, takerBuyVolume: number];
+export interface SignalChartFrame { interval: SignalInterval; candles: SignalCandle[] }
 export interface MarketSignalResult {
   schemaVersion: 1;
   requestId: string;
@@ -20,9 +23,9 @@ export interface MarketSignalResult {
     evidence: { metric: string; reason: string }[]; counterarguments: string[];
     expiredReasons: string[]; triggerVerified: false; priceReference: "markPrice";
   };
-  market: { latestQuote: { price: number; time: number }; warnings: string[] };
+  market: { asOf?: number; chart?: SignalChartFrame[]; latestQuote: { price: number; time: number }; warnings: string[] };
   timing: { completedAt: number; validUntil: number; totalMs: number; marketMs: number; modelMs: number; verificationMs: number };
-  model: { name: string };
+  model: { name: string; promptVersion?: string };
 }
 
 const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
@@ -30,7 +33,24 @@ const text = (v: unknown): v is string => typeof v === "string" && v.length > 0 
 const number = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const price = (v: unknown): v is number => number(v) && v > 0;
 const texts = (v: unknown): v is string[] => Array.isArray(v) && v.length <= 20 && v.every(text);
-function validResult(value: unknown): value is MarketSignalResult {
+const signalIntervals = ["4h", "1h", "15m"] as const;
+function validChart(value: unknown): value is SignalChartFrame[] {
+  return Array.isArray(value) && value.length === signalIntervals.length && signalIntervals.every(interval => {
+    const candles: unknown = value.find(frame => record(frame) && frame.interval === interval)?.candles;
+    if (!Array.isArray(candles) || candles.length < 60 || candles.length > 200) return false;
+    let previous = 0;
+    for (const row of candles) {
+      if (!Array.isArray(row) || row.length !== 7) return false;
+      const [time, open, high, low, close, volume, takerBuy] = row;
+      if (!Number.isSafeInteger(time) || time <= previous || ![open, high, low, close].every(price) ||
+          low > Math.min(open, close) || high < Math.max(open, close) || !number(volume) || !number(takerBuy) ||
+          volume < 0 || takerBuy < 0 || takerBuy > volume + 1e-8) return false;
+      previous = time;
+    }
+    return true;
+  });
+}
+export function validResult(value: unknown): value is MarketSignalResult {
   if (!record(value) || value.schemaVersion !== 1 || !text(value.requestId) || !text(value.analysisId) || !text(value.codeVersion) ||
     !text(value.symbol) || !["trend", "reversal", "neutral"].includes(String(value.style)) ||
     !["candidate", "watch", "none", "expired"].includes(String(value.status))) return false;
@@ -46,6 +66,7 @@ function validResult(value: unknown): value is MarketSignalResult {
   if (p.direction === null && (p.entry !== null || p.stopLoss !== null || p.targets.length)) return false;
   if (value.status !== "none" && value.status !== "expired" && (p.direction === null || p.entry === null || p.stopLoss === null || !p.targets.length)) return false;
   return record(market) && record(market.latestQuote) && price(market.latestQuote.price) && number(market.latestQuote.time) && texts(market.warnings) &&
+    (market.chart === undefined || number(market.asOf) && validChart(market.chart)) &&
     record(timing) && [timing.completedAt, timing.validUntil, timing.totalMs, timing.marketMs, timing.modelMs, timing.verificationMs].every(number) &&
     record(model) && text(model.name);
 }
