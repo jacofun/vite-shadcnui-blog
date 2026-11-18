@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-18",
+  "episodeId": "261015-why-do-people-buy-gold",
+  "title": "Why do people buy gold?",
+  "publishedAt": "2026-10-15",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-261015",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/261015_6_minute_english_why_do_people_buy_gold_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/261015_6_minute_english_why_do_people_buy_gold_transcript.pdf",
+  "reason": "从昨天的工程风险管理主题轮换到金融经济与资产选择。本集用黄金解释价格波动、危机时期的避险需求、稀缺供给与长期价值，既贴近金融科技背景，也适合联系个人投资判断。练习不追求复杂金融术语，而是通过客观题和逐级撤架的短答反复调用六个高频表达，帮助把能看懂的表达转化为能主动说出的英语。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "金融经济与消费",
+    "资产配置",
+    "投资判断",
+    "价格与供给",
+    "主动表达",
+    "渐进输出"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "go up and down",
+        "meaning": "to increase and decrease at different times",
+        "usage": "The price of gold can go up and down as demand changes."
+      },
+      {
+        "expression": "hit an all-time high",
+        "meaning": "to reach the highest level ever recorded",
+        "usage": "Gold prices hit an all-time high in early 2026."
+      },
+      {
+        "expression": "in times of crisis",
+        "meaning": "during periods of serious difficulty or uncertainty",
+        "usage": "Investors often look for safer assets in times of crisis."
+      },
+      {
+        "expression": "be thought of as",
+        "meaning": "to be generally considered or regarded in a particular way",
+        "usage": "Gold is thought of as a relatively safe investment."
+      },
+      {
+        "expression": "a store of value",
+        "meaning": "an asset expected to keep its value over time",
+        "usage": "Gold is perceived to be a store of value over the longer term."
+      },
+      {
+        "expression": "out of thin air",
+        "meaning": "from nothing or without an existing source",
+        "usage": "Unlike paper money, gold cannot be created out of thin air."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "obj-01",
+        "type": "fill-blank",
+        "prompt": "Complete the price description from the programme: The price of gold has always ________.",
+        "targetExpression": "go up and down",
+        "answers": [
+          "gone up and down"
+        ],
+        "explanation": "The transcript says the price of gold has always gone up and down, although it reached its highest ever price in 2026."
+      },
+      {
+        "id": "obj-02",
+        "type": "single-choice",
+        "prompt": "Which sentence best reflects why people buy gold during uncertain periods?",
+        "targetExpression": "be thought of as",
+        "options": [
+          {
+            "id": "a",
+            "text": "Gold is thought of as a safe investment."
+          },
+          {
+            "id": "b",
+            "text": "Gold is thought from a safe investment."
+          },
+          {
+            "id": "c",
+            "text": "Gold is thought to a safe investment."
+          },
+          {
+            "id": "d",
+            "text": "Gold thinks of investors as safe."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme says people buy gold in crises because it is thought of as a safe investment."
+      },
+      {
+        "id": "obj-03",
+        "type": "fill-blank",
+        "prompt": "Complete the context phrase: People often buy more gold ________, when economies and markets feel uncertain.",
+        "targetExpression": "in times of crisis",
+        "answers": [
+          "in times of crisis"
+        ],
+        "explanation": "The transcript directly links increased demand for gold with times of crisis."
+      },
+      {
+        "id": "obj-04",
+        "type": "single-choice",
+        "prompt": "What does describing gold as 'a store of value' suggest?",
+        "targetExpression": "a store of value",
+        "options": [
+          {
+            "id": "a",
+            "text": "It is expected to keep value over a longer period."
+          },
+          {
+            "id": "b",
+            "text": "It can be printed whenever demand rises."
+          },
+          {
+            "id": "c",
+            "text": "It is connected to only one government."
+          },
+          {
+            "id": "d",
+            "text": "Its price never changes at all."
+          }
+        ],
+        "answer": "a",
+        "explanation": "Suki Cooper says gold's neutrality means it is perceived as a store of value over the longer term; this does not mean its price never moves."
+      },
+      {
+        "id": "obj-05",
+        "type": "fill-blank",
+        "prompt": "Complete the supply argument: Gold cannot be created ________ in the way paper money can be printed.",
+        "targetExpression": "out of thin air",
+        "answers": [
+          "out of thin air"
+        ],
+        "explanation": "The expert says gold cannot be created or fabricated out of thin air, which limits supply and supports underlying value."
+      },
+      {
+        "id": "obj-06",
+        "type": "single-choice",
+        "prompt": "If a price 'hits an all-time high', what has happened?",
+        "targetExpression": "hit an all-time high",
+        "options": [
+          {
+            "id": "a",
+            "text": "It has reached its highest recorded level."
+          },
+          {
+            "id": "b",
+            "text": "It has returned to its average level."
+          },
+          {
+            "id": "c",
+            "text": "It has stopped changing permanently."
+          },
+          {
+            "id": "d",
+            "text": "It has fallen below every earlier price."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The programme explains that gold reached its highest ever price in early 2026—its all-time high."
+      },
+      {
+        "id": "obj-07",
+        "type": "single-choice",
+        "prompt": "Which sentence uses 'go up and down' naturally in a reusable work or finance context?",
+        "targetExpression": "go up and down",
+        "options": [
+          {
+            "id": "a",
+            "text": "Transaction volumes go up and down during the month."
+          },
+          {
+            "id": "b",
+            "text": "The team went the deadline up and down."
+          },
+          {
+            "id": "c",
+            "text": "We went up and down the incident."
+          },
+          {
+            "id": "d",
+            "text": "The report is go up and down yesterday."
+          }
+        ],
+        "answer": "a",
+        "explanation": "The phrase naturally describes a quantity that increases and decreases over time, such as prices or transaction volumes."
+      },
+      {
+        "id": "obj-08",
+        "type": "fill-blank",
+        "prompt": "Complete the perception phrase: Because it is neutral, gold is ________ a store of value over the longer term.",
+        "targetExpression": "be thought of as",
+        "answers": [
+          "thought of as",
+          "perceived to be"
+        ],
+        "explanation": "The transcript says gold is perceived to be a store of value because it is not tied to one government, economy or market; 'thought of as' expresses the same supported idea."
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sub-01",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words, one sentence): Why do people buy gold during a crisis? Use 'be thought of as'. Start: 'They buy gold because it...'.",
+        "targetExpression": "be thought of as",
+        "gradingCriteria": "First decide whether the answer states that gold is considered a safe investment during a crisis. Then check whether 'be thought of as' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-02",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words, one or two sentences): Explain why gold's neutrality supports its long-term appeal. Use 'a store of value'. You may use: 'not tied to one government' / 'over the longer term'.",
+        "targetExpression": "a store of value",
+        "gradingCriteria": "First decide whether the answer explains that gold is not tied to one government, economy or market and is therefore seen as keeping value over time. Then check whether 'a store of value' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-03",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words, one or two sentences): Rewrite this idea using 'out of thin air': 'Gold has a limited supply because people cannot simply create it from nothing.' Keep the meaning unchanged.",
+        "targetExpression": "out of thin air",
+        "gradingCriteria": "First decide whether the answer preserves the idea that gold's supply is limited because it cannot simply be created from nothing. Then check whether 'out of thin air' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-04",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences): Gold has just reached a record price, and a colleague wants to put all their savings into it. Give one risk and one reason it may remain attractive. Phrase bank—use one: 'hit an all-time high', 'go up and down', 'in times of crisis'.",
+        "targetExpression": "hit an all-time high",
+        "gradingCriteria": "First decide whether the answer gives one relevant risk, such as price changes or buying after a peak, and one relevant attraction, such as demand during uncertainty. Then check whether 'one phrase from the supplied phrase bank' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      },
+      {
+        "id": "sub-05",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, two or three sentences): Within the programme's topic, say whether you would buy some gold during uncertain times. Give two simple reasons and naturally use 'be thought of as'.",
+        "targetExpression": "be thought of as",
+        "gradingCriteria": "First decide whether the answer states a personal decision within the gold-investment topic and supports it with two relevant reasons. Then check whether 'be thought of as' is used naturally. Point out only the one or two most useful improvements. Do not lower the judgement because correct English is simple or not advanced. If a more natural phrase is needed, offer at most one alternative from today's target expressions or transcript. Clearly distinguish missing or incorrect meaning from meaning that is correct but slightly unnatural."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80-120 words. Use this structure: (1) topic—why gold remains valuable; (2) two key ideas—crisis demand and limited supply; (3) conclusion/example—why physical gold still appeals in a virtual, changing world. Phrase bank: 'in times of crisis', 'a store of value', 'out of thin air'. Use at least two naturally. Simple, accurate English is enough; advanced financial vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "Gold was historically easier to carry and trade than cattle or timber and remains a financial asset.",
+      "People buy gold in times of crisis because it is considered a relatively safe investment.",
+      "Gold is not tied to one government, economy or market, so it is perceived as a longer-term store of value.",
+      "Gold cannot be created out of thin air; limited supply helps support its underlying value when demand rises.",
+      "Gold prices can rise during political or economic uncertainty but still go up and down after reaching a peak.",
+      "In a virtual and changeable world, some people value gold because it is physical, solid and dependable."
+    ]
+  }
+}
