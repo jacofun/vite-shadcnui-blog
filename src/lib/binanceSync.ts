@@ -10,18 +10,20 @@ export interface BinanceSyncResult {
   newRecords: { trades: number; income: number };
 }
 
-export async function syncBinanceRecords(session: PrivateAuthSession): Promise<BinanceSyncResult> {
+// Shared short-lived credential for both routes on the FC JWT-protected domain.
+// The token stays in request memory and is never written to browser storage.
+export async function getTradingFunctionTicket(session: PrivateAuthSession, signal?: AbortSignal): Promise<{ token: string; url: URL }> {
   const ticketResponse = await fetch(`${PRIVATE_AUTH_API_BASE}/trading/binance/token`, {
     method: "POST",
     credentials: "include",
     cache: "no-store",
     headers: { "Content-Type": "application/json", "X-CSRF-Token": session.csrfToken, Accept: "application/json" },
     body: "{}",
-    signal: AbortSignal.timeout(20_000),
+    signal: AbortSignal.any([AbortSignal.timeout(20_000), ...(signal ? [signal] : [])]),
   });
   if (ticketResponse.status === 401) notifyPrivateAuthInvalidated();
   const ticket = await ticketResponse.json().catch(() => null);
-  if (!ticketResponse.ok) throw new Error(ticket?.message || "获取同步凭证失败，请重新登录后重试");
+  if (!ticketResponse.ok) throw new Error(ticket?.message || "获取交易凭证失败，请重新登录后重试");
   if (typeof ticket?.token !== "string" || typeof ticket.syncUrl !== "string" ||
     !Number.isSafeInteger(ticket.expiresAt) || ticket.expiresAt * 1000 <= Date.now()) {
     throw new Error("同步凭证格式无效");
@@ -29,12 +31,17 @@ export async function syncBinanceRecords(session: PrivateAuthSession): Promise<B
   const url = new URL(ticket.syncUrl);
   if (url.protocol !== "https:" || !SYNC_ORIGINS.has(url.origin) ||
     url.username || url.password || url.search || url.hash || url.pathname !== "/trade/api/sync") throw new Error("同步地址必须为 yanxiao.me 或 www.yanxiao.me 的 /trade/api/sync HTTPS 地址");
+  return { token: ticket.token, url };
+}
+
+export async function syncBinanceRecords(session: PrivateAuthSession): Promise<BinanceSyncResult> {
+  const ticket = await getTradingFunctionTicket(session);
 
   // A single foreground request. The short JWT stays in this call's memory.
   // Do not automatically retry: an interrupted response can still mean FC is running.
   let response: Response;
   try {
-    response = await fetch(url.href, {
+    response = await fetch(ticket.url.href, {
       method: "POST",
       credentials: "omit",
       cache: "no-store",
@@ -44,10 +51,10 @@ export async function syncBinanceRecords(session: PrivateAuthSession): Promise<B
       signal: AbortSignal.timeout(310_000),
     });
   } catch {
-    throw new Error("同步连接中断或超时，云端任务仍会继续；请先查看首尔函数日志与 OSS 运行报告，再重新同步");
+    throw new Error("同步连接中断或超时，云端任务仍会继续；请先查看新加坡函数日志与 OSS 运行报告，再重新同步");
   }
   const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(payload?.error?.message || "同步请求失败，请检查首尔函数鉴权与 CDN 配置");
+  if (!response.ok) throw new Error(payload?.error?.message || payload?.Message || "同步请求失败，请检查新加坡函数鉴权与 CDN 配置");
   if (payload?.status !== "completed" || typeof payload.requestId !== "string" ||
     !Number.isSafeInteger(payload.newRecords?.trades) || payload.newRecords.trades < 0 ||
     !Number.isSafeInteger(payload.newRecords?.income) || payload.newRecords.income < 0) {

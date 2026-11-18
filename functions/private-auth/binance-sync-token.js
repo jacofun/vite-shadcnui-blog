@@ -8,7 +8,8 @@ export class BinanceSyncTokenError extends Error {
   }
 }
 
-// This credential authorizes only a brief trade-sync request, never a site session.
+// Shared FC-domain credential for trade sync and market analysis, never a site session.
+// Keep the legacy audience/scope to match the existing native JWT policy.
 export function issueBinanceSyncToken({ user, env, nowSeconds }) {
   if (user?.role !== "owner") {
     throw new BinanceSyncTokenError(403, "MISSING_PERMISSION", "只有站点所有者可以同步币安记录");

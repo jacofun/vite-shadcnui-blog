@@ -1,8 +1,9 @@
-import { ArrowLeft, ArrowRight, BookOpenText, Download, Filter, LoaderCircle, Plus, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpenText, Download, Filter, LoaderCircle, Plus, RefreshCw, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState, type JSX } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams } from "react-router-dom";
 import BinanceTradePicker from "@/components/trading/BinanceTradePicker";
+import MarketOpportunityPanel from "@/components/trading/MarketOpportunityPanel";
 
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
@@ -17,6 +18,7 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
   const [params, setParams] = useSearchParams();
   const view = params.get("view") === "binance" ? "binance" : "journal";
   const [syncing, setSyncing] = useState(false);
+  const [signalOpen, setSignalOpen] = useState(false);
   const [syncMessage, setSyncMessage] = useState("");
   const [syncError, setSyncError] = useState("");
   async function syncRecords() {
@@ -72,6 +74,8 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
             <p className="mt-4 text-sm leading-7 text-slate-400">只回答三个问题，忠实记录自己的判断与实际执行；成交数据独立保存，用于胜率和收益统计。</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <button type="button" aria-expanded={signalOpen} aria-controls="market-opportunity" onClick={() => setSignalOpen(value => !value)}
+              className="inline-flex items-center gap-2 rounded-xl border border-violet-300/25 bg-violet-300/10 px-4 py-3 text-sm font-semibold text-violet-200 transition hover:bg-violet-300/20"><Sparkles className="size-4" />分析交易机会</button>
             <button type="button" disabled={syncing} onClick={() => void syncRecords()}
               className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-4 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-300/20 disabled:cursor-wait disabled:opacity-60">
               {syncing ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />}
@@ -86,6 +90,7 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
           {syncMessage && <p role="status" className="text-emerald-200">{syncMessage}</p>}
           {syncError && <p role="alert" className="rounded-xl border border-rose-400/25 bg-rose-400/[0.06] p-4 text-sm text-rose-200">{syncError}</p>}
         </div>
+        {signalOpen && <MarketOpportunityPanel session={session} onClose={() => setSignalOpen(false)} />}
         <div className="mt-7 inline-flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1" role="tablist" aria-label="交易数据视图">
           {([{ value: "journal", label: "交易日志" }, { value: "binance", label: "币安实盘 · 勾选成交" }] as const).map(item => <button key={item.value} role="tab" aria-selected={view === item.value}
             className={`rounded-lg px-4 py-2.5 text-sm transition ${view === item.value ? "bg-cyan-300/15 text-cyan-200" : "text-slate-400 hover:text-white"}`}

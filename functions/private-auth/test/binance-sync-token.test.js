@@ -9,7 +9,7 @@ const env = { BINANCE_SYNC_PRIVATE_KEY: privateKey.export({ type: "pkcs8", forma
 const nowSeconds = 1800000000;
 const user = { id: "owner", role: "owner" };
 
-test("tickets use RS256, unique IDs and only the sync scope for 120 seconds", () => {
+test("shared FC-domain tickets preserve the existing RS256 audience/scope for 120 seconds", () => {
   const first = issueBinanceSyncToken({ user, env, nowSeconds });
   const second = issueBinanceSyncToken({ user, env, nowSeconds });
   const [header, payload, signature] = first.token.split(".");

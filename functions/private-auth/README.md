@@ -537,62 +537,64 @@ never deletes the `published/` prefix. Do not add an empty build-time manifest o
 Before switching an existing deployment's frontend, complete the FC migration and verify the
 static manifest and media URLs anonymously; confirm your CDN cache rules separately.
 
-## 币安同步短期凭证
+## 交易函数共用短期凭证
 
-前端通过现有登录 Cookie、Origin 和 CSRF 校验调用 `POST /api/private-auth/trading/binance/token`。只有 `owner` 可以领取有效期 120 秒、用途为 `trading:sync` 的 RS256 JWT；OSS 注册表模式继续检查会话撤销、账号状态与权限。该接口不创建交易内容存储，也不访问首尔或币安。
+前端通过现有登录 Cookie、Origin 和 CSRF 校验调用 `POST /api/private-auth/trading/binance/token`。只有 `owner` 可以领取有效期 120 秒、用途为 `trading:sync` 的 RS256 JWT；OSS 注册表模式继续检查会话撤销、账号状态与权限。该接口不创建交易内容存储，也不访问新加坡或币安。
 
 北京 FC 新增以下环境变量，现有登录/存储配置全部保留：
 
 | 变量 | 值 |
 | --- | --- |
 | `BINANCE_SYNC_PRIVATE_KEY` | 仅北京保存的 PKCS#8 RSA PEM 私钥，至少 2048 位；接受换行或字面量 `\n` |
-| `BINANCE_SYNC_KEY_ID` | `trade-sync-v1`，须匹配首尔 JWKS 的 `kid` |
+| `BINANCE_SYNC_KEY_ID` | `trade-sync-v1`，须匹配新加坡 JWKS 的 `kid` |
 | `BINANCE_SYNC_ISSUER` | `https://www.yanxiao.me` |
 | `BINANCE_SYNC_AUDIENCE` | `binance-trade-sync` |
-| `BINANCE_SYNC_URL` | `https://yanxiao.me/trade/api/sync`，首尔服务的 HTTPS 反向代理地址；与北京 API 域名独立 |
+| `BINANCE_SYNC_URL` | `https://yanxiao.me/trade/api/sync`，新加坡服务的 HTTPS 反向代理地址；与北京 API 域名独立 |
 
-除私钥外均提供表内默认值，首尔签发者与受众必须一致。私钥缺失或配置无效只会使本接口返回 `503 BINANCE_SYNC_UNAVAILABLE`，不影响原登录和交易日志。不得将私钥放入 `VITE_*`、前端源码、GitHub 仓库或日志。
+除私钥外均提供表内默认值，FC 原生 JWT 策略须接受上述签发者与受众。私钥缺失或配置无效只会使本接口返回 `503 BINANCE_SYNC_UNAVAILABLE`，不影响原登录和交易日志。不得将私钥放入 `VITE_*`、前端源码、GitHub 仓库或日志。
 
-前端拿到凭证后经 `/trade/api/sync` 直接调用首尔；北京不代理同步。同步结果只反映原始成交/资金流水写入，暂不将它们自动生成交易日志或纳入网站统计。前端不持久化令牌、不自动重试长请求；注销阻止领取新凭证，已签发凭证在最长 120 秒有效期内仍可用，已开始的任务继续运行。
+前端拿到凭证后经 `/trade/api/sync` 直接调用新加坡；北京不代理同步。同步结果只反映原始成交/资金流水写入，暂不将它们自动生成交易日志或纳入网站统计。前端不持久化令牌、不自动重试长请求；注销阻止领取新凭证，已签发凭证在最长 120 秒有效期内仍可用，已开始的任务继续运行。
 
-密钥生成、首尔新增环境变量、FC 原生 JWT 触发器、CDN 透传及轮换步骤见 [binance-trade-sync README](https://github.com/jacofun/binance-trade-sync#6-登录后前端直连首尔)。部署 ZIP 已包含 `binance-sync-token.js`，工作流不写入签名私钥。
+密钥生成、FC 原生 JWT 配置、FC 原生 JWT 触发器、CDN 透传及轮换步骤见 [binance-trade-sync README](https://github.com/jacofun/binance-trade-sync#6-登录后前端直连新加坡)。部署 ZIP 已包含 `binance-sync-token.js`，工作流不写入签名私钥。
 
 验证命令：`npm test --prefix functions/private-auth`、`pnpm test:client`（包含直接同步时的 Cookie/CSRF 隔离、过期令牌、错误目标和中断不重试测试）、`pnpm lint`、`pnpm build`。
 
 
-同步入口由 `/trade/api` 迁移至 `/trade/api/sync`。CDN 应将新路径映射到现有首尔函数，允许 POST 和 OPTIONS、透传 X-JWT-Token，并禁用缓存。首尔处理器不依赖 CDN 外部路径，无需新增首尔环境变量。
+同步入口由 `/trade/api` 迁移至 `/trade/api/sync`。CDN 应将新路径映射到现有新加坡函数，允许 POST 和 OPTIONS、透传 X-JWT-Token，并禁用缓存。新加坡处理器不依赖 CDN 外部路径，无需新增新加坡环境变量。
 
-同步端点默认是 `https://yanxiao.me/trade/api/sync`，获取凭证的北京 API 仍是 `https://www.yanxiao.me/api/private-auth/trading/binance/token`。前端允许受控的 `yanxiao.me` 和 `www.yanxiao.me` 的 `/trade/api/sync`，不要求同步端点与北京 API 同源。**已有 FC 环境变量优先于默认值**：若北京此前显式配置了 `BINANCE_SYNC_URL`，请手工将旧路径改成新路径，推荐值为 `https://yanxiao.me/trade/api/sync`。无需重新生成密钥，`BINANCE_SYNC_ISSUER` 和首尔 `SYNC_JWT_ISSUER` 保持原先一致的值。
+同步端点默认是 `https://yanxiao.me/trade/api/sync`，获取凭证的北京 API 仍是 `https://www.yanxiao.me/api/private-auth/trading/binance/token`。前端允许受控的 `yanxiao.me` 和 `www.yanxiao.me` 的 `/trade/api/sync`，不要求同步端点与北京 API 同源。**已有 FC 环境变量优先于默认值**：若北京此前显式配置了 `BINANCE_SYNC_URL`，请手工将旧路径改成新路径，推荐值为 `https://yanxiao.me/trade/api/sync`。无需重新生成密钥，`BINANCE_SYNC_ISSUER` 与 FC 原生 JWT 策略保持一致。
 
-是否跨域由浏览器页面的 Origin 决定：使用 `https://yanxiao.me` 打开网站时，同步为同源请求；页面位于 `https://www.yanxiao.me` 时，同步才需要首尔入口的 CORS。若保留 www 页面，需在 CDN/网关处理无 JWT 的 OPTIONS 预检，并允许 `Origin: https://www.yanxiao.me`、`POST`、`X-JWT-Token` 和 `Content-Type`，POST 仍执行 JWT 校验。不要假定放开前端地址校验就完成了网关 CORS 配置。
+是否跨域由浏览器页面的 Origin 决定：使用 `https://yanxiao.me` 打开网站时，同步为同源请求；页面位于 `https://www.yanxiao.me` 时，同步才需要新加坡入口的 CORS。若保留 www 页面，需在 CDN/网关处理无 JWT 的 OPTIONS 预检，并允许 `Origin: https://www.yanxiao.me`、`POST`、`X-JWT-Token` 和 `Content-Type`，POST 仍执行 JWT 校验。不要假定放开前端地址校验就完成了网关 CORS 配置。
 
 
 ### 后续云函数的统一 JWT 请求头
 
-同步前端使用 `X-JWT-Token: Bearer <JWT>`，首尔代码和 FC 平台 JWT 的 Header 参数名也必须为 `X-JWT-Token`。保留 `Bearer ` 前缀的末尾空格；CORS 允许 `X-JWT-Token`、`Content-Type`，CDN 透传该请求头。业务 JWT 不再通过 `Authorization` 传递，避免与 CDN 的 OSS 回源签名共用字段；首尔也不会从旧请求头回退读取凭证。
+同步前端使用 `X-JWT-Token: Bearer <JWT>`，新加坡代码和 FC 平台 JWT 的 Header 参数名也必须为 `X-JWT-Token`。保留 `Bearer ` 前缀的末尾空格；CORS 允许 `X-JWT-Token`、`Content-Type`，CDN 透传该请求头。业务 JWT 不再通过 `Authorization` 传递，避免与 CDN 的 OSS 回源签名共用字段；新加坡也不会从旧请求头回退读取凭证。
 
-后续云函数沿用这套流程：北京先通过现有登录态、CSRF 和业务权限签发短期 RS256 凭证，前端将凭证放在 `X-JWT-Token` 中直连目标函数，目标函数使用可信公钥校验。私钥仅留在北京，目标函数只持有公钥；可以复用 issuer、受信公钥和密钥轮换机制，每个业务分别限制 audience 与 scope，并校验最长 120 秒有效期。新业务在北京添加明确的服务端签发路由和权限规则，不开放由客户端任意选择 audience/scope 的通用签发接口。当前币安凭证仍只授权 `aud=binance-trade-sync`、`scope=trading:sync`，不能作为其他云函数的通用通行证。
+交易同步与行情分析复用本节的签发接口及全部 `BINANCE_SYNC_*` 配置，沿用现有 audience/scope。浏览器拿到凭证后直连同一域名的 `/trade/api/sync` 或 `/trade/api/signal/analyze`，不会让北京转发行情分析请求。签名、公钥及 issuer/audience 策略统一由 FC 原生 JWT 入口管理，两个业务函数无需 JWT 环境变量；旧 `SYNC_JWT_*`、`SIGNAL_JWT_*`、`SIGNAL_AUTH_MODE` 不再读取，可删除。共用凭证授权这两项交易能力，签发接口继续只允许 owner，并保留登录态、Origin、CSRF 与撤销检查。
 
-代码部署后，需在首尔 HTTP 触发器或实际回源自定义域名的 JWT 设置中手工将 Header 名称从 `Authorization`（或排查时的临时名称）改为 `X-JWT-Token`。若 CDN/网关另有 CORS 配置，也须允许新请求头。无需更换现有签名密钥或调整函数环境变量，工作流不会替你修改平台鉴权设置。
+交易日志页面新增“分析交易机会”：默认 BTCUSDT，可选择顺势、反转或综合风格，显示候选方向、入场、止损、目标、证据、反对理由、耗时和请求编号。结果到期后在页面标记过期，不写 OSS、不自动下单。暂无机会也属于成功响应；错误展示函数/FC 错误码和请求编号。分析请求不自动重试，关闭面板或取消等待会中止浏览器请求。无新增北京环境变量，模型参数继续在交易信号函数维护。
+
+代码部署后，需在新加坡 HTTP 触发器或实际回源自定义域名的 JWT 设置中手工将 Header 名称从 `Authorization`（或排查时的临时名称）改为 `X-JWT-Token`。若 CDN/网关另有 CORS 配置，也须允许新请求头。无需更换现有签名密钥或调整函数环境变量，工作流不会替你修改平台鉴权设置。
 
 ## 勾选币安成交并创建交易日志
 
-交易日志增加“币安实盘 · 勾选成交”。桌面端点击成交整行、移动端点击成交卡片即可切换选择；复选框和日志链接独立操作。打包成功后返回交易记录列表，需要写复盘时再进入三个问题编辑器。浏览器使用网站原有登录 Cookie 和 CSRF 调用北京的 `POST trading/binance/list`、`preview`、`import`；仅 owner 可操作。首尔的同步接口和 `X-JWT-Token` 方案继续沿用，读取数据和打包日志不再调用币安或首尔。
+交易日志增加“币安实盘 · 勾选成交”。桌面端点击成交整行、移动端点击成交卡片即可切换选择；复选框和日志链接独立操作。打包成功后返回交易记录列表，需要写复盘时再进入三个问题编辑器。浏览器使用网站原有登录 Cookie 和 CSRF 调用北京的 `POST trading/binance/list`、`preview`、`import`；仅 owner 可操作。新加坡的同步接口和 `X-JWT-Token` 方案继续沿用，读取数据和打包日志不再调用币安或新加坡。
 
-北京函数需读取首尔写入的私有 OSS 目录。可配置以下环境变量；Bucket、地域和端点未填写时复用 `OSS_CONTENT_BUCKET`、`OSS_CONTENT_REGION`、`OSS_CONTENT_ENDPOINT`，目录默认 `fc/binance-sync/owner`：
+北京函数需读取新加坡写入的私有 OSS 目录。可配置以下环境变量；Bucket、地域和端点未填写时复用 `OSS_CONTENT_BUCKET`、`OSS_CONTENT_REGION`、`OSS_CONTENT_ENDPOINT`，目录默认 `fc/binance-sync/owner`：
 
 ```json
 {
-  "BINANCE_DATA_OSS_BUCKET": "首尔同步使用的 OSS_BUCKET",
+  "BINANCE_DATA_OSS_BUCKET": "新加坡同步使用的 OSS_BUCKET",
   "BINANCE_DATA_OSS_REGION": "oss-cn-beijing",
   "BINANCE_DATA_OSS_ENDPOINT": "https://oss-cn-beijing-internal.aliyuncs.com",
   "BINANCE_DATA_OSS_PREFIX": "fc/binance-sync/owner"
 }
 ```
 
-若北京函数不具备同地域内网访问条件，端点使用 `https://oss-cn-beijing.aliyuncs.com`。这些值配置在北京网站 FC，不是 GitHub Secrets；同步目录必须与首尔的 `OSS_PREFIX` 完全一致。现有部署保留这些环境变量。
+若北京函数不具备同地域内网访问条件，端点使用 `https://oss-cn-beijing.aliyuncs.com`。这些值配置在北京网站 FC，不是 GitHub Secrets；同步目录必须与新加坡的 `OSS_PREFIX` 完全一致。现有部署保留这些环境变量。
 
-使用网站现有 OSS 凭据来源（FC 调用临时凭据或 `ALIBABA_CLOUD_ACCESS_KEY_ID/SECRET`，与原 content store 一致），为对应角色/账号追加同步目录的只读权限即可，无需复制首尔的币安 API Key 或新增部署密钥：
+使用网站现有 OSS 凭据来源（FC 调用临时凭据或 `ALIBABA_CLOUD_ACCESS_KEY_ID/SECRET`，与原 content store 一致），为对应角色/账号追加同步目录的只读权限即可，无需复制新加坡的币安 API Key 或新增部署密钥：
 
 ```json
 {
