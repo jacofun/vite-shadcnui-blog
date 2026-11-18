@@ -16,11 +16,8 @@ export default function MarketSignalChart({ result }: { result: MarketSignalResu
 
   useEffect(() => {
     if (!container.current || !bars?.length) return;
-    const decimals = Math.min(12, Math.max(2, ...bars.map(row => {
-      const close = String(row[4]);
-      const [mantissa, exponent = "0"] = close.split("e");
-      return (mantissa.split(".")[1]?.length ?? 0) - Number(exponent);
-    })));
+    const decimals = Math.min(12, Math.max(2, 4 - Math.floor(Math.log10(result.market.latestQuote.price))));
+    const priceLabel = new Intl.NumberFormat("zh-CN", { maximumFractionDigits: decimals, useGrouping: false });
     const chart = createChart(container.current, {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: "#020617" }, textColor: "#94a3b8", attributionLogo: true },
@@ -35,7 +32,8 @@ export default function MarketSignalChart({ result }: { result: MarketSignalResu
     if (stopLoss !== null) levels.push(stopLoss);
     const price = chart.addSeries(CandlestickSeries, {
       upColor: colors.up, downColor: colors.down, borderVisible: false, wickUpColor: colors.up, wickDownColor: colors.down,
-      lastValueVisible: false, priceLineVisible: false, priceFormat: { type: "price", precision: decimals, minMove: 10 ** -decimals },
+      lastValueVisible: false, priceLineVisible: false,
+      priceFormat: { type: "custom", minMove: 10 ** -decimals, formatter: (value: number) => priceLabel.format(value) },
       autoscaleInfoProvider: (base: () => AutoscaleInfo | null) => {
         const info = base();
         if (!info?.priceRange) return info;

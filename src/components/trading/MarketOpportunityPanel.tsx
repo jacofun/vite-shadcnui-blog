@@ -97,13 +97,13 @@ export default function MarketOpportunityPanel({ session, onClose }: { session: 
     {message && <p role="status" className="mt-4 text-sm text-slate-400">{message}</p>}
     {error && <p role="alert" className="mt-4 break-words rounded-xl border border-rose-400/25 bg-rose-400/[0.06] p-4 text-sm leading-7 text-rose-200">{error}</p>}
     {result && status && <>
-      <MarketOpportunityResult result={result} status={status} />
       {!result.market.chart && <p role="status" className="mt-4 text-xs text-slate-400">当前信号接口未提供图表数据，本次结果未归档。</p>}
       {archiveState === "saving" && <p role="status" className="mt-4 text-xs text-slate-400">正在保存本次分析…</p>}
       {archiveState === "saved" && <p role="status" className="mt-4 text-xs text-emerald-300">已保存到分析历史</p>}
       {archiveState === "failed" && <div role="alert" className="mt-4 flex flex-wrap items-center gap-3 text-sm text-amber-200">
         <span>本次分析尚未保存。</span><button type="button" className="rounded-lg border border-white/15 px-3 py-1.5 hover:bg-white/5" onClick={() => void archive(result)}>重试保存</button>
       </div>}
+      <MarketOpportunityResult result={result} status={status} />
     </>}
     {showHistory && <MarketSignalHistory session={session} revision={historyRevision} />}
   </section>;
