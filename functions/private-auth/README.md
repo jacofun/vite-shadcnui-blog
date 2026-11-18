@@ -575,7 +575,7 @@ static manifest and media URLs anonymously; confirm your CDN cache rules separat
 
 ## 勾选币安成交并创建交易日志
 
-交易日志增加“币安实盘 · 勾选成交”。浏览器使用网站原有登录 Cookie 和 CSRF 调用北京的 `POST trading/binance/list`、`preview`、`import`；仅 owner 可操作。首尔的同步接口和 `X-JWT-Token` 方案继续沿用，读取数据和打包日志不再调用币安或首尔。
+交易日志增加“币安实盘 · 勾选成交”。桌面端点击成交整行、移动端点击成交卡片即可切换选择；复选框和日志链接独立操作。打包成功后返回交易记录列表，需要写复盘时再进入三个问题编辑器。浏览器使用网站原有登录 Cookie 和 CSRF 调用北京的 `POST trading/binance/list`、`preview`、`import`；仅 owner 可操作。首尔的同步接口和 `X-JWT-Token` 方案继续沿用，读取数据和打包日志不再调用币安或首尔。
 
 北京函数需读取首尔写入的私有 OSS 目录。可配置以下环境变量；Bucket、地域和端点未填写时复用 `OSS_CONTENT_BUCKET`、`OSS_CONTENT_REGION`、`OSS_CONTENT_ENDPOINT`，目录默认 `fc/binance-sync/owner`：
 

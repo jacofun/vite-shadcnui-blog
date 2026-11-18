@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type JSX } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState, type JSX, type MouseEvent } from "react";
+import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, LoaderCircle, PackagePlus, RefreshCw } from "lucide-react";
 import type { PrivateAuthSession } from "@/lib/privateAuth";
 import type { Trade } from "@/lib/trading";
@@ -14,7 +14,6 @@ const status = { incomplete: "待补全", open: "持仓中", closed: "已平仓"
 export default function BinanceTradePicker({ session, entries, refresh, initialTarget, onImported }: {
   session: PrivateAuthSession; entries: Trade[]; refresh: number; initialTarget?: string; onImported: (trade: Trade) => void;
 }): JSX.Element {
-  const navigate = useNavigate();
   const [symbol, setSymbol] = useState(() => entries.find(t => t.id === initialTarget)?.plan.symbol || "");
   const [startDate, setStartDate] = useState(() => date(Date.now() - 29 * 86400000));
   const [endDate, setEndDate] = useState(() => date(Date.now()));
@@ -53,7 +52,7 @@ export default function BinanceTradePicker({ session, entries, refresh, initialT
   const shownPreview = preview?.key === signature ? preview.value : null;
   function resetSelection() { setSelected(new Map()); setCompleteHistory(false); setPreview(null); setPage(1); }
   function toggle(row: BinanceFill) {
-    if (row.importedTradeId && row.importedTradeId !== targetId) return;
+    if (busy || row.importedTradeId && row.importedTradeId !== targetId) return;
     setCompleteHistory(false);
     setSelected(previous => {
       const next = new Map(previous);
@@ -62,6 +61,10 @@ export default function BinanceTradePicker({ session, entries, refresh, initialT
       return next;
     });
     if (selected.size === 0 && row.positionSide !== "BOTH") setDirection(row.positionSide === "LONG" ? "long" : "short");
+  }
+  function selectRow(event: MouseEvent<HTMLElement>, row: BinanceFill) {
+    if ((event.target as HTMLElement).closest("a, button, input, label")) return;
+    toggle(row);
   }
   async function showPreview() {
     setBusy("preview"); setError("");
@@ -75,7 +78,6 @@ export default function BinanceTradePicker({ session, entries, refresh, initialT
     try {
       const result = await importBinanceTrade(session, input);
       onImported(result.trade);
-      navigate(`/resources/trading/${result.trade.id}`);
     } catch (failure) { setError(failure instanceof Error ? failure.message : "保存失败，可保留选择后重试"); }
     finally { setBusy(""); }
   }
@@ -84,7 +86,7 @@ export default function BinanceTradePicker({ session, entries, refresh, initialT
   return <section className="mt-7 space-y-5" aria-label="币安实盘成交打包">
     <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.04] p-5">
       <h2 className="text-lg font-semibold text-emerald-100">把实际成交组成一笔交易</h2>
-      <p className="mt-2 text-sm leading-7 text-slate-400">勾选同一次交易的开仓、加仓、减仓和平仓成交，确认多空及完整性后，直接进入三个问题写日志。</p>
+      <p className="mt-2 text-sm leading-7 text-slate-400">勾选同一次交易的开仓、加仓、减仓和平仓成交，确认多空及完整性后保存到交易记录，稍后再补充日志。</p>
       <p className="mt-2 text-xs leading-6 text-slate-500">成交原件保留在私有 OSS。金额来自后端读取的原始记录；每条成交只关联一笔日志。所有时间按北京时间显示。</p>
     </div>
     <div className="grid gap-3 sm:grid-cols-3">
@@ -112,7 +114,7 @@ export default function BinanceTradePicker({ session, entries, refresh, initialT
       </div>
       <div className="hidden overflow-x-auto rounded-2xl border border-white/10 md:block">
         <table className="w-full text-left text-xs"><thead className="bg-white/5 text-slate-400"><tr>{["选择", "时间", "买卖 / 持仓", "价格 / 数量", "手续费", "已实现盈亏", "关联"].map(h => <th key={h} className="whitespace-nowrap px-4 py-3 font-medium">{h}</th>)}</tr></thead>
-          <tbody>{data.records.map(row => <tr key={row.id} className={`border-t border-white/5 ${selected.has(row.id) ? "bg-cyan-300/5" : ""}`}>
+          <tbody>{data.records.map(row => <tr key={row.id} onClick={event => selectRow(event, row)} className={`border-t border-white/5 transition-colors ${busy || row.importedTradeId && row.importedTradeId !== targetId ? "cursor-not-allowed" : "cursor-pointer hover:bg-white/5"} ${selected.has(row.id) ? "bg-cyan-300/5" : ""}`}>
             <td className="px-4 py-4"><input aria-label={`选择成交 ${row.id}`} type="checkbox" checked={selected.has(row.id)} disabled={!!busy || !!row.importedTradeId && row.importedTradeId !== targetId} onChange={() => toggle(row)} /></td>
             <td className="whitespace-nowrap px-4 py-4">{time(row.time)}<p className="mt-1 text-[10px] text-slate-500">成交 {row.id}</p></td>
             <td className="px-4 py-4"><span className={row.side === "BUY" ? "text-emerald-300" : "text-rose-300"}>{row.side === "BUY" ? "买入" : "卖出"}</span><p className="mt-1 text-slate-500">{row.positionSide === "BOTH" ? "单向持仓" : row.positionSide === "LONG" ? "多头" : "空头"}</p></td>
@@ -123,8 +125,8 @@ export default function BinanceTradePicker({ session, entries, refresh, initialT
           </tr>)}</tbody>
         </table>
       </div>
-      <div className="space-y-3 md:hidden">{data.records.map(row => <div key={row.id} className={`rounded-2xl border p-4 ${selected.has(row.id) ? "border-cyan-300/40 bg-cyan-300/5" : "border-white/10 bg-white/[0.025]"}`}>
-        <label className="flex items-center justify-between gap-3 text-sm"><span className="flex items-center gap-3"><input aria-label={`选择成交 ${row.id}`} type="checkbox" checked={selected.has(row.id)} disabled={!!busy || !!row.importedTradeId && row.importedTradeId !== targetId} onChange={() => toggle(row)} />{row.side === "BUY" ? "买入" : "卖出"} · {row.positionSide}</span><span className="text-xs text-slate-400">{time(row.time)}</span></label>
+      <div className="space-y-3 md:hidden">{data.records.map(row => <div key={row.id} onClick={event => selectRow(event, row)} className={`rounded-2xl border p-4 transition-colors ${busy || row.importedTradeId && row.importedTradeId !== targetId ? "cursor-not-allowed" : "cursor-pointer hover:bg-white/5"} ${selected.has(row.id) ? "border-cyan-300/40 bg-cyan-300/5" : "border-white/10 bg-white/[0.025]"}`}>
+        <div className="flex items-center justify-between gap-3 text-sm"><span className="flex items-center gap-3"><input aria-label={`选择成交 ${row.id}`} type="checkbox" checked={selected.has(row.id)} disabled={!!busy || !!row.importedTradeId && row.importedTradeId !== targetId} onChange={() => toggle(row)} />{row.side === "BUY" ? "买入" : "卖出"} · {row.positionSide}</span><span className="text-xs text-slate-400">{time(row.time)}</span></div>
         <dl className="mt-4 grid grid-cols-2 gap-3 text-xs"><div><dt className="text-slate-500">价格 / 数量</dt><dd className="mt-1 tabular-nums">{row.price} / {row.qty}</dd></div><div><dt className="text-slate-500">手续费</dt><dd className="mt-1">{row.commission} {row.commissionAsset}</dd></div><div><dt className="text-slate-500">已实现盈亏</dt><dd className="mt-1">{row.realizedPnl}</dd></div><div><dt className="text-slate-500">关联</dt><dd className="mt-1">{row.importedTradeId ? <Link className="text-cyan-300" to={`/resources/trading/${row.importedTradeId}`}>查看日志</Link> : "未关联"}</dd></div></dl>
       </div>)}</div>
       <div className="flex items-center justify-between gap-3"><button className={button} disabled={page <= 1 || !!busy} onClick={() => setPage(p => p - 1)}><ArrowLeft className="size-4" />上一页</button><span className="text-xs text-slate-400">第 {page} / {data.pages} 页 · {data.total} 条</span><button className={button} disabled={page >= data.pages || !!busy} onClick={() => setPage(p => p + 1)}>下一页<ArrowRight className="size-4" /></button></div>
@@ -152,7 +154,7 @@ export default function BinanceTradePicker({ session, entries, refresh, initialT
         ].map(([title, value]) => <div key={title}><dt className="text-xs text-slate-500">{title}</dt><dd className="mt-2 break-all tabular-nums">{value}</dd></div>)}</dl>
         <p className="mt-4 text-xs leading-6 text-slate-400">本次新增 {shownPreview.added} 条，日志共 {shownPreview.executions} 条。成交损益不含资金费；未统一币种的手续费不换算，也不视为零。</p>
         {!shownPreview.positionKnown && <p className="mt-2 text-xs text-amber-200">所选成交缺少起始开仓或存在反手，请补充核对；当前保存为待补全。</p>}
-        <button className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:opacity-50 sm:w-auto" disabled={!!busy} onClick={() => void save()}>{busy === "save" ? <LoaderCircle className="size-4 animate-spin" /> : <Check className="size-4" />}{targetId ? "补充成交并写日志" : "确认打包并写日志"}</button>
+        <button className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:opacity-50 sm:w-auto" disabled={!!busy} onClick={() => void save()}>{busy === "save" ? <LoaderCircle className="size-4 animate-spin" /> : <Check className="size-4" />}{targetId ? "确认补充成交" : "确认打包交易"}</button>
       </div>}
     </div>
   </section>;

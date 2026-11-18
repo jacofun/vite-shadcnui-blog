@@ -92,7 +92,12 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
             onClick={() => setParams(item.value === "binance" ? { view: "binance" } : {})}>{item.label}</button>)}
         </div>
         {view === "binance" && !loading && <BinanceTradePicker session={session} entries={entries} refresh={refresh} initialTarget={params.get("target") || undefined}
-          onImported={trade => setEntries(previous => [trade, ...previous.filter(t => t.id !== trade.id)])} />}
+          onImported={trade => {
+            setEntries(previous => [trade, ...previous.filter(t => t.id !== trade.id)]);
+            setFilter("all");
+            setSearch("");
+            setParams({});
+          }} />}
         {view === "binance" && loading && <p className="mt-8 text-sm text-slate-400">正在读取日志关联…</p>}
         {view === "journal" && <>
         <section className="mt-9 space-y-4" aria-label="交易表现统计">
