@@ -21,10 +21,10 @@ function storedId(key: string) {
     return isAnalysisId(id) ? id : "";
   } catch { return ""; }
 }
-type Props = { session: PrivateAuthSession; analysisId?: string; permit?: string; validUntil?: number; now: number };
+type Props = { session: PrivateAuthSession; analysisId?: string; permit?: string; validUntil?: number; now: number; testMode?: boolean };
 
-export default function MarketSignalOrders({ session, analysisId, permit, validUntil = 0, now }: Props) {
-  const storageKey = `market-signal:last-order:${session.user.id}`;
+export default function MarketSignalOrders({ session, analysisId, permit, validUntil = 0, now, testMode = false }: Props) {
+  const storageKey = `market-signal:${testMode ? "last-demo-order" : "last-order"}:${session.user.id}`;
   const [lastAttempt, setLastAttempt] = useState(() => storedId(storageKey));
   const [queryId, setQueryId] = useState<string>();
   const [retry, refresh] = useState(0);
@@ -47,7 +47,7 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
   useEffect(() => {
     if (!eligible || !fresh || alreadyAttempted) return;
     const controller = new AbortController();
-    void previewOrders(session, analysisId, permit, controller.signal).then(
+    void previewOrders(session, analysisId, permit, controller.signal, testMode ? "demo" : undefined).then(
       value => { if (!controller.signal.aborted) setPreviewResult({ id: analysisId, revision: retry, value }); },
       failure => {
         if (!controller.signal.aborted) setPreviewResult({ id: analysisId, revision: retry,
@@ -55,7 +55,7 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
       },
     );
     return () => controller.abort();
-  }, [session, analysisId, permit, fresh, retry, eligible, alreadyAttempted]);
+  }, [session, analysisId, permit, fresh, retry, eligible, alreadyAttempted, testMode]);
 
   async function requestOrder(id: string, draft?: string) {
     if (!isAnalysisId(id) || inFlight.current) return;
@@ -72,13 +72,14 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
   }
 
   if (!eligible && !lastAttempt) return null;
-  return <section className="mt-4 space-y-3 rounded-xl border border-sky-400/25 bg-sky-400/[0.05] p-4" aria-label="交易计划与查单">
+  const heading = testMode ? "测试草稿与查单" : "交易计划与查单";
+  return <section className="mt-4 space-y-3 rounded-xl border border-sky-400/25 bg-sky-400/[0.05] p-4" aria-label={heading}>
     <div>
-      <h3 className="font-semibold text-sky-100">交易计划与查单</h3>
+      <h3 className="font-semibold text-sky-100">{heading}</h3>
       {eligible && <p className="mt-1 text-xs leading-6 text-slate-400">先确认入场、止盈和止损。市价开仓成交后，系统依次提交保护单。</p>}
     </div>
     {eligible && !alreadyAttempted && <>
-      {!fresh && <p role="status" className="text-sm text-amber-200">研究机会已过期，请重新分析。</p>}
+      {!fresh && <p role="status" className="text-sm text-amber-200">{testMode ? "测试计划已过期，请重新生成。" : "研究机会已过期，请重新分析。"}</p>}
       {fresh && !previewResponse && <p role="status" className="text-sm text-sky-200">正在核对委托草稿…</p>}
       {fresh && previewResponse?.error && <p role="alert" className="text-sm text-amber-200">{previewResponse.error}</p>}
       {fresh && (!draftOpen && previewResponse || preview?.options.length === 0) &&
@@ -128,11 +129,12 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
           <span>我确认以上价格。开仓与保护单分开提交，成交后存在保护单未生效的间隔。保护单以标记价格触发，平掉该方向持仓。流程期间避免在该账户另行操作 BTCUSDT。</span>
         </label>
         <button type="button" disabled={!acknowledged || !!busy} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
-          onClick={() => { if (selected.draft && Date.now() < preview.expiresAt) void requestOrder(analysisId, selected.draft); }}>确认开仓并设置止盈止损</button>
+          onClick={() => { if (selected.draft && Date.now() < preview.expiresAt) void requestOrder(analysisId, selected.draft); }}>
+          {testMode ? "确认测试网开仓并设置止盈止损" : "确认开仓并设置止盈止损"}</button>
       </div>}
     </>}
     {lastAttempt && <form className="flex flex-wrap items-center gap-2" onSubmit={event => { event.preventDefault(); void requestOrder(queryId ?? lastAttempt); }}>
-      <label className="flex min-w-52 flex-1 flex-col gap-1 text-xs text-slate-400">查单用分析编号
+      <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-slate-400 sm:min-w-52">{testMode ? "查单用测试编号" : "查单用分析编号"}
         <input className="rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" maxLength={36} spellCheck={false}
           value={queryId ?? lastAttempt} onChange={event => setQueryId(event.target.value.trim())} />
       </label>

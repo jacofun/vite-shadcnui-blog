@@ -15,7 +15,7 @@ const source = compile(await readFile(new URL("../src/lib/marketSignal.ts", impo
 const { analyzeMarketOpportunity, validResult } = await import(data(source));
 const ordersSource = compile(await readFile(new URL("../src/lib/marketSignalOrders.ts", import.meta.url), "utf8"))
   .replace('"@/lib/binanceSync"', JSON.stringify(data(ticketSource)));
-const { previewOrders, fetchOrderStatus } = await import(data(ordersSource));
+const { createDemoOrderPlan, previewOrders, fetchOrderStatus } = await import(data(ordersSource));
 const session = { csrfToken: "csrf-for-beijing-only" };
 const input = { symbol: "BTCUSDT", style: "reversal" };
 const ticket = () => ({ token: "shared-sync-ticket", syncUrl: "https://yanxiao.me/trade/api/sync", expiresAt: Math.floor(Date.now() / 1000) + 120 });
@@ -168,6 +168,22 @@ test("protected confirmation uses its own ticket and accepts distinct stop and t
   assert.deepEqual(JSON.parse(calls[1].options.body), { action: "submit", draft });
   assert.equal(calls[1].options.credentials, "omit");
   assert.equal(calls.length, 2);
+});
+
+test("the test-order entry uses a read ticket and accepts only demo plans and previews", async t => {
+  const plan = { analysisId: "00000000-0000-0000-0000-000000000002", orderPermit: `v3.${"a".repeat(43)}`, validUntil: Date.now() + 60000 };
+  let payload = { ...plan, mode: "demo" };
+  const calls = setup(t, n => response(n % 2 === 1 ? ticket() : payload));
+  const signal = new AbortController().signal;
+  assert.deepEqual(await createDemoOrderPlan(session, "short", signal), plan);
+  assert.deepEqual(JSON.parse(calls[0].options.body), { action: "preview" });
+  assert.deepEqual(JSON.parse(calls[1].options.body), { action: "demo-plan", direction: "short" });
+  payload = { ...plan, mode: "live" };
+  await assert.rejects(createDemoOrderPlan(session, "short", signal), /测试草稿凭据无效/);
+  payload = { ...payload, symbol: "BTCUSDT", direction: "short", quantity: "0.001", stop: 10100, target: 9900,
+    riskCap: 1, markPrice: "10000", expiresAt: Date.now() + 30000, options: [], unavailable: {},
+    submission: { state: "blocked", reason: "仅可预览" } };
+  await assert.rejects(previewOrders(session, plan.analysisId, plan.orderPermit, signal, "demo"), /订单草稿格式无效/);
 });
 
 const scannerSource = compile(await readFile(new URL("../src/lib/marketScanner.ts", import.meta.url), "utf8"))

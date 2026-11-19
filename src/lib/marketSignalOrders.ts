@@ -30,10 +30,13 @@ export interface OrderStatus {
 interface ProtectionOrder { price: string; clientId: string; exchangeStatus: string | null }
 const validProtectionOrder = (value: unknown) => record(value) && decimal(value.price) && typeof value.clientId === "string" &&
   (value.exchangeStatus === null || typeof value.exchangeStatus === "string");
-type OrderRequest = { action: "preview"; permit: string } | { action: "status"; analysisId: string } | { action: "submit"; draft: string };
+type OrderRequest = { action: "preview"; permit: string } | { action: "status"; analysisId: string } | { action: "submit"; draft: string } |
+  { action: "demo-plan"; direction: "long" | "short" };
+export type DemoOrderPlan = { analysisId: string; orderPermit: string; validUntil: number };
 
 async function orderRequest(session: PrivateAuthSession, input: OrderRequest, signal?: AbortSignal): Promise<unknown> {
-  const ticket = await getTradingFunctionTicket(session, signal, input.action === "submit" ? input : { action: input.action });
+  const ticket = await getTradingFunctionTicket(session, signal, input.action === "submit" ? input :
+    { action: input.action === "demo-plan" ? "preview" : input.action });
   const url = new URL("/trade/api/signal/orders", ticket.url.origin);
   let response: Response;
   try {
@@ -56,11 +59,20 @@ async function orderRequest(session: PrivateAuthSession, input: OrderRequest, si
   }
   return payload;
 }
-export async function previewOrders(session: PrivateAuthSession, analysisId: string, permit: string, signal: AbortSignal): Promise<OrderPreview> {
+export async function createDemoOrderPlan(session: PrivateAuthSession, direction: "long" | "short", signal: AbortSignal): Promise<DemoOrderPlan> {
+  const value = await orderRequest(session, { action: "demo-plan", direction }, signal);
+  if (!record(value) || value.mode !== "demo" || !isAnalysisId(value.analysisId) || !sealed(value.orderPermit) || !number(value.validUntil)) {
+    throw new Error("测试草稿凭据无效。");
+  }
+  return { analysisId: value.analysisId, orderPermit: value.orderPermit, validUntil: value.validUntil };
+}
+export async function previewOrders(session: PrivateAuthSession, analysisId: string, permit: string, signal: AbortSignal,
+  expectedMode?: "demo"): Promise<OrderPreview> {
   const value = await orderRequest(session, { action: "preview", permit }, signal);
   const submission = record(value) && record(value.submission) ? value.submission : {};
   const enabled = submission.state === "enabled";
   if (!record(value) || value.symbol !== "BTCUSDT" || value.analysisId !== analysisId || !mode(value.mode) ||
+    (expectedMode !== undefined && value.mode !== expectedMode) ||
     (value.direction !== "long" && value.direction !== "short") || !decimal(value.quantity) || !decimal(value.markPrice) ||
     ![value.stop, value.target, value.riskCap, value.expiresAt].every(number) ||
     (!enabled && (submission.state !== "blocked" || typeof submission.reason !== "string" || !submission.reason)) ||
