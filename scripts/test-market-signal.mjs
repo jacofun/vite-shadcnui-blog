@@ -8,9 +8,11 @@ const data = source => `data:text/javascript;base64,${Buffer.from(source).toStri
 const ticketSource = compile(await readFile(new URL("../src/lib/binanceSync.ts", import.meta.url), "utf8"))
   .replace('"@/lib/privateAuthApi"', JSON.stringify(data('export const PRIVATE_AUTH_API_BASE = "https://www.yanxiao.me/api/private-auth"')))
   .replace('"@/lib/privateAuthEvents"', JSON.stringify(data('export function notifyPrivateAuthInvalidated() {globalThis.invalidations++}')));
+const researchContract = await readFile(new URL("../functions/private-auth/market-research-contract.js", import.meta.url), "utf8");
 const source = compile(await readFile(new URL("../src/lib/marketSignal.ts", import.meta.url), "utf8"))
-  .replace('"@/lib/binanceSync"', JSON.stringify(data(ticketSource)));
-const { analyzeMarketOpportunity } = await import(data(source));
+  .replace('"@/lib/binanceSync"', JSON.stringify(data(ticketSource)))
+  .replace('"../../functions/private-auth/market-research-contract.js"', JSON.stringify(data(researchContract)));
+const { analyzeMarketOpportunity, validResult } = await import(data(source));
 const session = { csrfToken: "csrf-for-beijing-only" };
 const input = { symbol: "BTCUSDT", style: "reversal" };
 const ticket = () => ({ token: "shared-sync-ticket", syncUrl: "https://yanxiao.me/trade/api/sync", expiresAt: Math.floor(Date.now() / 1000) + 120 });
@@ -103,4 +105,28 @@ test("candidate, watch and expired analyses retain complete price and evidence d
     assert.equal(actual.status, status); assert.equal(actual.opportunity.triggerVerified, false);
     assert.deepEqual(actual.opportunity.entry, { min: 9990, max: 10010 });
   }
+});
+
+
+test("V4 accepts a watch without a plan and validates version, full chart and research horizons", () => {
+  const payload = result();
+  const at = Math.floor(Date.now() / 14_400_000) * 14_400_000;
+  Object.assign(payload, { schemaVersion: 4, status: "watch" });
+  Object.assign(payload.opportunity, { status: "watch", validForSeconds: 30 });
+  Object.assign(payload.model, { promptVersion: "market-research-v4" });
+  Object.assign(payload.market, { asOf: at, tickSize: 0.1,
+    chart: Object.entries({ "4h": 14_400_000, "1h": 3_600_000, "15m": 900_000 }).map(([interval, period]) => ({
+      interval, candles: Array.from({ length: 200 }, (_, i) => [at - (200 - i) * period, 100, 102, 98, 100, 10, 4]),
+    })),
+  });
+  payload.research = { marketRegime: "transition", scenario: "none", researchHorizon: 24, entryZoneId: null, stopZoneId: null,
+    timeframeAnalysis: { "4h": "背景", "1h": "结构", "15m": "量价" }, priceZones: [], riskFactors: ["周期冲突"], targetAssessment: [],
+    ruleAssessment: { trendAlignment: "conflict", structure: { confirmedZones: 0, repeatedZones: 0, activeSupport: 0, activeResistance: 0, clarity: "limited" },
+      volumePrice: null, invalidation: null, targetSpace: [], riskReward: [] },
+  };
+  assert.equal(validResult(payload), true);
+  assert.equal(validResult({ ...payload, research: { ...payload.research, researchHorizon: 3 } }), false);
+  assert.equal(validResult({ ...payload, market: { ...payload.market, chart: [] } }), false);
+  assert.equal(validResult({ ...payload, schemaVersion: 5 }), false);
+  assert.equal(validResult(result()), true);
 });

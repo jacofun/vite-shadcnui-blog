@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import type { MarketSignalResult } from "@/lib/marketSignal";
 import { formatSignalDate, getMarketSignal, listMarketSignals, statusText, type SavedSignalSummary } from "@/lib/marketSignalHistory";
 import type { PrivateAuthSession } from "@/lib/privateAuth";
+import MarketResearchReview from "./market-research-review";
 import MarketOpportunityResult from "./market-opportunity-result";
 
 const actionClass = "rounded-lg border border-white/15 px-3 py-2 text-xs text-slate-300 hover:bg-white/5 disabled:opacity-60";
@@ -10,7 +10,7 @@ export default function MarketSignalHistory({ session, revision }: { session: Pr
   const [entries, setEntries] = useState<SavedSignalSummary[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [listBusy, setListBusy] = useState(true);
-  const [detail, setDetail] = useState<MarketSignalResult | null>(null);
+  const [detail, setDetail] = useState<Awaited<ReturnType<typeof getMarketSignal>> | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [listError, setListError] = useState("");
   const [detailError, setDetailError] = useState("");
@@ -79,13 +79,20 @@ export default function MarketSignalHistory({ session, revision }: { session: Pr
         <button type="button" onClick={() => void open(entry.analysisId)} aria-pressed={detailId === entry.analysisId}
           className="flex w-full flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 p-3 text-left text-sm hover:bg-white/5 aria-pressed:border-violet-300/35">
           <span className="min-w-0 break-words text-slate-100">{entry.symbol} · {entry.title}</span>
-          <span className="text-xs text-slate-400">{formatSignalDate(entry.completedAt)} · {statusText[entry.status]}</span>
+          <span className="text-xs text-slate-400">{formatSignalDate(entry.completedAt)} · {statusText[entry.status]}{entry.schemaVersion === 4 ? ` · ${entry.direction === "long" ? "做多" : entry.direction === "short" ? "做空" : "观望"}` : ""}</span>
+          {entry.reviews && <span className="flex w-full flex-wrap gap-x-3 text-xs text-slate-400">
+            {entry.reviews.map(review => <span key={review.hours}>{review.hours}h · {review.status === "pending" ? "待评估" : review.status === "insufficient" ? "数据不足" :
+              review.targets.length ? `触达 ${review.targets.filter(target => target.touched).length}/${review.targets.length}` : "已评估"}</span>)}
+          </span>}
         </button>
       </li>)}
     </ul>
     {cursor && <button type="button" disabled={listBusy} onClick={() => void loadMore()} className={actionClass}>加载更多</button>}
     {detailId && !detail && !detailError && <p role="status" className="text-sm text-slate-400">正在读取分析详情…</p>}
     {detailError && <p role="alert" className="text-sm text-amber-200">{detailError}</p>}
-    {detail && <MarketOpportunityResult result={detail} status={detail.status} archived />}
+    {detail && <>
+      <MarketOpportunityResult result={detail.result} status={detail.result.status} archived />
+      {detail.result.schemaVersion === 4 && detail.reviews && <MarketResearchReview key={detail.result.analysisId} reviews={detail.reviews} preferred={detail.result.research.researchHorizon} />}
+    </>}
   </section>;
 }

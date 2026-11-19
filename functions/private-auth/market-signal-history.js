@@ -1,7 +1,7 @@
 import { TradeError } from "./trading.js";
 
-const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/;
-const SYMBOL = /^[A-Z0-9]{3,24}USDT$/;
+import { SYMBOL, UUID, validResearchV4 } from "./market-research-contract.js";
+import { enqueueSignalReviews, readReviewWindows, signalHistoryRoot } from "./market-signal-review.js";
 const STATUSES = ["candidate", "watch", "none", "expired"];
 const PERIOD_MS = { "4h": 14_400_000, "1h": 3_600_000, "15m": 900_000 };
 const MAX_TIMESTAMP = 9_999_999_999_999;
@@ -29,7 +29,7 @@ function validChart(frames, asOf) {
 const strings = (values) => Array.isArray(values) && values.length <= 20 && values.every(isText);
 function validateResult(result) {
   const { analysisId, symbol, status, style, market, opportunity, timing, model } = result || {};
-  if (result?.schemaVersion !== 1 || typeof analysisId !== "string" || !UUID.test(analysisId) ||
+  if (![1, 4].includes(result?.schemaVersion) || typeof analysisId !== "string" || !UUID.test(analysisId) ||
       typeof symbol !== "string" || !SYMBOL.test(symbol) || !STATUSES.includes(status) ||
       !["trend", "reversal", "neutral"].includes(style) || !isText(result.requestId) || !isText(result.codeVersion) ||
       !isText(model?.name) || !isText(model?.promptVersion) || !isTime(market?.asOf) || !positive(market?.latestQuote?.price) ||
@@ -45,24 +45,28 @@ function validateResult(result) {
       !validChart(market.chart, market.asOf)) invalid();
   const { direction, entry, stopLoss, targets } = opportunity;
   if (direction === null) {
-    if (entry !== null || stopLoss !== null || targets.length || !["none", "expired"].includes(status)) invalid();
+    if (entry !== null || stopLoss !== null || targets.length || !["none", "expired", ...(result.schemaVersion === 4 ? ["watch"] : [])].includes(status)) invalid();
   } else if (!positive(entry?.min) || !positive(entry?.max) || entry.min > entry.max || !positive(stopLoss) || !targets.length || status === "none") invalid();
+  if (result.schemaVersion === 4 && !validResearchV4(result)) invalid();
 }
 
-export async function handleMarketSignalHistory({ route, body, user, config, contentStore }) {
+export async function handleMarketSignalHistory({ route, body, user, config, contentStore, now = Date.now() }) {
   if (user.role !== "owner") throw new TradeError(403, "MISSING_PERMISSION", "分析历史仅限站点所有者。");
   if (!contentStore) throw new TradeError(503, "CONTENT_STORE_UNAVAILABLE", "分析历史存储暂不可用。");
-  const root = `${config.privateRoot}/.trading/owner/market-signals`;
+  const root = signalHistoryRoot(config.privateRoot);
   if (route === "trading/signals/save") {
     const { result } = body;
     validateResult(result);
     const { analysisId, symbol, status, style, opportunity, timing } = result;
     const completedAt = timing.completedAt;
+    if (result.schemaVersion === 4 && completedAt > now + 30_000) invalid();
     const inverseTime = String(MAX_TIMESTAMP - completedAt).padStart(13, "0");
     // Both objects are immutable. Retrying after a partial write completes the listing entry.
     await contentStore.putJsonOnce(`${root}/records/${analysisId}.json`, result);
+    if (result.schemaVersion === 4) await enqueueSignalReviews(contentStore, root, result);
     await contentStore.putJsonOnce(`${root}/index/${inverseTime}-${analysisId}.json`, {
       analysisId, symbol, status, style, completedAt, title: opportunity.title,
+      ...(result.schemaVersion === 4 ? { schemaVersion: 4, direction: opportunity.direction } : {}),
     });
     return { analysisId };
   }
@@ -70,13 +74,17 @@ export async function handleMarketSignalHistory({ route, body, user, config, con
     if (typeof body.analysisId !== "string" || !UUID.test(body.analysisId)) invalid();
     const result = await contentStore.readJson(`${root}/records/${body.analysisId}.json`, { missing: null });
     if (!result) throw new TradeError(404, "SIGNAL_NOT_FOUND", "分析记录不存在。");
-    return { result };
+    return { result, ...(result.schemaVersion === 4 ? { reviews: await readReviewWindows(contentStore, root, result.analysisId, result.timing.completedAt, true) } : {}) };
   }
   if (route === "trading/signals/list") {
     const { cursor } = body;
     if (cursor !== undefined && (typeof cursor !== "string" || !cursor.length || cursor.length > 2048)) invalid();
     const { paths, nextCursor } = await contentStore.listJsonPaths(`${root}/index/`, { cursor, limit: 12 });
-    const entries = await Promise.all(paths.map(path => contentStore.readJson(path)));
+    const entries = await Promise.all(paths.map(async path => {
+      const entry = await contentStore.readJson(path);
+      if (entry.schemaVersion !== 4) return entry;
+      return { ...entry, reviews: await readReviewWindows(contentStore, root, entry.analysisId, entry.completedAt) };
+    }));
     return { entries, nextCursor };
   }
   throw new TradeError(404, "NOT_FOUND", "分析历史接口不存在。");
