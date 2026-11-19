@@ -136,7 +136,8 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
         </label>
         <button type="button" disabled={!acknowledged || !!busy} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
           onClick={() => { if (selected.draft && Date.now() < preview.expiresAt) void requestOrder(analysisId, selected.draft); }}>
-          {selected.kind === "market" ? (testMode ? "确认测试网开仓并设置止盈止损" : "确认开仓并设置止盈止损") : "确认提交测试网挂单"}</button>
+          {selected.kind === "market" ? (testMode ? "确认测试网开仓并设置止盈止损" : "确认开仓并设置止盈止损") :
+            preview.mode === "live" ? "确认提交实盘挂单" : "确认提交测试网挂单"}</button>
       </div>}
     </>}
     {lastAttempt && <form className="flex flex-wrap items-center gap-2" onSubmit={event => { event.preventDefault(); void requestOrder(queryId ?? lastAttempt); }}>
@@ -151,7 +152,8 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
     {status && <div role="status" className="space-y-1 break-words text-xs leading-6 text-slate-200">
       <p><strong>{stateLabels[status.state]}</strong>{status.kind ? ` · ${orderLabels[status.kind]}` : ""}{status.exchangeStatus ? ` · ${exchangeLabel(status.exchangeStatus)}` : ""}</p>
       {status.childStatus && <p>触发生成的委托 · {exchangeLabel(status.childStatus)}</p>}
-      {status.entryExpiresAt && status.protection?.state === "pending" && <p>定时任务将检查等待成交或撤单状态，可在币安测试网查看当前挂单。</p>}
+      {status.entryExpiresAt && status.protection?.state === "pending" &&
+        <p>定时任务将检查等待成交或撤单状态，可在{status.mode === "live" ? "币安实盘" : "币安测试网"}查看当前挂单。</p>}
       {status.clientId && <p>币安客户端订单编号 {status.clientId}</p>}
       {status.executedQty !== undefined && <p>实际成交 {status.executedQty} BTC{Number(status.avgPrice) > 0 ? ` · 均价 ${status.avgPrice}` : ""}</p>}
       {status.protection && <div className={status.protection.state === "attention" ? "text-amber-200" : ""}>

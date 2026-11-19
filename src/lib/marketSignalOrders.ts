@@ -81,7 +81,7 @@ export async function previewOrders(session: PrivateAuthSession, analysisId: str
     (!enabled && (submission.state !== "blocked" || typeof submission.reason !== "string" || !submission.reason)) ||
     !Array.isArray(value.options) || value.options.length > 3 ||
     !value.options.every(option => record(option) && kind(option.kind) && decimal(option.price) && decimal(option.stopLossPrice) && decimal(option.takeProfitPrice) &&
-      (option.draft === undefined || enabled && sealed(option.draft) && (option.kind === "market" || value.mode === "demo")) &&
+      (option.draft === undefined || enabled && sealed(option.draft)) &&
       (option.kind !== "market" && option.draft !== undefined
         ? typeof option.entryWaitingSeconds === "number" && Number.isSafeInteger(option.entryWaitingSeconds) && option.entryWaitingSeconds > 0
         : option.entryWaitingSeconds === undefined) &&

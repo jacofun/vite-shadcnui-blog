@@ -186,7 +186,7 @@ test("the test-order entry uses a read ticket and accepts only demo plans and pr
   await assert.rejects(previewOrders(session, plan.analysisId, plan.orderPermit, signal, "demo"), /订单草稿格式无效/);
 });
 
-test("executable pending drafts require a demo response and a positive order waiting period", async t => {
+test("executable pending drafts support live and demo with a positive order waiting period", async t => {
   const analysisId = "00000000-0000-0000-0000-000000000003";
   const permit = `v3.${"a".repeat(43)}`;
   const option = { kind: "conditional", price: "10001", triggerPrice: "10001", risk: 0.1, notional: 10,
@@ -197,10 +197,10 @@ test("executable pending drafts require a demo response and a positive order wai
   setup(t, n => response(n % 2 === 1 ? ticket() : payload));
   const preview = () => previewOrders(session, analysisId, permit, new AbortController().signal);
   assert.deepEqual(await preview(), valid);
-  for (const value of [{ ...valid, mode: "live" }, { ...valid, options: [{ ...option, entryWaitingSeconds: 0 }] }]) {
-    payload = value;
-    await assert.rejects(preview(), /订单草稿格式无效/);
-  }
+  payload = { ...valid, mode: "live" };
+  assert.deepEqual(await preview(), payload);
+  payload = { ...payload, options: [{ ...option, entryWaitingSeconds: 0 }] };
+  await assert.rejects(preview(), /订单草稿格式无效/);
 });
 
 const scannerSource = compile(await readFile(new URL("../src/lib/marketScanner.ts", import.meta.url), "utf8"))
