@@ -126,4 +126,4 @@ pnpm check
 
 ## 交易日志自动扫描
 
-站点所有者可在交易日志的「自动扫描」页查看 BTCUSDT 的 15m 收盘初筛记录，并逐条展开规则、阈值和实测值。列表复用现有站点登录和币安同步短期凭证，走信号函数的 POST `/trade/api/signal/scans`。如需排查定时触发或 OSS 配置，参见 [信号函数说明](https://github.com/jacofun/binance-market-signal#btcusdt-自动扫描)。
+站点所有者可在交易日志的「自动扫描」页查看 BTCUSDT 的 15m 收盘初筛记录。表格分别显示每次触发的扫描时间和实际采用的 K 线收盘时间，并可逐条展开规则、阈值和实测值。列表复用现有站点登录和币安同步短期凭证，走信号函数的 POST `/trade/api/signal/scans`。如需排查定时触发或 OSS 配置，参见 [信号函数说明](https://github.com/jacofun/binance-market-signal#btcusdt-自动扫描)。

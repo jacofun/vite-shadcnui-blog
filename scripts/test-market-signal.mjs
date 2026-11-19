@@ -174,18 +174,21 @@ const scannerSource = compile(await readFile(new URL("../src/lib/marketScanner.t
   .replace('"@/lib/binanceSync"', JSON.stringify(data(ticketSource)));
 const { fetchMarketScans } = await import(data(scannerSource));
 
-test("scanner reads only its own route with the existing owner ticket and validates time windows", async t => {
+test("scanner reads only its own route and preserves two scans of the same candle", async t => {
   const signal = new AbortController().signal;
   const slot = 1800000000000;
-  const row = { slot, symbol: "BTCUSDT", rulesVersion: "v1", status: "error", errorCode: "BINANCE_RATE_LIMITED" };
-  let payload = { records: [row], from: slot - 900000, to: slot, next: slot - 900000 };
+  const row = { id: "run-2", time: slot + 200, scannedAt: slot + 200, candleClosedAt: slot,
+    symbol: "BTCUSDT", rulesVersion: "v1", status: "error", errorCode: "BINANCE_RATE_LIMITED" };
+  const next = `${slot - 900000}:`;
+  let payload = { records: [row, { ...row, id: "run-1", time: slot + 100, scannedAt: slot + 100 }],
+    from: slot - 900000, to: slot + 500, next };
   const calls = setup(t, n => response(n % 2 === 1 ? ticket() : payload));
   assert.deepEqual(await fetchMarketScans(session, undefined, signal), payload);
   assert.equal(calls[0].url, "https://www.yanxiao.me/api/private-auth/trading/binance/token");
   assert.equal(calls[1].url, "https://yanxiao.me/trade/api/signal/scans");
   assert.equal(calls[1].options.credentials, "omit");
-  assert.deepEqual(JSON.parse(calls[1].options.body), {});
-  payload = { ...payload, records: [{ ...row, slot: slot + 900000 }] };
-  await assert.rejects(fetchMarketScans(session, slot, signal), /扫描记录时段无效/);
-  assert.deepEqual(JSON.parse(calls[3].options.body), { before: slot });
+  assert.deepEqual(JSON.parse(calls[1].options.body), { version: 2 });
+  payload = { ...payload, next: null, records: [{ ...row, time: slot + 900000, scannedAt: slot + 900000 }] };
+  await assert.rejects(fetchMarketScans(session, next, signal), /扫描记录时段无效/);
+  assert.deepEqual(JSON.parse(calls[3].options.body), { version: 2, before: next });
 });

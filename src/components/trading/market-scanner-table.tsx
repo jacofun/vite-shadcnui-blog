@@ -3,7 +3,7 @@ import type { PrivateAuthSession } from "@/lib/privateAuth";
 import { fetchMarketScans, type ScanPage, type ScanRecord } from "@/lib/marketScanner";
 
 const date = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month: "2-digit", day: "2-digit",
-  hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
 const number = new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 2 });
 const statuses = { passed: "通过初筛", watch: "待下一根确认", filtered: "已过滤", none: "无触发", error: "扫描失败" };
 const trends: Record<string, string> = { up: "上行", down: "下行", flat: "中性" };
@@ -14,6 +14,11 @@ const checkLabels: Record<string, string> = {
 const display = (value: string | number | null) =>
   value === null ? "—" : typeof value === "number" ? number.format(value) : trends[value] ?? value;
 const cell = "border-t border-white/10 px-3 py-3 align-top";
+
+function ScanTime({ value }: { value: number | null }) {
+  return value === null ? <span className="text-slate-400">—</span> :
+    <time dateTime={new Date(value).toISOString()}>{date.format(value)}</time>;
+}
 
 function ScanDetails({ row }: { row: ScanRecord }) {
   if (row.status === "error") return <span className="text-amber-200">{row.errorCode}</span>;
@@ -41,7 +46,7 @@ function ScanDetails({ row }: { row: ScanRecord }) {
 }
 
 export default function MarketScannerTable({ session }: { session: PrivateAuthSession }) {
-  const [query, setQuery] = useState<{ before?: number }>({});
+  const [query, setQuery] = useState<{ before?: string }>({});
   const [result, setResult] = useState<{ query: typeof query; page?: ScanPage; error?: string }>();
   useEffect(() => {
     const controller = new AbortController();
@@ -61,20 +66,21 @@ export default function MarketScannerTable({ session }: { session: PrivateAuthSe
       <button type="button" className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-300 hover:text-white disabled:opacity-50"
         onClick={() => setQuery({})} disabled={pending}>刷新最新记录</button>
     </div>
-    <p className="mt-2 text-sm text-slate-400">BTCUSDT · 15m 收盘初筛 · 时间为北京时间</p>
+    <p className="mt-2 text-sm text-slate-400">BTCUSDT · 每次触发取最新已收盘 15m K 线 · 北京时间</p>
     {pending && <p role="status" className="mt-4 text-sm text-slate-300">正在读取自动扫描记录…</p>}
     {error && <p role="alert" className="mt-4 text-sm text-amber-200">{error}</p>}
     {page && <>
       <p className="mt-4 text-xs text-slate-400">{date.format(page.from)} 至 {date.format(page.to)}，共 {page.records.length} 条</p>
       {page.records.length === 0 ? <p className="mt-4 text-sm text-slate-300">此时段暂无扫描记录。</p> :
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[38rem] text-left text-sm text-slate-300" aria-label="BTCUSDT 扫描结果和筛选过程">
+          <table className="w-full min-w-[46rem] text-left text-sm text-slate-300" aria-label="BTCUSDT 扫描结果和筛选过程">
             <thead className="text-xs text-slate-400"><tr>
-              {["收盘时间", "结果", "收盘价", "量比", "4h 趋势", "筛选过程"].map(label =>
+              {["扫描时间", "K 线收盘时间", "结果", "收盘价", "量比", "4h 趋势", "筛选过程"].map(label =>
                 <th key={label} scope="col" className="px-3 py-2 font-medium">{label}</th>)}
             </tr></thead>
-            <tbody>{page.records.map(row => <tr key={row.slot}>
-              <td className={`${cell} whitespace-nowrap`}><time dateTime={new Date(row.slot).toISOString()}>{date.format(row.slot)}</time></td>
+            <tbody>{page.records.map(row => <tr key={row.id}>
+              <td className={`${cell} whitespace-nowrap`}><ScanTime value={row.scannedAt} /></td>
+              <td className={`${cell} whitespace-nowrap`}><ScanTime value={row.candleClosedAt} /></td>
               <td className={`${cell} whitespace-nowrap ${row.status === "passed" ? "text-emerald-300" : ""}`}>{statuses[row.status]}</td>
               <td className={cell}>{row.status === "error" ? "—" : display(row.close)}</td>
               <td className={cell}>{row.status === "error" ? "—" : display(row.rvol20)}</td>
