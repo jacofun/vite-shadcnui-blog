@@ -12,7 +12,7 @@ export interface BinanceSyncResult {
 
 // Shared short-lived credential for both routes on the FC JWT-protected domain.
 // The token stays in request memory and is never written to browser storage.
-export type OrderTicket = { action: "preview" | "status" } | { action: "submit"; draft: string };
+export type OrderTicket = { action: "preview" | "status" };
 export async function getTradingFunctionTicket(session: PrivateAuthSession, signal?: AbortSignal, order?: OrderTicket): Promise<{ token: string; url: URL }> {
   const route = order ? "order-token" : "token";
   const ticketResponse = await fetch(`${PRIVATE_AUTH_API_BASE}/trading/binance/${route}`, {

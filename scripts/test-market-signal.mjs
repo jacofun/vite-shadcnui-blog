@@ -13,6 +13,9 @@ const source = compile(await readFile(new URL("../src/lib/marketSignal.ts", impo
   .replace('"@/lib/binanceSync"', JSON.stringify(data(ticketSource)))
   .replace('"../../functions/private-auth/market-research-contract.js"', JSON.stringify(data(researchContract)));
 const { analyzeMarketOpportunity, validResult } = await import(data(source));
+const ordersSource = compile(await readFile(new URL("../src/lib/marketSignalOrders.ts", import.meta.url), "utf8"))
+  .replace('"@/lib/binanceSync"', JSON.stringify(data(ticketSource)));
+const { previewOrders } = await import(data(ordersSource));
 const session = { csrfToken: "csrf-for-beijing-only" };
 const input = { symbol: "BTCUSDT", style: "reversal" };
 const ticket = () => ({ token: "shared-sync-ticket", syncUrl: "https://yanxiao.me/trade/api/sync", expiresAt: Math.floor(Date.now() / 1000) + 120 });
@@ -129,4 +132,25 @@ test("V4 accepts a watch without a plan and validates version, full chart and re
   assert.equal(validResult({ ...payload, market: { ...payload.market, chart: [] } }), false);
   assert.equal(validResult({ ...payload, schemaVersion: 5 }), false);
   assert.equal(validResult(result()), true);
+});
+
+test("only read-only order previews with both matching protective prices are rendered", async t => {
+  const permit = `preview.${"a".repeat(43)}`;
+  const analysisId = "00000000-0000-0000-0000-000000000001";
+  const option = { kind: "market", price: "10000", risk: 0.1, notional: 10, stopLossPrice: "9900", takeProfitPrice: "10200" };
+  const valid = { mode: "demo", symbol: "BTCUSDT", analysisId, direction: "long", quantity: "0.001",
+    stop: 9900, target: 10200, riskCap: 1, markPrice: "10000", expiresAt: Date.now() + 30000,
+    options: [option], unavailable: {}, submission: { state: "blocked", code: "ORDER_PROTECTION_UNAVAILABLE", reason: "仅可预览。" } };
+  let payload = valid;
+  const calls = setup(t, n => response(n % 2 === 1 ? ticket() : payload));
+  const preview = () => previewOrders(session, analysisId, permit, new AbortController().signal);
+  assert.deepEqual(await preview(), valid);
+  assert.equal(calls[0].url, "https://www.yanxiao.me/api/private-auth/trading/binance/order-token");
+  assert.deepEqual(JSON.parse(calls[0].options.body), { action: "preview" });
+  assert.deepEqual(JSON.parse(calls[1].options.body), { action: "preview", permit });
+  for (const patch of [{ submission: undefined }, { options: [{ ...option, takeProfitPrice: undefined }] },
+    { options: [{ ...option, stopLossPrice: "9000" }] }]) {
+    payload = { ...valid, ...patch };
+    await assert.rejects(preview(), /订单草稿格式无效/);
+  }
 });

@@ -88,13 +88,12 @@ test("sync destination can use either trusted domain independently of the Beijin
 
 test("explicit order tickets use a separate authenticated site route and leave existing sync tickets alone", async t => {
   const calls = setup(t, () => response(ticket()));
-  const draft = `sealed.${"a".repeat(43)}`;
-  await getTradingFunctionTicket(session, undefined, { action: "submit", draft });
+  await getTradingFunctionTicket(session, undefined, { action: "preview" });
   await getTradingFunctionTicket(session);
   assert.equal(calls[0].url, "https://www.yanxiao.me/api/private-auth/trading/binance/order-token");
   assert.equal(calls[0].options.credentials, "include");
   assert.equal(calls[0].options.headers["X-CSRF-Token"], session.csrfToken);
-  assert.deepEqual(JSON.parse(calls[0].options.body), { action: "submit", draft });
+  assert.deepEqual(JSON.parse(calls[0].options.body), { action: "preview" });
   assert.equal(calls[1].url, "https://www.yanxiao.me/api/private-auth/trading/binance/token");
   assert.equal(calls[1].options.body, "{}");
 });

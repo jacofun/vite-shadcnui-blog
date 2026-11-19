@@ -1,4 +1,4 @@
-import { createHash, createPrivateKey, randomUUID, sign } from "node:crypto";
+import { createPrivateKey, randomUUID, sign } from "node:crypto";
 
 export class BinanceSyncTokenError extends Error {
   constructor(statusCode, code, message) {
@@ -11,7 +11,7 @@ export class BinanceSyncTokenError extends Error {
 // Shared FC-domain credential for trade sync and market analysis, never a site session.
 // Keep the legacy audience/scope to match the existing native JWT policy.
 export function issueBinanceSyncToken(options) {
-  return issueTicket(options, "trading:sync", 120);
+  return issueTicket(options, "trading:sync");
 }
 
 export function issueBinanceOrderToken(options, input) {
@@ -22,17 +22,15 @@ export function issueBinanceOrderToken(options, input) {
     throw new BinanceSyncTokenError(503, "BINANCE_ORDER_TICKET_DISABLED", "订单凭证尚未启用");
   }
   if (["preview", "status"].includes(input.action) && Object.keys(input).length === 1) {
-    return issueTicket(options, "trading:orders:read", 120);
+    return issueTicket(options, "trading:orders:read");
   }
-  if (input.action === "submit" && Object.keys(input).length === 2 &&
-      typeof input.draft === "string" && /^[A-Za-z0-9_-]{1,1500}\.[A-Za-z0-9_-]{43}$/.test(input.draft)) {
-    const intent = createHash("sha256").update(input.draft).digest("hex");
-    return issueTicket(options, "trading:orders:submit", 30, intent);
+  if (input.action === "submit") {
+    throw new BinanceSyncTokenError(409, "ORDER_PROTECTION_UNAVAILABLE", "当前仅可预览含止盈止损的交易计划。");
   }
   throw new BinanceSyncTokenError(400, "INVALID_ORDER_TICKET", "订单凭证参数无效");
 }
 
-function issueTicket({ user, env, nowSeconds }, scope, ttl, intent) {
+function issueTicket({ user, env, nowSeconds }, scope) {
   if (user?.role !== "owner") {
     throw new BinanceSyncTokenError(403, "MISSING_PERMISSION", "只有站点所有者可以同步币安记录");
   }
@@ -47,10 +45,10 @@ function issueTicket({ user, env, nowSeconds }, scope, ttl, intent) {
       url.protocol !== "https:" || url.username || url.password || url.search || url.hash || !user.id) {
       throw new Error("Invalid signing settings");
     }
-    const expiresAt = nowSeconds + ttl;
+    const expiresAt = nowSeconds + 120;
     const encode = value => Buffer.from(JSON.stringify(value)).toString("base64url");
     const header = encode({ alg: "RS256", typ: "JWT", kid });
-    const payload = encode({ iss: issuer, aud: audience, sub: user.id, scope, ...(intent ? { intent } : {}),
+    const payload = encode({ iss: issuer, aud: audience, sub: user.id, scope,
       iat: nowSeconds, exp: expiresAt, jti: randomUUID() });
     const data = `${header}.${payload}`;
     const signature = sign("RSA-SHA256", Buffer.from(data), key).toString("base64url");

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createHash, generateKeyPairSync, verify } from "node:crypto";
+import { generateKeyPairSync, verify } from "node:crypto";
 import test from "node:test";
 import { issueBinanceOrderToken, issueBinanceSyncToken } from "../binance-sync-token.js";
 import { __test, createHandler } from "../index.js";
@@ -49,6 +49,9 @@ test("legacy environment sessions still require cookie, CSRF and origin for tick
   assert.equal((await handler({ ...input, headers: { ...input.headers, "x-csrf-token": "wrong" } })).statusCode, 403);
   const order = { ...input, path: "/api/private-auth/trading/binance/order-token", body: JSON.stringify({ action: "preview" }) };
   assert.equal((await handler(order)).statusCode, 200);
+  const blocked = await handler({ ...order, body: JSON.stringify({ action: "submit", draft: `draft.${"a".repeat(43)}` }) });
+  assert.equal(blocked.statusCode, 409);
+  assert.equal(JSON.parse(blocked.body).code, "ORDER_PROTECTION_UNAVAILABLE");
   assert.equal((await handler({ ...order, headers: { ...order.headers, "x-csrf-token": "wrong" } })).statusCode, 403);
   assert.equal((await handler({ ...order, headers: { ...order.headers, cookie: "" } })).statusCode, 401);
   assert.equal((await handler({ ...order, headers: { ...order.headers, origin: "https://evil.test" } })).statusCode, 403);
@@ -68,7 +71,7 @@ test("sync URL override is independent of JWT issuer and audience", () => {
   }
 });
 
-test("order tickets require an owner, an explicit action and a confirmation bound to one draft", () => {
+test("order tickets require an owner and support only read operations", () => {
   const options = { user, env: { ...env, BINANCE_ORDER_TICKETS_ENABLED: "true" }, nowSeconds };
   const draft = `${"a".repeat(120)}.${"b".repeat(43)}`;
   const claims = ticket => JSON.parse(Buffer.from(ticket.token.split(".")[1], "base64url"));
@@ -76,12 +79,9 @@ test("order tickets require an owner, an explicit action and a confirmation boun
   assert.equal(readonly.scope, "trading:orders:read");
   assert.equal(readonly.intent, undefined);
   assert.equal(readonly.exp - readonly.iat, 120);
-  const submitted = claims(issueBinanceOrderToken(options, { action: "submit", draft }));
-  assert.equal(submitted.scope, "trading:orders:submit");
-  assert.equal(submitted.intent, createHash("sha256").update(draft).digest("hex"));
-  assert.equal(submitted.exp - submitted.iat, 30);
+  assert.equal(claims(issueBinanceOrderToken(options, { action: "status" })).scope, "trading:orders:read");
+  assert.throws(() => issueBinanceOrderToken(options, { action: "submit", draft }), { code: "ORDER_PROTECTION_UNAVAILABLE" });
   assert.throws(() => issueBinanceOrderToken({ ...options, env }, { action: "submit", draft }), { code: "BINANCE_ORDER_TICKET_DISABLED" });
   assert.throws(() => issueBinanceOrderToken({ ...options, user: { id: "m", role: "member" } }, { action: "submit", draft }), { code: "MISSING_PERMISSION" });
   assert.throws(() => issueBinanceOrderToken(options, { action: "preview", draft }), { code: "INVALID_ORDER_TICKET" });
-  assert.throws(() => issueBinanceOrderToken(options, { action: "submit", draft: "unsealed" }), { code: "INVALID_ORDER_TICKET" });
 });

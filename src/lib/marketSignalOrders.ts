@@ -14,10 +14,11 @@ const record = (value: unknown): value is Record<string, unknown> => !!value && 
 const number = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0;
 const decimal = (value: unknown): value is string => typeof value === "string" && /^\d+(?:\.\d+)?$/.test(value);
 const kind = (value: unknown): value is OrderKind => value === "market" || value === "limit" || value === "conditional";
-export interface OrderOption { kind: OrderKind; price: string; triggerPrice?: string; risk: number; notional: number; draft: string }
+export interface OrderOption { kind: OrderKind; price: string; triggerPrice?: string; stopLossPrice: string; takeProfitPrice: string; risk: number; notional: number }
 export interface OrderPreview {
   mode: "live" | "demo"; symbol: "BTCUSDT"; analysisId: string; direction: "long" | "short"; quantity: string;
   stop: number; target: number; riskCap: number; markPrice: string; expiresAt: number;
+  submission: { state: "blocked"; code: "ORDER_PROTECTION_UNAVAILABLE"; reason: string };
   options: OrderOption[]; unavailable: Partial<Record<OrderKind, string>>;
 }
 export interface OrderStatus {
@@ -25,10 +26,10 @@ export interface OrderStatus {
   kind?: OrderKind; clientId?: string; exchangeStatus?: string; childStatus?: string; executedQty?: string; avgPrice?: string;
   exchangeCode?: number; reason?: string; lookupUnavailable?: boolean; reconciliationRequired?: boolean;
 }
-type OrderRequest = { action: "preview"; permit: string } | { action: "submit"; draft: string } | { action: "status"; analysisId: string };
+type OrderRequest = { action: "preview"; permit: string } | { action: "status"; analysisId: string };
 
 async function orderRequest(session: PrivateAuthSession, input: OrderRequest, signal?: AbortSignal): Promise<unknown> {
-  const ticket = await getTradingFunctionTicket(session, signal, input.action === "submit" ? input : { action: input.action });
+  const ticket = await getTradingFunctionTicket(session, signal, { action: input.action });
   const url = new URL("/trade/api/signal/orders", ticket.url.origin);
   let response: Response;
   try {
@@ -39,15 +40,14 @@ async function orderRequest(session: PrivateAuthSession, input: OrderRequest, si
       signal: AbortSignal.any([AbortSignal.timeout(35_000), ...(signal ? [signal] : [])]),
     });
   } catch {
-    throw new Error(input.action === "submit" ? "提交连接中断，请查询订单状态。请勿直接重发。" : "订单接口连接中断，请重试查询。");
+    throw new Error("交易计划接口连接中断，请重试。");
   }
   const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const error = record(payload) && record(payload.error) ? payload.error : {};
     const message = typeof error.message === "string" ? error.message : `订单请求失败（HTTP ${response.status}）`;
     const requestId = record(payload) && typeof payload.requestId === "string" ? `。请求编号 ${payload.requestId}` : "";
-    const verify = input.action === "submit" && response.status >= 500 ? "。请先查询订单状态" : "";
-    throw new Error(message + verify + requestId);
+    throw new Error(message + requestId);
   }
   return payload;
 }
@@ -56,16 +56,19 @@ export async function previewOrders(session: PrivateAuthSession, analysisId: str
   if (!record(value) || value.symbol !== "BTCUSDT" || value.analysisId !== analysisId || !mode(value.mode) ||
     (value.direction !== "long" && value.direction !== "short") || !decimal(value.quantity) || !decimal(value.markPrice) ||
     ![value.stop, value.target, value.riskCap, value.expiresAt].every(number) ||
+    !record(value.submission) || value.submission.state !== "blocked" || value.submission.code !== "ORDER_PROTECTION_UNAVAILABLE" ||
+    typeof value.submission.reason !== "string" || !value.submission.reason ||
     !Array.isArray(value.options) || value.options.length > 3 ||
-    !value.options.every(option => record(option) && kind(option.kind) && decimal(option.price) && sealed(option.draft) &&
+    !value.options.every(option => record(option) && kind(option.kind) && decimal(option.price) && decimal(option.stopLossPrice) && decimal(option.takeProfitPrice) &&
+      Number(option.stopLossPrice) === value.stop && Number(option.takeProfitPrice) === value.target &&
       number(option.risk) && number(option.notional) && (option.kind === "conditional" ? decimal(option.triggerPrice) : option.triggerPrice === undefined)) ||
     !record(value.unavailable) || Object.values(value.unavailable).some(message => typeof message !== "string")) {
     throw new Error("订单草稿格式无效。");
   }
   return value as unknown as OrderPreview;
 }
-export async function fetchOrderStatus(session: PrivateAuthSession, analysisId: string, draft?: string): Promise<OrderStatus> {
-  const value = await orderRequest(session, draft === undefined ? { action: "status", analysisId } : { action: "submit", draft });
+export async function fetchOrderStatus(session: PrivateAuthSession, analysisId: string): Promise<OrderStatus> {
+  const value = await orderRequest(session, { action: "status", analysisId });
   if (!record(value) || value.analysisId !== analysisId || !mode(value.mode) ||
     !["not_recorded", "accepted", "rejected", "unknown"].includes(String(value.state)) ||
     (value.state !== "not_recorded" && (!kind(value.kind) || typeof value.clientId !== "string"))) {
