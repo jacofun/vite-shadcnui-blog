@@ -624,3 +624,52 @@ static manifest and media URLs anonymously; confirm your CDN cache rules separat
 币安执行时间轴只读，手工更正/新增接口不会改写已关联成交。AI 继续保存三个问题的原文、总结和复盘，也可补充原计划中空缺的风险字段；文字中再次提及成交时不重复新增执行。净成交损益不等同于包含资金费的账户收益；缺少初始风险时 R 保持为空。
 
 验证：`npm test --prefix functions/private-auth` 覆盖服务端原件读取、北京时间跨月、长 ID、精确费用、重复/并发导入、补充成交、方向与完整性、权限及来源只读；`npm run test:client`、`npm run lint`、`npm run build` 验证原前端流程和类型/构建。功能上线后需用 owner 登录验证实际 OSS 读取权限与目录。
+
+## 行情研究 V4 与定时复盘
+
+分析结果页和私有 `trading/signals/*` 接口同时支持 `schemaVersion=1` 和 `schemaVersion=4`。V1 原始 JSON、历史列表和三周期图表按原样读取。V4 的研究输出由行情函数生成，继续由浏览器使用 owner 会话和 CSRF 提交原始快照。界面显示“已保存到分析历史”后，复盘由服务器定时运行。原始归档为 owner 提交的快照，存储层校验格式和结构引用。
+
+### 部署顺序与函数配置
+
+1. 先更新网站私有鉴权 FC 和静态站点，使它们能接收 V1 与 V4。行情分析 FC 继续使用现有 JWT 入口和百炼配置。
+2. 创建新加坡 `ap-southeast-1` 事件函数，例如 `market-signal-review`。使用 Node.js 20，入口 `market-signal-review-timer.handler`，设置 75 秒超时、实例并发 1，建议最大实例数 1。上传现有私有鉴权 FC 工作流生成的 `private-auth-fc-package` 中的 ZIP，单独更新该事件函数。该工作流的生产部署步骤只负责现有北京函数。
+3. 启用公网访问，以访问固定的币安公开行情端点及内容 Bucket 的跨地域 HTTPS 端点。事件函数只配置 Timer 触发器，无 HTTP 入口或自定义域名。绑定独立的 FC 执行角色，回调通过 `context.credentials` 取得临时授权。
+4. 创建名为 `market-research-review-v4` 的定时触发器，周期 `@every 5m`，触发消息为 `drain-market-signal-reviews`。用 FC 控制台发送含 `triggerName`、`triggerTime`（ISO UTC）和 `payload` 的测试事件，确认日志出现 `market_review_timer_completed`。
+5. 最后更新新加坡行情分析 FC。检查一次 V4 归档、OSS 队列创建，以及满 4 小时后的首个复盘。回滚分析 FC 到 V1 时，新版网站可继续读两个版本，已经入队的 V4 窗口仍由复盘函数处理。
+
+事件函数环境变量如下。
+
+| 变量 | 配置 |
+| --- | --- |
+| `PRIVATE_RESOURCE_ROOT` | 与北京私有鉴权函数一致，默认 `/private` |
+| `OSS_CONTENT_BUCKET` | 现有私有内容 Bucket |
+| `OSS_CONTENT_REGION` | Bucket 实际地域，例如 `oss-cn-beijing` |
+| `OSS_CONTENT_ENDPOINT` | Bucket 所在地域的 HTTPS 公网 OSS 端点，例如 `https://oss-cn-beijing.aliyuncs.com` |
+| `OSS_CONTENT_PUBLIC_ENDPOINT` | 可选，按地域自动生成。填写时使用与 Bucket 一致的 HTTPS 公网 OSS 端点 |
+
+新事件函数仅需上述变量和 FC 执行角色。网站和分析函数继续使用已有变量。分析函数中的 `DASHSCOPE_MODEL=kimi-k3.1-pro`、JSON 模式和输出上限 4096 适用于 V4。
+
+### OSS 对象及权限
+
+下面以 `P=private/.trading/owner/market-signals` 表示对象前缀，按实际私有资源根目录替换。此功能沿用 ContentStore 的条件写入，应使用从未启用对象版本控制的私有 Bucket。先核实 `x-oss-forbid-overwrite=true` 对同名对象返回冲突；OSS 在启用或暂停版本控制的 Bucket 中会忽略该请求头。
+
+| 对象 | 内容 | 北京私有鉴权角色 | 新加坡事件函数角色 |
+| --- | --- | --- | --- |
+| `P/records/<id>.json` | 不可变的原始 V1 或 V4 研究与快照 | GetObject、PutObject | GetObject |
+| `P/index/<倒序时间>-<id>.json` | 现有历史列表 | GetObject、PutObject、按前缀列举 | — |
+| `P/review-queue/<到期毫秒>-<id>-<窗口>h-<尝试号>.json` | 按时间排序的待处理任务 | GetObject、PutObject | GetObject、PutObject、DeleteObject、按前缀列举 |
+| `P/review-enqueued/<id>.json` | 三个窗口均已入队的凭据 | GetObject、PutObject | — |
+| `P/reviews/<id>/<窗口>h.json` | 完整复盘和分钟标记价格快照 | GetObject | GetObject、PutObject |
+| `P/review-index/<id>/<窗口>h.json` | 历史列表使用的轻量复盘摘要 | GetObject | GetObject、PutObject |
+
+对象权限限定在相应的 `acs:oss:*:*:<bucket>/<prefix>/*`。Bucket 层的 `oss:ListObjects` 权限用 `oss:Prefix` 限在各自表中列出的前缀；事件函数只列举 `P/review-queue/`。临时凭证通过独立 RAM 角色签发，调用事件函数也由 FC 调用权限控制。原始记录、复盘和摘要均使用阻止覆盖的写入。清理待执行对象只在对应报告已发布或重试任务已写入后进行。
+
+### 观察口径与诊断
+
+- 三个复盘窗口均按分析完成时间计算，到期后留 2 分钟给行情确认。窗口只使用完整的 UTC 1 分钟 K 线，从完成时间向上取整到下一个分钟边界，到窗口结束时间向下取整。两个边界的零散分钟舍弃，触达时间精度为分钟。
+- 复盘参考价为分析结束时核验的标记价格，后续高低、收盘和目标触达均取币安标记价格 K 线。分析时的量价和结构区域使用成交 K 线。原始图和后续图分别展示。
+- MFE 和 MAE 是相对于研究参考价的有利和不利波动幅度。目标区域触达只表示某根 K 线的高低范围与价格带相交。结果中保留自然语言触发条件，由人工确认。无方向记录只提供参考价、期末价与高低区间。
+- 单次分批翻页并限量处理。行情失败按原队列到期时间依次顺延 5、15、60 和 240 分钟，限流时结束当前批次。重试耗尽或参考价失效时保存“数据不足”。存储异常保留队列，由下一次触发继续处理。日志含研究 ID、窗口、尝试号和经过归类的错误码。
+- V1 历史无需迁移。V4 从成功归档开始安排复盘。删除或过期策略应避开尚未结案的队列和关联原始记录。
+
+参考：[FC 定时触发器](https://www.alibabacloud.com/help/en/functioncompute/time-triggers) · [Node.js 事件处理器和临时凭证](https://www.alibabacloud.com/help/en/functioncompute/request-handlers) · [OSS 条件写入](https://www.alibabacloud.com/help/en/oss/developer-reference/putobject) · [OSS 前缀授权](https://www.alibabacloud.com/help/en/oss/user-guide/access-control-base-on-ram-policy) · [币安标记价格 K 线](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Mark-Price-Kline-Candlestick-Data)

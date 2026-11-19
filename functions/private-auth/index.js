@@ -125,7 +125,7 @@ function normalizeOrigin(value, name) {
   return url.origin;
 }
 
-function normalizePrivateRoot(value) {
+export function normalizePrivateRoot(value) {
   const root = value?.trim() || DEFAULT_PRIVATE_ROOT;
   if (!root.startsWith("/") || root.endsWith("/") || root.includes("..")) {
     throw new HttpError(500, "CONFIGURATION_ERROR", "PRIVATE_RESOURCE_ROOT is invalid");
@@ -833,7 +833,7 @@ function isOssAlreadyExists(error) {
 
 let contentIndexUpdate = Promise.resolve();
 
-export async function createPrivateResourceContentStore({ env = process.env, credentials = {}, sdk, client, publicClient } = {}) {
+export async function createPrivateResourceContentStore({ env = process.env, credentials = {}, sdk, client, publicClient, clientOptions } = {}) {
   const OSS = sdk || (client ? null : (await import("ali-oss")).default);
   const bucket = requiredString(env, "OSS_CONTENT_BUCKET");
   const region = requiredString(env, "OSS_CONTENT_REGION");
@@ -843,7 +843,7 @@ export async function createPrivateResourceContentStore({ env = process.env, cre
     "OSS_CONTENT_PUBLIC_ENDPOINT",
   );
   const ossCredentials = contentCredentials(env, credentials);
-  const common = { bucket, region, authorizationV4: false, secure: true, ...ossCredentials };
+  const common = { bucket, region, authorizationV4: false, secure: true, ...ossCredentials, ...clientOptions };
   const oss = client || new OSS({ ...common, endpoint: internalEndpoint });
   const signer = publicClient || new OSS({ ...common, endpoint: publicEndpoint });
   const syncPublished = await createPublicPublisher({ env, source: oss });

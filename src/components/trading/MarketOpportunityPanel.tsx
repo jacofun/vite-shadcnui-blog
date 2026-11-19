@@ -64,7 +64,7 @@ export default function MarketOpportunityPanel({ session, onClose }: { session: 
     const controller = request.current;
     request.current = null; controller?.abort(); setBusy(false); setMessage("已取消等待，可重新发起分析。");
   }
-  const status = result && (result.status === "expired" || now >= result.timing.validUntil) ? "expired" : result?.status;
+  const status = result && (result.status === "expired" || result.opportunity.direction !== null && now >= result.timing.validUntil) ? "expired" : result?.status;
   return <section id="market-opportunity" aria-labelledby="market-opportunity-heading" aria-busy={busy}
     className="mt-7 rounded-2xl border border-violet-300/20 bg-gradient-to-br from-violet-400/[0.08] to-slate-950 p-5 sm:p-7">
     <div className="flex items-start justify-between gap-4">
