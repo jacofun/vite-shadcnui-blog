@@ -1,4 +1,4 @@
-import { createPrivateKey, randomUUID, sign } from "node:crypto";
+import { createHash, createPrivateKey, randomUUID, sign } from "node:crypto";
 
 export class BinanceSyncTokenError extends Error {
   constructor(statusCode, code, message) {
@@ -24,13 +24,15 @@ export function issueBinanceOrderToken(options, input) {
   if (["preview", "status"].includes(input.action) && Object.keys(input).length === 1) {
     return issueTicket(options, "trading:orders:read");
   }
-  if (input.action === "submit") {
-    throw new BinanceSyncTokenError(409, "ORDER_PROTECTION_UNAVAILABLE", "当前仅可预览含止盈止损的交易计划。");
+  if (input.action === "submit" && Object.keys(input).length === 2 &&
+      typeof input.draft === "string" && /^[A-Za-z0-9_-]{1,1500}\.[A-Za-z0-9_-]{43}$/.test(input.draft)) {
+    const intent = createHash("sha256").update(input.draft).digest("hex");
+    return issueTicket(options, "trading:orders:submit-protected", intent);
   }
   throw new BinanceSyncTokenError(400, "INVALID_ORDER_TICKET", "订单凭证参数无效");
 }
 
-function issueTicket({ user, env, nowSeconds }, scope) {
+function issueTicket({ user, env, nowSeconds }, scope, intent) {
   if (user?.role !== "owner") {
     throw new BinanceSyncTokenError(403, "MISSING_PERMISSION", "只有站点所有者可以同步币安记录");
   }
@@ -45,10 +47,10 @@ function issueTicket({ user, env, nowSeconds }, scope) {
       url.protocol !== "https:" || url.username || url.password || url.search || url.hash || !user.id) {
       throw new Error("Invalid signing settings");
     }
-    const expiresAt = nowSeconds + 120;
+    const expiresAt = nowSeconds + (intent ? 30 : 120);
     const encode = value => Buffer.from(JSON.stringify(value)).toString("base64url");
     const header = encode({ alg: "RS256", typ: "JWT", kid });
-    const payload = encode({ iss: issuer, aud: audience, sub: user.id, scope,
+    const payload = encode({ iss: issuer, aud: audience, sub: user.id, scope, ...(intent ? { intent } : {}),
       iat: nowSeconds, exp: expiresAt, jti: randomUUID() });
     const data = `${header}.${payload}`;
     const signature = sign("RSA-SHA256", Buffer.from(data), key).toString("base64url");

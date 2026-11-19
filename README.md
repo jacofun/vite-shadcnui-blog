@@ -118,8 +118,8 @@ pnpm check
 - AI 限额和批改任务恢复说明见 [后端配置](functions/private-auth/README.md#ai-request-limits-and-retry-behavior)。
 - 本次保留现有存储协议、依赖版本和页面样式；分布式锁改造与模块拆分留待后续单独实施。
 
-## BTCUSDT 交易计划与查单
+## BTCUSDT 开仓与保护单
 
-交易日志中的「分析交易机会」可预览入场、止盈和止损俱全的委托草稿。币安 U 本位公开 API 缺少将开仓和两张保护单一并提交的接口，站内提交处于关闭状态。此前的委托仍可按分析编号查询。
+「分析交易机会」可预览入场、止盈和止损。执行已启用且恢复任务正常时，站点所有者可以确认提交市价方案。币安确认开仓有成交后，信号函数依次提交止损和止盈，并分别展示受理状态。回踩限价和条件限价可预览。历史委托仍按分析编号查询。
 
-私有鉴权函数配置 `BINANCE_ORDER_TICKETS_ENABLED=true` 后，POST `/api/private-auth/trading/binance/order-token` 仅签发预览和查单的只读票据。交易网关应将 POST `/trade/api/signal/orders` 路由到信号函数。[信号函数配置说明](https://github.com/jacofun/binance-market-signal)
+私有鉴权函数设置 `BINANCE_ORDER_TICKETS_ENABLED=true` 后，POST `/api/private-auth/trading/binance/order-token` 签发只读票据和绑定草稿的提交票据。交易网关将 POST `/trade/api/signal/orders` 转发给信号函数。恢复定时触发器、执行开关与权限见 [信号函数配置说明](https://github.com/jacofun/binance-market-signal)。

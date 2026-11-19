@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import type { PrivateAuthSession } from "@/lib/privateAuth";
 import {
   fetchOrderStatus, isAnalysisId, isOrderPermit, orderKinds, orderLabels, previewOrders,
-  type OrderPreview, type OrderStatus,
+  type OrderOption, type OrderPreview, type OrderStatus,
 } from "@/lib/marketSignalOrders";
 
 const button = "rounded-lg border border-white/15 px-3 py-2 text-sm hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50";
 const format = new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 4 });
 const stateLabels = { not_recorded: "暂未查到提交记录", accepted: "币安已受理", rejected: "未下单或币安拒绝", unknown: "提交结果待核对" };
+const protectionLabels = { pending: "待确认开仓或保护单", active: "止盈和止损均已挂出", attention: "保护单未齐，需立即核对",
+  closed: "持仓已结束，剩余保护单已清理", not_required: "无开仓成交，无需挂保护单" };
 const exchangeLabels: Record<string, string> = {
   NEW: "等待成交或触发", TRIGGERING: "正在触发", TRIGGERED: "条件已触发", FINISHED: "条件委托已结束",
   FILLED: "已全部成交", PARTIALLY_FILLED: "部分成交", CANCELED: "已撤销", EXPIRED: "已失效", REJECTED: "已拒绝",
@@ -23,11 +25,13 @@ type Props = { session: PrivateAuthSession; analysisId?: string; permit?: string
 
 export default function MarketSignalOrders({ session, analysisId, permit, validUntil = 0, now }: Props) {
   const storageKey = `market-signal:last-order:${session.user.id}`;
-  const [lastAttempt] = useState(() => storedId(storageKey));
+  const [lastAttempt, setLastAttempt] = useState(() => storedId(storageKey));
   const [queryId, setQueryId] = useState<string>();
   const [retry, refresh] = useState(0);
   const [previewResult, setPreviewResult] = useState<{ id: string; revision: number; value?: OrderPreview; error?: string }>();
-  const [busy, setBusy] = useState(false);
+  const [choice, setChoice] = useState<OrderOption>();
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [busy, setBusy] = useState<"status" | "submit">();
   const [status, setStatus] = useState<OrderStatus>();
   const [error, setError] = useState("");
   const inFlight = useRef(false);
@@ -37,6 +41,8 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
   const preview = previewResponse?.value;
   const draftOpen = fresh && !!preview && now < preview.expiresAt;
   const alreadyAttempted = !!analysisId && lastAttempt === analysisId;
+  const selected = draftOpen && !alreadyAttempted && preview?.submission.state === "enabled" && choice?.draft
+    ? preview.options.find(option => option.draft === choice.draft) : undefined;
 
   useEffect(() => {
     if (!eligible || !fresh || alreadyAttempted) return;
@@ -51,20 +57,25 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
     return () => controller.abort();
   }, [session, analysisId, permit, fresh, retry, eligible, alreadyAttempted]);
 
-  async function requestOrder(id: string) {
+  async function requestOrder(id: string, draft?: string) {
     if (!isAnalysisId(id) || inFlight.current) return;
     inFlight.current = true;
-    setError(""); setStatus(undefined); setBusy(true);
-    try { setStatus(await fetchOrderStatus(session, id)); }
+    setError(""); setStatus(undefined); setBusy(draft ? "submit" : "status");
+    if (draft) {
+      setLastAttempt(id); setQueryId(undefined);
+      setChoice(undefined); setAcknowledged(false);
+      try { localStorage.setItem(storageKey, id); } catch { /* current page can still query */ }
+    }
+    try { setStatus(await fetchOrderStatus(session, id, draft)); }
     catch (failure) { setError(failure instanceof Error ? failure.message : "未收到订单状态，请查单。"); }
-    finally { inFlight.current = false; setBusy(false); }
+    finally { inFlight.current = false; setBusy(undefined); }
   }
 
   if (!eligible && !lastAttempt) return null;
   return <section className="mt-4 space-y-3 rounded-xl border border-sky-400/25 bg-sky-400/[0.05] p-4" aria-label="交易计划与查单">
     <div>
       <h3 className="font-semibold text-sky-100">交易计划与查单</h3>
-      {eligible && <p className="mt-1 text-xs leading-6 text-slate-400">每张草稿包含入场参考价、止盈和止损。当前仅可预览交易计划。</p>}
+      {eligible && <p className="mt-1 text-xs leading-6 text-slate-400">先确认入场、止盈和止损。市价开仓成交后，系统依次提交保护单。</p>}
     </div>
     {eligible && !alreadyAttempted && <>
       {!fresh && <p role="status" className="text-sm text-amber-200">研究机会已过期，请重新分析。</p>}
@@ -77,7 +88,7 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
           <strong className={preview.mode === "live" ? "text-amber-200" : "text-sky-200"}>{preview.mode === "live" ? "实盘" : "测试网"}</strong>
           {" · BTCUSDT · "}{preview.direction === "long" ? "开多" : "开空"}{" · "}{preview.quantity} BTC
         </p>
-        <p role="status" className="text-sm leading-6 text-amber-200">{preview.submission.reason}</p>
+        {preview.submission.state === "blocked" && <p role="status" className="text-sm leading-6 text-amber-200">{preview.submission.reason}</p>}
         <p className="text-xs leading-6 text-slate-400">
           标记价 {preview.markPrice} · 计划价差风险上限 {format.format(preview.riskCap)} USDT
         </p>
@@ -97,10 +108,28 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
                 <br />名义金额约 {format.format(option.notional)} USDT
                 <br />至止损价差约 {format.format(option.risk)} USDT
               </p>
+              {preview.submission.state === "enabled" && option.draft
+                ? <button type="button" className={`${button} mt-2`} disabled={!draftOpen || !!busy}
+                    aria-pressed={selected?.draft === option.draft}
+                    onClick={() => { setChoice(option); setAcknowledged(false); }}>选择市价方案</button>
+                : <p className="mt-1 text-xs text-slate-400">仅供预览</p>}
             </div>;
           })}
         </div>
       </>}
+      {selected?.draft && preview && analysisId && <div className="space-y-3 rounded-lg border border-amber-300/30 bg-amber-400/[0.06] p-3">
+        <p className="text-sm font-medium text-amber-100">
+          {preview.mode === "live" ? "实盘" : "测试网"} · {preview.direction === "long" ? "开多" : "开空"} {preview.quantity} BTC
+          {" · 止盈 "}{selected.takeProfitPrice}{" · 止损 "}{selected.stopLossPrice}
+        </p>
+        <label className="flex items-start gap-2 text-xs leading-6 text-amber-100">
+          <input aria-label="确认顺序开仓风险" className="mt-1.5 size-4 shrink-0 accent-amber-300" type="checkbox" checked={acknowledged}
+            onChange={event => setAcknowledged(event.target.checked)} />
+          <span>我确认以上价格。开仓与保护单分开提交，成交后存在保护单未生效的间隔。保护单以标记价格触发，平掉该方向持仓。流程期间避免在该账户另行操作 BTCUSDT。</span>
+        </label>
+        <button type="button" disabled={!acknowledged || !!busy} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
+          onClick={() => { if (selected.draft && Date.now() < preview.expiresAt) void requestOrder(analysisId, selected.draft); }}>确认开仓并设置止盈止损</button>
+      </div>}
     </>}
     {lastAttempt && <form className="flex flex-wrap items-center gap-2" onSubmit={event => { event.preventDefault(); void requestOrder(queryId ?? lastAttempt); }}>
       <label className="flex min-w-52 flex-1 flex-col gap-1 text-xs text-slate-400">查单用分析编号
@@ -109,13 +138,18 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
       </label>
       <button className={`${button} self-end`} disabled={!!busy || !isAnalysisId(queryId ?? lastAttempt)}>查询订单</button>
     </form>}
-    {busy && <p className="text-sm text-sky-200" role="status">正在查询委托…</p>}
+    {busy && <p className="text-sm text-sky-200" role="status">{busy === "submit" ? "正在提交开仓与保护单…" : "正在查询委托…"}</p>}
     {error && <p role="alert" className="break-words text-sm text-amber-200">{error}</p>}
     {status && <div role="status" className="space-y-1 break-words text-xs leading-6 text-slate-200">
       <p><strong>{stateLabels[status.state]}</strong>{status.kind ? ` · ${orderLabels[status.kind]}` : ""}{status.exchangeStatus ? ` · ${exchangeLabel(status.exchangeStatus)}` : ""}</p>
       {status.childStatus && <p>触发生成的委托 · {exchangeLabel(status.childStatus)}</p>}
       {status.clientId && <p>币安客户端订单编号 {status.clientId}</p>}
       {status.executedQty !== undefined && <p>实际成交 {status.executedQty} BTC{Number(status.avgPrice) > 0 ? ` · 均价 ${status.avgPrice}` : ""}</p>}
+      {status.protection && <div className={status.protection.state === "attention" ? "text-amber-200" : ""}>
+        <p><strong>{protectionLabels[status.protection.state]}</strong></p>
+        <p>止损 {status.protection.stop.price} · {status.protection.stop.exchangeStatus ?? "未确认"}</p>
+        <p>止盈 {status.protection.target.price} · {status.protection.target.exchangeStatus ?? "未确认"}</p>
+      </div>}
       {status.exchangeCode !== undefined && <p>币安返回码 {status.exchangeCode}</p>}
       {status.reason && <p>提交检查 {status.reason}</p>}
       {(status.lookupUnavailable || status.reconciliationRequired || status.state === "unknown" || status.state === "not_recorded") &&

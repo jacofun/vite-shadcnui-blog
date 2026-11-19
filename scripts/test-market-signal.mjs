@@ -15,7 +15,7 @@ const source = compile(await readFile(new URL("../src/lib/marketSignal.ts", impo
 const { analyzeMarketOpportunity, validResult } = await import(data(source));
 const ordersSource = compile(await readFile(new URL("../src/lib/marketSignalOrders.ts", import.meta.url), "utf8"))
   .replace('"@/lib/binanceSync"', JSON.stringify(data(ticketSource)));
-const { previewOrders } = await import(data(ordersSource));
+const { previewOrders, fetchOrderStatus } = await import(data(ordersSource));
 const session = { csrfToken: "csrf-for-beijing-only" };
 const input = { symbol: "BTCUSDT", style: "reversal" };
 const ticket = () => ({ token: "shared-sync-ticket", syncUrl: "https://yanxiao.me/trade/api/sync", expiresAt: Math.floor(Date.now() / 1000) + 120 });
@@ -140,7 +140,7 @@ test("only read-only order previews with both matching protective prices are ren
   const option = { kind: "market", price: "10000", risk: 0.1, notional: 10, stopLossPrice: "9900", takeProfitPrice: "10200" };
   const valid = { mode: "demo", symbol: "BTCUSDT", analysisId, direction: "long", quantity: "0.001",
     stop: 9900, target: 10200, riskCap: 1, markPrice: "10000", expiresAt: Date.now() + 30000,
-    options: [option], unavailable: {}, submission: { state: "blocked", code: "ORDER_PROTECTION_UNAVAILABLE", reason: "仅可预览。" } };
+    options: [option], unavailable: {}, submission: { state: "blocked", reason: "仅可预览。" } };
   let payload = valid;
   const calls = setup(t, n => response(n % 2 === 1 ? ticket() : payload));
   const preview = () => previewOrders(session, analysisId, permit, new AbortController().signal);
@@ -153,4 +153,19 @@ test("only read-only order previews with both matching protective prices are ren
     payload = { ...valid, ...patch };
     await assert.rejects(preview(), /订单草稿格式无效/);
   }
+});
+
+test("protected confirmation uses its own ticket and accepts distinct stop and target status", async t => {
+  const draft = `selected.${"a".repeat(43)}`;
+  const analysisId = "00000000-0000-0000-0000-000000000001";
+  const outcome = { mode: "demo", analysisId, state: "accepted", kind: "market", clientId: "entry",
+    executedQty: "0.001", exchangeStatus: "FILLED", protection: { state: "attention",
+      stop: { price: "9900", clientId: "stop", exchangeStatus: "NEW" },
+      target: { price: "10200", clientId: "target", exchangeStatus: null } } };
+  const calls = setup(t, n => response(n === 1 ? ticket() : outcome));
+  assert.deepEqual(await fetchOrderStatus(session, analysisId, draft), outcome);
+  assert.deepEqual(JSON.parse(calls[0].options.body), { action: "submit", draft });
+  assert.deepEqual(JSON.parse(calls[1].options.body), { action: "submit", draft });
+  assert.equal(calls[1].options.credentials, "omit");
+  assert.equal(calls.length, 2);
 });
