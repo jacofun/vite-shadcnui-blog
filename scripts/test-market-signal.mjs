@@ -147,7 +147,7 @@ test("only read-only order previews with both matching protective prices are ren
   assert.deepEqual(await preview(), valid);
   assert.equal(calls[0].url, "https://www.yanxiao.me/api/private-auth/trading/binance/order-token");
   assert.deepEqual(JSON.parse(calls[0].options.body), { action: "preview" });
-  assert.deepEqual(JSON.parse(calls[1].options.body), { action: "preview", permit });
+  assert.deepEqual(JSON.parse(calls[1].options.body), { action: "preview", permit, includePending: true });
   for (const patch of [{ submission: undefined }, { options: [{ ...option, takeProfitPrice: undefined }] },
     { options: [{ ...option, stopLossPrice: "9000" }] }]) {
     payload = { ...valid, ...patch };
@@ -184,6 +184,23 @@ test("the test-order entry uses a read ticket and accepts only demo plans and pr
     riskCap: 1, markPrice: "10000", expiresAt: Date.now() + 30000, options: [], unavailable: {},
     submission: { state: "blocked", reason: "仅可预览" } };
   await assert.rejects(previewOrders(session, plan.analysisId, plan.orderPermit, signal, "demo"), /订单草稿格式无效/);
+});
+
+test("executable pending drafts require a demo response and a positive order waiting period", async t => {
+  const analysisId = "00000000-0000-0000-0000-000000000003";
+  const permit = `v3.${"a".repeat(43)}`;
+  const option = { kind: "conditional", price: "10001", triggerPrice: "10001", risk: 0.1, notional: 10,
+    stopLossPrice: "9900", takeProfitPrice: "10200", draft: `v3.${"b".repeat(43)}`, entryWaitingSeconds: 120 };
+  const valid = { mode: "demo", symbol: "BTCUSDT", analysisId, direction: "long", quantity: "0.001", stop: 9900, target: 10200,
+    riskCap: 1, markPrice: "10000", expiresAt: Date.now() + 30000, options: [option], unavailable: {}, submission: { state: "enabled" } };
+  let payload = valid;
+  setup(t, n => response(n % 2 === 1 ? ticket() : payload));
+  const preview = () => previewOrders(session, analysisId, permit, new AbortController().signal);
+  assert.deepEqual(await preview(), valid);
+  for (const value of [{ ...valid, mode: "live" }, { ...valid, options: [{ ...option, entryWaitingSeconds: 0 }] }]) {
+    payload = value;
+    await assert.rejects(preview(), /订单草稿格式无效/);
+  }
 });
 
 const scannerSource = compile(await readFile(new URL("../src/lib/marketScanner.ts", import.meta.url), "utf8"))
