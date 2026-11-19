@@ -22,9 +22,9 @@ function storedId(key: string) {
     return isAnalysisId(id) ? id : "";
   } catch { return ""; }
 }
-type Props = { session: PrivateAuthSession; analysisId?: string; permit?: string; validUntil?: number; now: number; testMode?: boolean };
+type Props = { session: PrivateAuthSession; analysisId?: string; permit?: string; validUntil?: number; now: number; testMode?: boolean; sideBySide?: boolean };
 
-export default function MarketSignalOrders({ session, analysisId, permit, validUntil = 0, now, testMode = false }: Props) {
+export default function MarketSignalOrders({ session, analysisId, permit, validUntil = 0, now, testMode = false, sideBySide = false }: Props) {
   const storageKey = `market-signal:${testMode ? "last-demo-order" : "last-order"}:${session.user.id}`;
   const [lastAttempt, setLastAttempt] = useState(() => storedId(storageKey));
   const [queryId, setQueryId] = useState<string>();
@@ -36,14 +36,19 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
   const [status, setStatus] = useState<OrderStatus>();
   const [error, setError] = useState("");
   const inFlight = useRef(false);
+  const confirmation = useRef<HTMLHeadingElement>(null);
   const fresh = now < validUntil;
   const eligible = isAnalysisId(analysisId) && isOrderPermit(permit);
   const previewResponse = previewResult?.id === analysisId && previewResult?.revision === retry ? previewResult : undefined;
   const preview = previewResponse?.value;
   const draftOpen = fresh && !!preview && now < preview.expiresAt;
   const alreadyAttempted = !!analysisId && lastAttempt === analysisId;
+  const showCountdown = fresh && !!preview?.options.length;
+  const canRefresh = fresh && (!!previewResponse && !draftOpen || preview?.options.length === 0);
   const selected = draftOpen && !alreadyAttempted && preview?.submission.state === "enabled" && choice?.draft
     ? preview.options.find(option => option.draft === choice.draft) : undefined;
+
+  useEffect(() => { confirmation.current?.focus(); }, [selected?.draft]);
 
   useEffect(() => {
     if (!eligible || !fresh || alreadyAttempted) return;
@@ -74,60 +79,74 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
 
   if (!eligible && !lastAttempt) return null;
   const heading = testMode ? "测试草稿与查单" : "交易计划与查单";
-  return <section className="mt-4 space-y-3 rounded-xl border border-sky-400/25 bg-sky-400/[0.05] p-4" aria-label={heading}>
-    <div>
-      <h3 className="font-semibold text-sky-100">{heading}</h3>
-      {eligible && <p className="mt-1 text-xs leading-6 text-slate-400">先确认入场、止盈和止损。系统确认开仓成交后，依次提交保护单。</p>}
+  return <section className={`mt-4 space-y-3 border-t border-white/10 pt-3 sm:mt-5 sm:pt-4 ${sideBySide ? "lg:mt-0 lg:border-t-0 lg:pt-0" : ""}`} aria-label={heading}>
+    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+      <h3 className="text-base font-semibold text-white">{heading}</h3>
+      {fresh && preview && !alreadyAttempted && <p className="text-xs text-slate-400">
+        <strong className={preview.mode === "live" ? "text-amber-200" : "text-sky-200"}>{preview.mode === "live" ? "实盘" : "测试网"}</strong>
+        {" · "}{preview.symbol}{" · "}{preview.direction === "long" ? "开多" : "开空"}{" · "}{preview.quantity} BTC
+      </p>}
     </div>
     {eligible && !alreadyAttempted && <>
       {!fresh && <p role="status" className="text-sm text-amber-200">{testMode ? "测试计划已过期，请重新生成。" : "研究机会已过期，请重新分析。"}</p>}
       {fresh && !previewResponse && <p role="status" className="text-sm text-sky-200">正在核对委托草稿…</p>}
       {fresh && previewResponse?.error && <p role="alert" className="text-sm text-amber-200">{previewResponse.error}</p>}
-      {fresh && (!draftOpen && previewResponse || preview?.options.length === 0) &&
-        <button type="button" className={button} disabled={!!busy} onClick={() => refresh(value => value + 1)}>刷新委托草稿</button>}
       {fresh && preview && <>
-        <p className="text-sm text-slate-200">
-          <strong className={preview.mode === "live" ? "text-amber-200" : "text-sky-200"}>{preview.mode === "live" ? "实盘" : "测试网"}</strong>
-          {" · BTCUSDT · "}{preview.direction === "long" ? "开多" : "开空"}{" · "}{preview.quantity} BTC
-        </p>
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 border-b border-white/10 pb-3 sm:grid-cols-4">
+          {[
+            { label: "止损", value: preview.stop, color: "text-rose-200" },
+            { label: "止盈", value: preview.target, color: "text-emerald-200" },
+            { label: "标记价", value: preview.markPrice, color: "text-slate-100" },
+            { label: "计划价差风险上限", value: `${format.format(preview.riskCap)} USDT`, color: "text-slate-100" },
+          ].map(item => <div key={item.label} className="min-w-0">
+            <dt className="text-xs text-slate-400">{item.label}</dt>
+            <dd className={`mt-1 break-words text-sm font-semibold tabular-nums ${item.color}`}>{item.value}</dd>
+          </div>)}
+        </dl>
         {preview.submission.state === "blocked" && <p role="status" className="text-sm leading-6 text-amber-200">{preview.submission.reason}</p>}
-        <p className="text-xs leading-6 text-slate-400">
-          标记价 {preview.markPrice} · 计划价差风险上限 {format.format(preview.riskCap)} USDT
-        </p>
-        {preview.options.length > 0 && <p className="text-xs text-slate-400">{draftOpen ? `草稿剩余 ${Math.max(0, Math.ceil((preview.expiresAt - now) / 1000))} 秒` : "草稿已过期"}</p>}
-        <div className="grid gap-2 md:grid-cols-3">
+        <ul className="divide-y divide-white/10" aria-label="委托方案">
           {orderKinds.map(kind => {
             const option = preview.options.find(value => value.kind === kind);
-            if (!option) return <div key={kind} className="rounded-lg border border-white/10 p-3 text-xs leading-5 text-slate-400">
-              <h4 className="mb-1 font-medium text-slate-300">{orderLabels[kind]}</h4>{preview.unavailable[kind]}
-            </div>;
-            return <div key={kind} className="rounded-lg border border-sky-300/20 p-3 text-sm text-slate-200">
-              <h4 className="font-medium text-sky-100">{orderLabels[kind]}</h4>
-              <p className="mt-1 text-xs leading-6">
-                {kind === "market" ? "盘口参考价 " : "入场限价 "}{option.price}
-                {option.triggerPrice && <> · 标记价{preview.direction === "long" ? " ≥ " : " ≤ "}{option.triggerPrice}触发</>}
-                <br />止盈 {option.takeProfitPrice} · 止损 {option.stopLossPrice}
-                <br />名义金额约 {format.format(option.notional)} USDT
-                <br />至止损价差约 {format.format(option.risk)} USDT
+            if (!option) return <li key={kind} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2.5">
+              <h4 className="text-sm font-medium text-slate-300">{orderLabels[kind]}</h4>
+              <p className="text-xs leading-5 text-slate-400">{preview.unavailable[kind]}</p>
+            </li>;
+            const chosen = selected?.draft === option.draft && !!option.draft;
+            return <li key={kind} className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 py-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)_minmax(0,1.3fr)_auto] ${chosen ? "bg-sky-400/[0.06]" : ""}`}>
+              <h4 className="col-start-1 row-start-1 text-sm font-medium text-slate-100">{orderLabels[kind]}</h4>
+              <p className="col-start-1 row-start-2 min-w-0 break-words text-xs leading-5 text-slate-400 sm:col-start-2 sm:row-start-1">
+                <span className="font-medium tabular-nums text-slate-100">{option.price}</span>
+                {" "}{kind === "market" ? "盘口参考" : "限价"}
+                {option.triggerPrice && <span className="block">标记价 {preview.direction === "long" ? "≥" : "≤"} {option.triggerPrice} 触发</span>}
               </p>
-              {preview.submission.state === "enabled" && option.draft
-                ? <button type="button" className={`${button} mt-2`} disabled={!draftOpen || !!busy}
-                    aria-pressed={selected?.draft === option.draft}
-                    onClick={() => { setChoice(option); setAcknowledged(false); }}>{chooseLabels[kind]}</button>
-                : <p className="mt-1 text-xs text-slate-400">仅供预览</p>}
-            </div>;
+              <p className="col-start-1 row-start-3 text-xs leading-5 text-slate-400 sm:col-start-3 sm:row-start-1">
+                名义 {format.format(option.notional)} USDT<span className="sm:hidden"> · </span><span className="sm:block">风险 {format.format(option.risk)} USDT</span>
+              </p>
+              <div className="col-start-2 row-span-3 row-start-1 justify-self-end sm:col-start-4 sm:row-span-1">
+                {preview.submission.state === "enabled" && option.draft
+                  ? <button type="button" className={`${button} whitespace-nowrap text-xs aria-pressed:border-sky-300/55 aria-pressed:text-sky-200`}
+                      disabled={!draftOpen || !!busy} aria-label={chooseLabels[kind]} aria-pressed={chosen}
+                      onClick={() => { setChoice(option); setAcknowledged(false); }}>{chosen ? "已选择" : "选择"}</button>
+                  : <span className="whitespace-nowrap text-xs text-slate-400">仅供预览</span>}
+              </div>
+            </li>;
           })}
-        </div>
+        </ul>
       </>}
-      {selected?.draft && preview && analysisId && <div className="space-y-3 rounded-lg border border-amber-300/30 bg-amber-400/[0.06] p-3">
-        <p className="text-sm font-medium text-amber-100">
-          {preview.mode === "live" ? "实盘" : "测试网"} · {preview.direction === "long" ? "开多" : "开空"} {preview.quantity} BTC
-          {" · 止盈 "}{selected.takeProfitPrice}{" · 止损 "}{selected.stopLossPrice}
-        </p>
-        {selected.kind !== "market" && <p className="text-xs leading-6 text-amber-100">
-          {orderLabels[selected.kind]} · 委托价 {selected.price}{selected.triggerPrice && ` · 标记价触发 ${selected.triggerPrice}`}。
-          约 {selected.entryWaitingSeconds} 秒后开始撤销未成交委托。
+      {(showCountdown || canRefresh) && <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2">
+        {showCountdown && preview && <p className="text-xs text-slate-400">
+          {draftOpen ? `草稿剩余 ${Math.max(0, Math.ceil((preview.expiresAt - now) / 1000))} 秒` : "草稿已过期"}
         </p>}
+        {canRefresh &&
+          <button type="button" className={`${button} ml-auto`} disabled={!!busy} onClick={() => refresh(value => value + 1)}>刷新委托草稿</button>}
+      </div>}
+      {selected?.draft && preview && analysisId && <div className="space-y-2 border-l-2 border-amber-300/55 py-1 pl-3">
+        <h4 ref={confirmation} tabIndex={-1} className="scroll-mt-24 text-sm font-semibold text-amber-100">确认{preview.mode === "live" ? "实盘" : "测试网"}委托</h4>
+        <p className="text-sm leading-6 text-slate-200">
+          {orderLabels[selected.kind]} · {preview.direction === "long" ? "开多" : "开空"} {preview.quantity} BTC · 入场 {selected.price}
+          {selected.triggerPrice && ` · 标记价触发 ${selected.triggerPrice}`} · 止盈 {selected.takeProfitPrice} · 止损 {selected.stopLossPrice}
+        </p>
+        {selected.kind !== "market" && <p className="text-xs leading-6 text-slate-400">约 {selected.entryWaitingSeconds} 秒后开始撤销未成交委托。</p>}
         <label className="flex items-start gap-2 text-xs leading-6 text-amber-100">
           <input aria-label="确认顺序开仓风险" className="mt-1.5 size-4 shrink-0 accent-amber-300" type="checkbox" checked={acknowledged}
             onChange={event => setAcknowledged(event.target.checked)} />
@@ -140,27 +159,35 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
             preview.mode === "live" ? "确认提交实盘挂单" : "确认提交测试网挂单"}</button>
       </div>}
     </>}
-    {lastAttempt && <form className="flex flex-wrap items-center gap-2" onSubmit={event => { event.preventDefault(); void requestOrder(queryId ?? lastAttempt); }}>
-      <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-slate-400 sm:min-w-52">{testMode ? "查单用测试编号" : "查单用分析编号"}
+    {lastAttempt && <form className="flex flex-wrap items-end gap-2" onSubmit={event => { event.preventDefault(); void requestOrder(queryId ?? lastAttempt); }}>
+      <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-slate-400 sm:max-w-sm">{testMode ? "查单用测试编号" : "查单用分析编号"}
         <input className="rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-xs text-white" maxLength={36} spellCheck={false}
           value={queryId ?? lastAttempt} onChange={event => setQueryId(event.target.value.trim())} />
       </label>
-      <button className={`${button} self-end`} disabled={!!busy || !isAnalysisId(queryId ?? lastAttempt)}>查询订单</button>
+      <button className={button} disabled={!!busy || !isAnalysisId(queryId ?? lastAttempt)}>查询订单</button>
     </form>}
     {busy && <p className="text-sm text-sky-200" role="status">{busy === "submit" ? "正在提交开仓委托…" : "正在查询委托…"}</p>}
     {error && <p role="alert" className="break-words text-sm text-amber-200">{error}</p>}
-    {status && <div role="status" className="space-y-1 break-words text-xs leading-6 text-slate-200">
-      <p><strong>{stateLabels[status.state]}</strong>{status.kind ? ` · ${orderLabels[status.kind]}` : ""}{status.exchangeStatus ? ` · ${exchangeLabel(status.exchangeStatus)}` : ""}</p>
+    {status && <div role="status" className="space-y-2 break-words border-y border-white/10 py-3 text-xs leading-5 text-slate-400">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <strong className="text-sm text-slate-100">{stateLabels[status.state]}</strong>
+        {status.kind && <span>{orderLabels[status.kind]}</span>}
+        {status.exchangeStatus && <span>{exchangeLabel(status.exchangeStatus)}</span>}
+        {status.protection && <span className={status.protection.state === "attention" ? "text-amber-200" :
+          status.protection.state === "active" ? "text-emerald-200" : "text-slate-300"}>{protectionLabels[status.protection.state]}</span>}
+      </div>
+      {(status.executedQty !== undefined || status.protection) && <dl className="grid grid-cols-2 gap-x-4 gap-y-2 py-1 sm:grid-cols-4">
+        {status.executedQty !== undefined && <div><dt>实际成交</dt><dd className="font-semibold tabular-nums text-slate-100">{status.executedQty} BTC</dd></div>}
+        {Number(status.avgPrice) > 0 && <div><dt>成交均价</dt><dd className="font-semibold tabular-nums text-slate-100">{status.avgPrice}</dd></div>}
+        {status.protection && <>
+          <div><dt>止损 · {status.protection.stop.exchangeStatus ?? "未确认"}</dt><dd className="font-semibold tabular-nums text-rose-200">{status.protection.stop.price}</dd></div>
+          <div><dt>止盈 · {status.protection.target.exchangeStatus ?? "未确认"}</dt><dd className="font-semibold tabular-nums text-emerald-200">{status.protection.target.price}</dd></div>
+        </>}
+      </dl>}
       {status.childStatus && <p>触发生成的委托 · {exchangeLabel(status.childStatus)}</p>}
       {status.entryExpiresAt && status.protection?.state === "pending" &&
         <p>定时任务将检查等待成交或撤单状态，可在{status.mode === "live" ? "币安实盘" : "币安测试网"}查看当前挂单。</p>}
       {status.clientId && <p>币安客户端订单编号 {status.clientId}</p>}
-      {status.executedQty !== undefined && <p>实际成交 {status.executedQty} BTC{Number(status.avgPrice) > 0 ? ` · 均价 ${status.avgPrice}` : ""}</p>}
-      {status.protection && <div className={status.protection.state === "attention" ? "text-amber-200" : ""}>
-        <p><strong>{protectionLabels[status.protection.state]}</strong></p>
-        <p>止损 {status.protection.stop.price} · {status.protection.stop.exchangeStatus ?? "未确认"}</p>
-        <p>止盈 {status.protection.target.price} · {status.protection.target.exchangeStatus ?? "未确认"}</p>
-      </div>}
       {status.exchangeCode !== undefined && <p>币安返回码 {status.exchangeCode}</p>}
       {status.reason && <p>提交检查 {status.reason}</p>}
       {(status.lookupUnavailable || status.reconciliationRequired || status.state === "unknown" || status.state === "not_recorded") &&

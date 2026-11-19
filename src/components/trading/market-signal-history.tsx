@@ -17,6 +17,7 @@ export default function MarketSignalHistory({ session, revision }: { session: Pr
   const [refresh, setRefresh] = useState(0);
   const listRequest = useRef<AbortController | null>(null);
   const detailRequest = useRef<AbortController | null>(null);
+  const detailHeading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     listRequest.current?.abort();
@@ -32,6 +33,7 @@ export default function MarketSignalHistory({ session, revision }: { session: Pr
   }, [session, revision, refresh]);
 
   useEffect(() => () => { detailRequest.current?.abort(); }, [session]);
+  useEffect(() => { if (detailId) detailHeading.current?.focus(); }, [detailId]);
 
   async function loadMore() {
     if (!cursor || listBusy) return;
@@ -67,32 +69,38 @@ export default function MarketSignalHistory({ session, revision }: { session: Pr
     }
   }
 
-  return <section id="market-signal-history" aria-label="分析历史" className="mt-6 space-y-3 border-t border-white/10 pt-5">
-    <h3 className="text-base font-medium text-slate-100">分析历史</h3>
-    {listBusy && <p role="status" className="text-sm text-slate-400">正在加载记录…</p>}
-    {listError && <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-amber-200">
-      {listError}<button type="button" className={actionClass} onClick={() => setRefresh(value => value + 1)}>重新加载</button>
+  return <section id="market-signal-history" aria-label="分析历史"
+    className={detailId ? "grid gap-5 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]" : "space-y-2"}>
+    <div className={detailId ? "min-w-0 space-y-2 lg:border-r lg:border-white/10 lg:pr-4" : "space-y-2"}>
+      <h3 className="text-base font-semibold text-white">分析历史</h3>
+      {listBusy && <p role="status" className="text-sm text-slate-400">正在加载记录…</p>}
+      {listError && <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-amber-200">
+        {listError}<button type="button" className={actionClass} onClick={() => setRefresh(value => value + 1)}>重新加载</button>
+      </div>}
+      {!listBusy && !entries.length && !listError && <p className="text-sm text-slate-400">暂无已保存的分析。</p>}
+      <ul className="divide-y divide-white/10">
+        {entries.map(entry => <li key={entry.analysisId}>
+          <button type="button" onClick={() => void open(entry.analysisId)} aria-pressed={detailId === entry.analysisId}
+            className="flex w-full flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-md px-2 py-2.5 text-left text-sm hover:bg-white/5 aria-pressed:bg-violet-300/10">
+            <span className="min-w-0 break-words text-slate-100">{entry.symbol} · {entry.title}</span>
+            <span className="text-xs text-slate-400">{formatSignalDate(entry.completedAt)} · {statusText[entry.status]}{entry.schemaVersion === 4 ? ` · ${entry.direction === "long" ? "做多" : entry.direction === "short" ? "做空" : "观望"}` : ""}</span>
+            {entry.reviews && <span className="flex w-full flex-wrap gap-x-3 text-xs text-slate-400">
+              {entry.reviews.map(review => <span key={review.hours}>{review.hours}h · {review.status === "pending" ? "待评估" : review.status === "insufficient" ? "数据不足" :
+                review.targets.length ? `触达 ${review.targets.filter(target => target.touched).length}/${review.targets.length}` : "已评估"}</span>)}
+            </span>}
+          </button>
+        </li>)}
+      </ul>
+      {cursor && <button type="button" disabled={listBusy} onClick={() => void loadMore()} className={actionClass}>加载更多</button>}
+    </div>
+    {detailId && <div className="order-first min-w-0 space-y-4 lg:order-none">
+      <h3 ref={detailHeading} tabIndex={-1} className="scroll-mt-24 text-base font-semibold text-white">分析记录详情</h3>
+      {!detail && !detailError && <p role="status" className="text-sm text-slate-400">正在读取分析详情…</p>}
+      {detailError && <p role="alert" className="text-sm text-amber-200">{detailError}</p>}
+      {detail && <>
+        <MarketOpportunityResult result={detail.result} status={detail.result.status} archived />
+        {detail.result.schemaVersion === 4 && detail.reviews && <MarketResearchReview key={detail.result.analysisId} reviews={detail.reviews} preferred={detail.result.research.researchHorizon} />}
+      </>}
     </div>}
-    {!listBusy && !entries.length && !listError && <p className="text-sm text-slate-400">暂无已保存的分析。</p>}
-    <ul className="space-y-2">
-      {entries.map(entry => <li key={entry.analysisId}>
-        <button type="button" onClick={() => void open(entry.analysisId)} aria-pressed={detailId === entry.analysisId}
-          className="flex w-full flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 p-3 text-left text-sm hover:bg-white/5 aria-pressed:border-violet-300/35">
-          <span className="min-w-0 break-words text-slate-100">{entry.symbol} · {entry.title}</span>
-          <span className="text-xs text-slate-400">{formatSignalDate(entry.completedAt)} · {statusText[entry.status]}{entry.schemaVersion === 4 ? ` · ${entry.direction === "long" ? "做多" : entry.direction === "short" ? "做空" : "观望"}` : ""}</span>
-          {entry.reviews && <span className="flex w-full flex-wrap gap-x-3 text-xs text-slate-400">
-            {entry.reviews.map(review => <span key={review.hours}>{review.hours}h · {review.status === "pending" ? "待评估" : review.status === "insufficient" ? "数据不足" :
-              review.targets.length ? `触达 ${review.targets.filter(target => target.touched).length}/${review.targets.length}` : "已评估"}</span>)}
-          </span>}
-        </button>
-      </li>)}
-    </ul>
-    {cursor && <button type="button" disabled={listBusy} onClick={() => void loadMore()} className={actionClass}>加载更多</button>}
-    {detailId && !detail && !detailError && <p role="status" className="text-sm text-slate-400">正在读取分析详情…</p>}
-    {detailError && <p role="alert" className="text-sm text-amber-200">{detailError}</p>}
-    {detail && <>
-      <MarketOpportunityResult result={detail.result} status={detail.result.status} archived />
-      {detail.result.schemaVersion === 4 && detail.reviews && <MarketResearchReview key={detail.result.analysisId} reviews={detail.reviews} preferred={detail.result.research.researchHorizon} />}
-    </>}
   </section>;
 }

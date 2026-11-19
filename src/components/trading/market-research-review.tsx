@@ -18,7 +18,7 @@ export default function MarketResearchReview({ reviews, preferred }: { reviews: 
   const [windowHours, setWindowHours] = useState(preferred);
   const review = reviews.find(item => item.hours === windowHours);
   if (!review) return null;
-  return <section aria-label="研究复盘" className="space-y-3 rounded-xl border border-sky-300/20 bg-sky-300/[0.025] p-4">
+  return <section aria-label="研究复盘" className="space-y-3 border-t border-white/10 pt-4">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h4 className="text-sm font-medium text-slate-100">研究复盘 · 分析后的标记价格</h4>
       <div role="group" aria-label="复盘窗口" className="flex flex-wrap gap-1">
@@ -30,14 +30,14 @@ export default function MarketResearchReview({ reviews, preferred }: { reviews: 
     {review.status === "insufficient" && <p className="text-sm text-amber-200">数据不足 · {reasons[review.code] ?? "复盘所需数据未通过校验"}。</p>}
     {review.status === "completed" && <>
       <p className="text-xs leading-6 text-slate-400">评估覆盖 {formatSignalDate(review.observedFrom)} 至 {formatSignalDate(review.observedUntil)} 的完整 1 分钟 K 线。参考价采集于 {formatSignalDate(review.referenceTime)}。</p>
-      <dl className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 border-y border-white/10 py-3 text-xs sm:grid-cols-3">
         {[
           ["研究参考价", researchPrice(review.referencePrice)], ["期末价格", researchPrice(review.endPrice)],
           ["最高 / 最低", `${researchPrice(review.high)} / ${researchPrice(review.low)}`],
           ["期末方向", review.directionAligned === null ? "—" : review.endPrice === review.referencePrice ? "持平" : review.directionAligned ? "一致" : "相反"],
           ["最大有利波动 MFE", review.mfePct === null ? "—" : `${review.mfePct.toFixed(2)}%`],
           ["最大不利波动 MAE", review.maePct === null ? "—" : `${review.maePct.toFixed(2)}%`],
-        ].map(([label, value]) => <div key={label} className="rounded-lg border border-white/10 p-2"><dt className="text-slate-400">{label}</dt><dd className="mt-1 break-words text-slate-200">{value}</dd></div>)}
+        ].map(([label, value]) => <div key={label}><dt className="text-slate-400">{label}</dt><dd className="mt-1 break-words font-semibold tabular-nums text-slate-100">{value}</dd></div>)}
       </dl>
       {review.targets.length > 0 && <ul className="space-y-1 text-xs leading-6 text-slate-300">
         {review.targets.map((target, i) => <li key={`${target.zoneId}-${i}`}>目标 {i + 1} · {researchPrice(target.lower)} – {researchPrice(target.upper)} ·
