@@ -1,5 +1,5 @@
 import { createBinanceSource, handleBinanceImport } from "./binance-import.js";
-import { issueBinanceSyncToken, BinanceSyncTokenError } from "./binance-sync-token.js";
+import { issueBinanceOrderToken, issueBinanceSyncToken, BinanceSyncTokenError } from "./binance-sync-token.js";
 import { handlePublishing, PublishingError } from "./publishing.js";
 import { createPublicPublisher } from "./public-publishing.js";
 import { handleTrading, TradeError } from "./trading.js";
@@ -406,7 +406,7 @@ function routeName(path, cookiePath, persistent = false) {
     "trading/list", "trading/get", "trading/save", "trading/confirm", "trading/revise",
     "trading/signals/save", "trading/signals/list", "trading/signals/get",
     "trading/execution/add", "trading/execution/update", "trading/skip", "trading/review",
-    "trading/binance/token", "trading/binance/list", "trading/binance/preview", "trading/binance/import", "trading/image/init", "trading/image/complete", "trading/ai/parse", "trading/ai/apply",
+    "trading/binance/token", "trading/binance/order-token", "trading/binance/list", "trading/binance/preview", "trading/binance/import", "trading/image/init", "trading/image/complete", "trading/ai/parse", "trading/ai/apply",
     "assessment/grade", "assessment/result", "assessment/ask",
     "public/assistant/ask", "health", "public/content",
     "publishing/list", "publishing/save", "publishing/publish", "publishing/unpublish", "publishing/sync-public", "publishing/upload-init", "publishing/upload-complete",
@@ -442,7 +442,7 @@ async function handleTradingAiRoute({ route, body, user, config, contentStore, n
 }
 
 function usesPrivateContentStore(route) {
-  if (route === "trading/binance/token") return false;
+  if (route === "trading/binance/token" || route === "trading/binance/order-token") return false;
   return ["publishing/", "uploads/", "collections/", "files/", "clipboard/", "assessment/", "just-write/", "trading/"].some((prefix) => route.startsWith(prefix));
 }
 
@@ -3017,6 +3017,12 @@ export function createHandler({
         }));
       }
 
+      if (route === "trading/binance/order-token") {
+        return jsonResponse(config, 200, issueBinanceOrderToken({
+          user: { id: "owner", role: "owner" }, env, nowSeconds,
+        }, parseJsonBody(request.body || "{}")));
+      }
+
       if (usesPrivateContentStore(route)) {
         const privateContentStore = contentStore || await createPrivateResourceContentStore({
           env,
@@ -3702,6 +3708,9 @@ async function persistentRequest(options) {
   const { user } = persistedSession(state, auth, config, nowSeconds);
   if (route === "trading/binance/token") {
     return jsonResponse(config, 200, issueBinanceSyncToken({ user, env, nowSeconds }));
+  }
+  if (route === "trading/binance/order-token") {
+    return jsonResponse(config, 200, issueBinanceOrderToken({ user, env, nowSeconds }, body));
   }
   if (route.startsWith("trading/binance/")) return jsonResponse(config, 200, await handleBinanceRoute({
     route, body, user, config, contentStore, nowSeconds, env, request, binanceSource,

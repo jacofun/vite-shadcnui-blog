@@ -5,6 +5,7 @@ import { analyzeMarketOpportunity, type MarketSignalResult, type SignalStyle } f
 import { saveMarketSignal } from "@/lib/marketSignalHistory";
 import MarketOpportunityResult from "./market-opportunity-result";
 import MarketSignalHistory from "./market-signal-history";
+import MarketSignalOrders from "./market-signal-orders";
 
 const inputClass = "min-w-0 rounded-xl border border-white/15 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-300/60 disabled:opacity-60";
 export default function MarketOpportunityPanel({ session, onClose }: { session: PrivateAuthSession; onClose: () => void }): JSX.Element {
@@ -105,6 +106,8 @@ export default function MarketOpportunityPanel({ session, onClose }: { session: 
       </div>}
       <MarketOpportunityResult result={result} status={status} />
     </>}
+    {session.user.role === "owner" && <MarketSignalOrders key={session.user.id} session={session} now={now}
+      analysisId={result?.analysisId} permit={result?.orderPermit} validUntil={result?.timing.validUntil} />}
     {showHistory && <MarketSignalHistory session={session} revision={historyRevision} />}
   </section>;
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { generateKeyPairSync, verify } from "node:crypto";
+import { createHash, generateKeyPairSync, verify } from "node:crypto";
 import test from "node:test";
-import { issueBinanceSyncToken } from "../binance-sync-token.js";
+import { issueBinanceOrderToken, issueBinanceSyncToken } from "../binance-sync-token.js";
 import { __test, createHandler } from "../index.js";
 
 const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
@@ -35,7 +35,7 @@ test("only owners can obtain tickets and invalid signing settings fail closed", 
 });
 
 test("legacy environment sessions still require cookie, CSRF and origin for tickets", async () => {
-  const runtimeEnv = { ...env, WEBAUTHN_ORIGIN: "https://yanxiao.me", WEBAUTHN_RP_ID: "yanxiao.me",
+  const runtimeEnv = { ...env, BINANCE_ORDER_TICKETS_ENABLED: "true", WEBAUTHN_ORIGIN: "https://yanxiao.me", WEBAUTHN_RP_ID: "yanxiao.me",
     SESSION_CURRENT_KEY: Buffer.alloc(32, 7).toString("base64url"), CDN_AUTH_KEY: "PrivateCdnKey123456",
     WEBAUTHN_CREDENTIAL_ID: "credential", WEBAUTHN_PUBLIC_KEY: Buffer.alloc(77, 9).toString("base64url") };
   const config = __test.loadConfig(runtimeEnv);
@@ -47,6 +47,11 @@ test("legacy environment sessions still require cookie, CSRF and origin for tick
   assert.equal(good.statusCode, 200, good.body);
   assert.equal((await handler({ ...input, headers: { ...input.headers, cookie: "" } })).statusCode, 401);
   assert.equal((await handler({ ...input, headers: { ...input.headers, "x-csrf-token": "wrong" } })).statusCode, 403);
+  const order = { ...input, path: "/api/private-auth/trading/binance/order-token", body: JSON.stringify({ action: "preview" }) };
+  assert.equal((await handler(order)).statusCode, 200);
+  assert.equal((await handler({ ...order, headers: { ...order.headers, "x-csrf-token": "wrong" } })).statusCode, 403);
+  assert.equal((await handler({ ...order, headers: { ...order.headers, cookie: "" } })).statusCode, 401);
+  assert.equal((await handler({ ...order, headers: { ...order.headers, origin: "https://evil.test" } })).statusCode, 403);
   const unconfigured = createHandler({ env: { ...runtimeEnv, BINANCE_SYNC_PRIVATE_KEY: "" }, now: () => nowSeconds });
   assert.equal((await unconfigured(input)).statusCode, 503);
   assert.equal((await unconfigured({ ...input, method: "GET", path: "/session" })).statusCode, 200);
@@ -61,4 +66,22 @@ test("sync URL override is independent of JWT issuer and audience", () => {
     assert.equal(claims.iss, "https://www.yanxiao.me");
     assert.equal(claims.aud, "binance-trade-sync");
   }
+});
+
+test("order tickets require an owner, an explicit action and a confirmation bound to one draft", () => {
+  const options = { user, env: { ...env, BINANCE_ORDER_TICKETS_ENABLED: "true" }, nowSeconds };
+  const draft = `${"a".repeat(120)}.${"b".repeat(43)}`;
+  const claims = ticket => JSON.parse(Buffer.from(ticket.token.split(".")[1], "base64url"));
+  const readonly = claims(issueBinanceOrderToken(options, { action: "preview" }));
+  assert.equal(readonly.scope, "trading:orders:read");
+  assert.equal(readonly.intent, undefined);
+  assert.equal(readonly.exp - readonly.iat, 120);
+  const submitted = claims(issueBinanceOrderToken(options, { action: "submit", draft }));
+  assert.equal(submitted.scope, "trading:orders:submit");
+  assert.equal(submitted.intent, createHash("sha256").update(draft).digest("hex"));
+  assert.equal(submitted.exp - submitted.iat, 30);
+  assert.throws(() => issueBinanceOrderToken({ ...options, env }, { action: "submit", draft }), { code: "BINANCE_ORDER_TICKET_DISABLED" });
+  assert.throws(() => issueBinanceOrderToken({ ...options, user: { id: "m", role: "member" } }, { action: "submit", draft }), { code: "MISSING_PERMISSION" });
+  assert.throws(() => issueBinanceOrderToken(options, { action: "preview", draft }), { code: "INVALID_ORDER_TICKET" });
+  assert.throws(() => issueBinanceOrderToken(options, { action: "submit", draft: "unsealed" }), { code: "INVALID_ORDER_TICKET" });
 });

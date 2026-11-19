@@ -7,7 +7,7 @@ const source = await readFile(new URL("../src/lib/binanceSync.ts", import.meta.u
 const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText
   .replace('"@/lib/privateAuthApi"', '"data:text/javascript,export const PRIVATE_AUTH_API_BASE = %22https://www.yanxiao.me/api/private-auth%22"')
   .replace('"@/lib/privateAuthEvents"', '"data:text/javascript,export function notifyPrivateAuthInvalidated() {globalThis.invalidations++}"');
-const { syncBinanceRecords } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const { syncBinanceRecords, getTradingFunctionTicket } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const session = { csrfToken: "csrf-only-for-beijing" };
 const ticket = () => ({ token: "short-lived-jwt", syncUrl: "https://yanxiao.me/trade/api/sync", expiresAt: Math.floor(Date.now() / 1000) + 120 });
 const result = { status: "completed", requestId: "request-id", newRecords: { trades: 2, income: 3 } };
@@ -84,4 +84,17 @@ test("sync destination can use either trusted domain independently of the Beijin
   syncUrl = "https://www.yanxiao.me/trade/api/sync";
   await syncBinanceRecords(session);
   assert.equal(calls[3].url, syncUrl);
+});
+
+test("explicit order tickets use a separate authenticated site route and leave existing sync tickets alone", async t => {
+  const calls = setup(t, () => response(ticket()));
+  const draft = `sealed.${"a".repeat(43)}`;
+  await getTradingFunctionTicket(session, undefined, { action: "submit", draft });
+  await getTradingFunctionTicket(session);
+  assert.equal(calls[0].url, "https://www.yanxiao.me/api/private-auth/trading/binance/order-token");
+  assert.equal(calls[0].options.credentials, "include");
+  assert.equal(calls[0].options.headers["X-CSRF-Token"], session.csrfToken);
+  assert.deepEqual(JSON.parse(calls[0].options.body), { action: "submit", draft });
+  assert.equal(calls[1].url, "https://www.yanxiao.me/api/private-auth/trading/binance/token");
+  assert.equal(calls[1].options.body, "{}");
 });

@@ -55,8 +55,9 @@ export async function handleMarketSignalHistory({ route, body, user, config, con
   if (!contentStore) throw new TradeError(503, "CONTENT_STORE_UNAVAILABLE", "分析历史存储暂不可用。");
   const root = signalHistoryRoot(config.privateRoot);
   if (route === "trading/signals/save") {
-    const { result } = body;
-    validateResult(result);
+    validateResult(body.result);
+    const result = { ...body.result };
+    delete result.orderPermit;
     const { analysisId, symbol, status, style, opportunity, timing } = result;
     const completedAt = timing.completedAt;
     if (result.schemaVersion === 4 && completedAt > now + 30_000) invalid();

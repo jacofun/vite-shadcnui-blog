@@ -25,7 +25,9 @@ export interface SavedSignalSummary {
 }
 
 export async function saveMarketSignal(session: PrivateAuthSession, result: MarketSignalResult) {
-  const saved = await tradingRequest<{ analysisId: string }>(session, "signals/save", { result }, AbortSignal.timeout(20_000));
+  const record = { ...result };
+  delete record.orderPermit;
+  const saved = await tradingRequest<{ analysisId: string }>(session, "signals/save", { result: record }, AbortSignal.timeout(20_000));
   if (saved.analysisId !== result.analysisId) throw new Error("未收到本次分析的保存确认。");
 }
 

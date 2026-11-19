@@ -51,6 +51,7 @@ interface BaseSignalResult {
     evidence: { metric: string; reason: string }[]; counterarguments: string[];
     expiredReasons: string[]; triggerVerified: false; priceReference: "markPrice";
   };
+  orderPermit?: string;
   market: { asOf?: number; tickSize?: number; chart?: SignalChartFrame[]; latestQuote: { price: number; time: number }; warnings: string[] };
   timing: { completedAt: number; validUntil: number; totalMs: number; marketMs: number; modelMs: number; verificationMs: number };
   model: { name: string; promptVersion?: string };
