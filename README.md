@@ -123,3 +123,7 @@ pnpm check
 「分析交易机会」可预览入场、止盈和止损。执行已启用且恢复任务正常时，站点所有者可以确认提交市价方案。币安确认开仓有成交后，信号函数依次提交止损和止盈，并分别展示受理状态。回踩限价和条件限价可预览。历史委托仍按分析编号查询。
 
 私有鉴权函数设置 `BINANCE_ORDER_TICKETS_ENABLED=true` 后，POST `/api/private-auth/trading/binance/order-token` 签发只读票据和绑定草稿的提交票据。交易网关将 POST `/trade/api/signal/orders` 转发给信号函数。恢复定时触发器、执行开关与权限见 [信号函数配置说明](https://github.com/jacofun/binance-market-signal)。
+
+## 交易日志自动扫描
+
+站点所有者可在交易日志的「自动扫描」页查看 BTCUSDT 的 15m 收盘初筛记录，并逐条展开规则、阈值和实测值。列表复用现有站点登录和币安同步短期凭证，走信号函数的 POST `/trade/api/signal/scans`。如需排查定时触发或 OSS 配置，参见 [信号函数说明](https://github.com/jacofun/binance-market-signal#btcusdt-自动扫描)。

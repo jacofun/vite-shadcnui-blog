@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams } from "react-router-dom";
 import BinanceTradePicker from "@/components/trading/BinanceTradePicker";
 import MarketOpportunityPanel from "@/components/trading/MarketOpportunityPanel";
+import MarketScannerTable from "@/components/trading/market-scanner-table";
 
 import PrivateResourceAccessState from "@/components/resources/PrivateResourceAccessState";
 import { usePrivateResourceSession } from "@/hooks/usePrivateResourceSession";
@@ -16,7 +17,9 @@ const statusLabels: Record<TradeStatus, string> = {
 };
 function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivateResourceSession>["session"]> }): JSX.Element {
   const [params, setParams] = useSearchParams();
-  const view = params.get("view") === "binance" ? "binance" : "journal";
+  const canReadScans = session.user.role === "owner";
+  const requestedView = params.get("view");
+  const view = requestedView === "binance" ? "binance" : requestedView === "scans" && canReadScans ? "scans" : "journal";
   const [syncing, setSyncing] = useState(false);
   const [signalOpen, setSignalOpen] = useState(false);
   const [syncMessage, setSyncMessage] = useState("");
@@ -91,11 +94,13 @@ function Journal({ session }: { session: NonNullable<ReturnType<typeof usePrivat
           {syncError && <p role="alert" className="rounded-xl border border-rose-400/25 bg-rose-400/[0.06] p-4 text-sm text-rose-200">{syncError}</p>}
         </div>
         {signalOpen && <MarketOpportunityPanel session={session} onClose={() => setSignalOpen(false)} />}
-        <div className="mt-7 inline-flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1" role="tablist" aria-label="交易数据视图">
-          {([{ value: "journal", label: "交易日志" }, { value: "binance", label: "币安实盘 · 勾选成交" }] as const).map(item => <button key={item.value} role="tab" aria-selected={view === item.value}
+        <div className="mt-7 inline-flex flex-wrap gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1" role="tablist" aria-label="交易数据视图">
+          {([{ value: "journal", label: "交易日志" }, { value: "binance", label: "币安实盘 · 勾选成交" }, { value: "scans", label: "自动扫描" }] as const)
+            .filter(item => item.value !== "scans" || canReadScans).map(item => <button key={item.value} role="tab" aria-selected={view === item.value}
             className={`rounded-lg px-4 py-2.5 text-sm transition ${view === item.value ? "bg-cyan-300/15 text-cyan-200" : "text-slate-400 hover:text-white"}`}
-            onClick={() => setParams(item.value === "binance" ? { view: "binance" } : {})}>{item.label}</button>)}
+            onClick={() => setParams(item.value === "journal" ? {} : { view: item.value })}>{item.label}</button>)}
         </div>
+        {view === "scans" && <MarketScannerTable session={session} />}
         {view === "binance" && !loading && <BinanceTradePicker session={session} entries={entries} refresh={refresh} initialTarget={params.get("target") || undefined}
           onImported={trade => {
             setEntries(previous => [trade, ...previous.filter(t => t.id !== trade.id)]);

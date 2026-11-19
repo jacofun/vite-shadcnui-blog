@@ -169,3 +169,23 @@ test("protected confirmation uses its own ticket and accepts distinct stop and t
   assert.equal(calls[1].options.credentials, "omit");
   assert.equal(calls.length, 2);
 });
+
+const scannerSource = compile(await readFile(new URL("../src/lib/marketScanner.ts", import.meta.url), "utf8"))
+  .replace('"@/lib/binanceSync"', JSON.stringify(data(ticketSource)));
+const { fetchMarketScans } = await import(data(scannerSource));
+
+test("scanner reads only its own route with the existing owner ticket and validates time windows", async t => {
+  const signal = new AbortController().signal;
+  const slot = 1800000000000;
+  const row = { slot, symbol: "BTCUSDT", rulesVersion: "v1", status: "error", errorCode: "BINANCE_RATE_LIMITED" };
+  let payload = { records: [row], from: slot - 900000, to: slot, next: slot - 900000 };
+  const calls = setup(t, n => response(n % 2 === 1 ? ticket() : payload));
+  assert.deepEqual(await fetchMarketScans(session, undefined, signal), payload);
+  assert.equal(calls[0].url, "https://www.yanxiao.me/api/private-auth/trading/binance/token");
+  assert.equal(calls[1].url, "https://yanxiao.me/trade/api/signal/scans");
+  assert.equal(calls[1].options.credentials, "omit");
+  assert.deepEqual(JSON.parse(calls[1].options.body), {});
+  payload = { ...payload, records: [{ ...row, slot: slot + 900000 }] };
+  await assert.rejects(fetchMarketScans(session, slot, signal), /扫描记录时段无效/);
+  assert.deepEqual(JSON.parse(calls[3].options.body), { before: slot });
+});
