@@ -142,6 +142,8 @@ test("V4 renders a watch across prompt revisions and still validates schema, cha
   payload.decision = { modelStatus: "candidate", modelDirection: "short", modelSummary: "偏空",
     reasons: [{ code: "target_obstacle", message: "目标前有更近的支撑区" }] };
   assert.deepEqual((await analyzeMarketOpportunity(session, input)).decision, payload.decision);
+  payload.decision.reasons = [{ code: "entry_out_of_bounds", message: "入场区间超出引用区域" }];
+  assert.deepEqual((await analyzeMarketOpportunity(session, input)).decision, payload.decision);
   assert.equal(validResult({ ...payload, decision: { ...payload.decision, modelStatus: "expired" } }), false);
   assert.equal(validResult({ ...payload, decision: { ...payload.decision, reasons: [{ code: "unknown", message: "unknown" }] } }), false);
   assert.equal(validResult({ ...payload, research: { ...payload.research, researchHorizon: 3 } }), false);

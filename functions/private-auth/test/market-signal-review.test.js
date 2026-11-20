@@ -195,9 +195,9 @@ test("a revised V4 prompt and decision trace can be saved, listed and loaded thr
   const store = fakeStore();
   const result = analysis();
   result.status = "watch";
-  result.model.promptVersion = "market-research-v4-volume-timing-v5";
+  result.model.promptVersion = "market-research-v4-volume-timing-v8";
   result.decision = { modelStatus: "candidate", modelDirection: "short", modelSummary: "空头候选",
-    reasons: [{ code: "entry_missing", message: "模型未提供入场区间。" }] };
+    reasons: [{ code: "entry_out_of_bounds", message: "模型给出的入场区间超出所引用的区域。" }] };
   Object.assign(result.opportunity, { status: "watch", direction: null, entry: null, stopLoss: null, targets: [], rewardRisk: [] });
   Object.assign(result.research, { scenario: "none", entryZoneId: null, stopZoneId: null, targetAssessment: [] });
   Object.assign(result.research.ruleAssessment, { volumePrice: null, invalidation: null, targetSpace: [], riskReward: [] });

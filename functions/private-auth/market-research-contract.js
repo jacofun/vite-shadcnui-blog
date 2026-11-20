@@ -11,7 +11,7 @@ const bounded = (value, max, check) => Array.isArray(value) && value.length <= m
 const time = value => Number.isSafeInteger(value) && value > 0 && value < 9_999_999_999_999;
 const alignments = ["up", "down", "mixed", "conflict"];
 const comparisons = ["within_p50", "p50_to_p75", "p75_to_p90", "above_p90"];
-const decisionCodes = ["model_watch", "model_none", "entry_missing", "target_obstacle", "quote_outside_entry",
+const decisionCodes = ["model_watch", "model_none", "entry_missing", "entry_out_of_bounds", "target_obstacle", "quote_outside_entry",
   "analysis_age", "quote_stale", "quote_drift", "quote_crossed_exit"];
 
 function validDecision(decision) {
