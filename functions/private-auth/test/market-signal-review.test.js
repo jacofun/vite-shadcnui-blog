@@ -164,11 +164,13 @@ test("only owners can archive V4, schema is checked, and partial writes can be r
   assert.ok(!JSON.stringify(entry).includes("candles"));
 });
 
-test("a revised V4 prompt can be saved, listed and loaded through analysis history", async () => {
+test("a revised V4 prompt and decision trace can be saved, listed and loaded through analysis history", async () => {
   const store = fakeStore();
   const result = analysis();
   result.status = "watch";
   result.model.promptVersion = "market-research-v4-volume-timing-v5";
+  result.decision = { modelStatus: "candidate", modelDirection: "short", modelSummary: "空头候选",
+    reasons: [{ code: "entry_missing", message: "模型未提供入场区间。" }] };
   Object.assign(result.opportunity, { status: "watch", direction: null, entry: null, stopLoss: null, targets: [], rewardRisk: [] });
   Object.assign(result.research, { scenario: "none", entryZoneId: null, stopZoneId: null, targetAssessment: [] });
   Object.assign(result.research.ruleAssessment, { volumePrice: null, invalidation: null, targetSpace: [], riskReward: [] });

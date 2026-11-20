@@ -11,6 +11,14 @@ const bounded = (value, max, check) => Array.isArray(value) && value.length <= m
 const time = value => Number.isSafeInteger(value) && value > 0 && value < 9_999_999_999_999;
 const alignments = ["up", "down", "mixed", "conflict"];
 const comparisons = ["within_p50", "p50_to_p75", "p75_to_p90", "above_p90"];
+const decisionCodes = ["model_watch", "model_none", "entry_missing", "target_obstacle", "quote_outside_entry",
+  "analysis_age", "quote_stale", "quote_drift", "quote_crossed_exit"];
+
+function validDecision(decision) {
+  return decision && ["candidate", "watch", "none"].includes(decision.modelStatus) &&
+    [null, "long", "short"].includes(decision.modelDirection) && text(decision.modelSummary) &&
+    bounded(decision.reasons, 5, reason => reason && decisionCodes.includes(reason.code) && text(reason.message));
+}
 
 function validZone(zone, at) {
   return zone && INTERVALS.includes(zone.interval) && ["support", "resistance"].includes(zone.kind) &&
@@ -37,11 +45,11 @@ function validDistribution(distribution, hours) {
 }
 
 export function validResearchV4(result) {
-  const { research, opportunity, market, timing, model } = result;
+  const { research, opportunity, market, timing, model, decision } = result;
   // The response schema determines compatibility. The prompt version is
   // provenance shared by live analyses and saved records.
   if (!research || !opportunity || !market || !timing || !model || !text(model.promptVersion) || !model.promptVersion.trim() ||
-      !time(market.asOf) || !time(timing.completedAt) || !time(market.latestQuote?.time) ||
+      (decision !== undefined && !validDecision(decision)) || !time(market.asOf) || !time(timing.completedAt) || !time(market.latestQuote?.time) ||
       timing.completedAt < market.asOf - 30_000 ||
       !positive(market.tickSize) || !market.chart ||
       !["trend", "range", "transition"].includes(research.marketRegime) ||

@@ -139,6 +139,11 @@ test("V4 renders a watch across prompt revisions and still validates schema, cha
   for (const promptVersion of [undefined, null, 5, "", "   "]) {
     assert.equal(validResult({ ...payload, model: { ...payload.model, promptVersion } }), false);
   }
+  payload.decision = { modelStatus: "candidate", modelDirection: "short", modelSummary: "偏空",
+    reasons: [{ code: "target_obstacle", message: "目标前有更近的支撑区" }] };
+  assert.deepEqual((await analyzeMarketOpportunity(session, input)).decision, payload.decision);
+  assert.equal(validResult({ ...payload, decision: { ...payload.decision, modelStatus: "expired" } }), false);
+  assert.equal(validResult({ ...payload, decision: { ...payload.decision, reasons: [{ code: "unknown", message: "unknown" }] } }), false);
   assert.equal(validResult({ ...payload, research: { ...payload.research, researchHorizon: 3 } }), false);
   assert.equal(validResult({ ...payload, market: { ...payload.market, chart: [] } }), false);
   assert.equal(validResult({ ...payload, schemaVersion: 5 }), false);

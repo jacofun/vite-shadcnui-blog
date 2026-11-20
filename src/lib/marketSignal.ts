@@ -4,6 +4,12 @@ import { getTradingFunctionTicket } from "@/lib/binanceSync";
 
 export type SignalStyle = "trend" | "reversal" | "neutral";
 export type SignalStatus = "candidate" | "watch" | "none" | "expired";
+export interface SignalDecision {
+  modelStatus: Exclude<SignalStatus, "expired">;
+  modelDirection: "long" | "short" | null;
+  modelSummary: string;
+  reasons: { code: string; message: string }[];
+}
 export type SignalInterval = "4h" | "1h" | "15m";
 export type SignalCandle = [openTimeMs: number, open: number, high: number, low: number, close: number, volume: number, takerBuyVolume: number];
 export interface SignalChartFrame { interval: SignalInterval; candles: SignalCandle[] }
@@ -58,7 +64,7 @@ interface BaseSignalResult {
 }
 
 export type MarketSignalResult = BaseSignalResult & (
-  { schemaVersion: 1; research?: never } | { schemaVersion: 4; research: SignalResearch }
+  { schemaVersion: 1; research?: never; decision?: never } | { schemaVersion: 4; research: SignalResearch; decision?: SignalDecision }
 );
 
 const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);

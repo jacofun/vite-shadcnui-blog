@@ -7,6 +7,7 @@ import { researchPrice } from "@/lib/marketSignalDisplay";
 import { formatSignalDate, statusText } from "@/lib/marketSignalHistory";
 
 const MarketSignalChart = lazy(() => import("./market-signal-chart"));
+const decisionStatus: Record<SignalStatus, string> = { candidate: "候选机会", watch: "继续观察", none: "暂无机会", expired: "已过期" };
 
 function Reasons({ title, items }: { title: string; items: string[] }): JSX.Element | null {
   if (!items.length) return null;
@@ -19,6 +20,8 @@ type Props = { result: MarketSignalResult; status: SignalStatus; archived?: bool
 
 export default function MarketOpportunityResult({ result, status, archived = false, compact = false, view = "all" }: Props): JSX.Element {
   const { opportunity } = result;
+  const decision = result.schemaVersion === 4 ? result.decision : undefined;
+  const summaryInReasons = decision?.reasons.some(reason => reason.message === opportunity.summary);
   const price = result.schemaVersion === 4 ? researchPrice : formatPrice;
   const direction = opportunity.direction === "long" ? "做多" : opportunity.direction === "short" ? "做空" : "观望";
   return <div className={archived ? "space-y-5 border-t border-white/10 pt-4" : "space-y-5"}>
@@ -31,6 +34,20 @@ export default function MarketOpportunityResult({ result, status, archived = fal
         <p className="text-xs text-slate-400">{formatSignalDate(result.timing.completedAt)} · {(result.timing.totalMs / 1000).toFixed(1)} 秒</p>
       </div>
       <h3 className="text-lg font-semibold text-white">{opportunity.title}</h3>
+      {decision && <div className="space-y-2 border-l-2 border-violet-300/40 pl-3 text-sm">
+        <dl className="flex flex-wrap gap-x-6 gap-y-2">
+          <div><dt className="text-xs text-slate-400">Kimi 原始结论</dt>
+            <dd className="mt-0.5 font-medium text-slate-100">{decisionStatus[decision.modelStatus]}{decision.modelDirection === "long" ? " · 偏多" : decision.modelDirection === "short" ? " · 偏空" : ""}</dd></div>
+          <div><dt className="text-xs text-slate-400">分析完成时的状态</dt>
+            <dd className="mt-0.5 font-medium text-slate-100">{decisionStatus[result.status]}</dd></div>
+        </dl>
+        <Reasons title="判定原因" items={decision.reasons.map(reason => reason.message)} />
+        {summaryInReasons && decision.modelSummary !== opportunity.summary &&
+          <details className="text-xs text-slate-400">
+            <summary className="cursor-pointer">查看模型原始摘要</summary>
+            <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-300">{decision.modelSummary}</p>
+          </details>}
+      </div>}
       <dl className={`grid grid-cols-2 gap-x-4 gap-y-3 border-y border-white/10 py-3 sm:grid-cols-6 ${compact ? "lg:grid-cols-3" : ""}`}>
         {[
           { label: "方向", value: direction, color: opportunity.direction === "long" ? "text-emerald-200" : opportunity.direction === "short" ? "text-rose-200" : "text-slate-100" },
@@ -44,8 +61,8 @@ export default function MarketOpportunityResult({ result, status, archived = fal
         </div>)}
       </dl>
       {archived && result.schemaVersion === 1 && <p className="text-xs text-slate-400">原结果有效至 {formatSignalDate(result.timing.validUntil)}</p>}
-      {!archived && status === "expired" && <p className="text-sm leading-6 text-amber-200">价位已过期，请重新分析。{opportunity.expiredReasons.join(" ")}</p>}
-      <p className={`whitespace-pre-wrap break-words text-sm leading-6 text-slate-300 ${view === "summary" ? "line-clamp-2" : ""}`}>{opportunity.summary}</p>
+      {!archived && status === "expired" && <p className="text-sm leading-6 text-amber-200">价位已过期，请重新分析。{!decision && opportunity.expiredReasons.join(" ")}</p>}
+      {!summaryInReasons && <p className={`whitespace-pre-wrap break-words text-sm leading-6 text-slate-300 ${view === "summary" ? "line-clamp-2" : ""}`}>{opportunity.summary}</p>}
     </div>}
     {(view === "all" || view === "chart") && result.market.chart &&
       <Suspense fallback={<p role="status" className="py-4 text-sm text-slate-400">正在加载行情图…</p>}>
@@ -65,7 +82,7 @@ export default function MarketOpportunityResult({ result, status, archived = fal
         <div><h4 className="flex items-center gap-1.5 text-sm font-medium text-amber-200"><ArrowDownRight className="size-4" />反对理由</h4><ul className="mt-2 list-disc space-y-1.5 pl-4 text-sm leading-7 text-slate-400">{opportunity.counterarguments.map((item, i) => <li key={i} className="break-words">{item}</li>)}</ul></div>
       </div>
       <Reasons title="行情提示" items={result.market.warnings} />
-      {archived && <Reasons title="分析时已过期的原因" items={opportunity.expiredReasons} />}
+      {archived && !decision && <Reasons title="分析时已过期的原因" items={opportunity.expiredReasons} />}
       <details className="border-t border-white/10 pt-3 text-xs text-slate-400"><summary className="cursor-pointer">调用详情 · {result.model.name}</summary>
         <dl className="mt-3 grid gap-2 break-all leading-6 sm:grid-cols-2"><div><dt>请求编号</dt><dd>{result.requestId}</dd></div><div><dt>分析编号</dt><dd>{result.analysisId}</dd></div><div><dt>各阶段耗时</dt><dd>行情 {result.timing.marketMs} ms / 模型 {result.timing.modelMs} ms / 核价 {result.timing.verificationMs} ms</dd></div><div><dt>代码版本</dt><dd>{result.codeVersion}</dd></div>{result.model.promptVersion && <div><dt>提示词版本</dt><dd>{result.model.promptVersion}</dd></div>}</dl>
       </details>
