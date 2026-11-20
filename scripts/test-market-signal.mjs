@@ -225,3 +225,26 @@ test("scanner reads only its own route and preserves two scans of the same candl
   await assert.rejects(fetchMarketScans(session, next, signal), /扫描记录时段无效/);
   assert.deepEqual(JSON.parse(calls[3].options.body), { version: 2, before: next });
 });
+
+test("scanner accepts completed and failed automatic analysis without requiring it on legacy rows", async t => {
+  const signal = new AbortController().signal;
+  const slot = 1800000000000;
+  const checks = [{ code: "close_cross", passed: true, value: null, expected: null }];
+  const row = { id: "run-1", time: slot + 200, scannedAt: slot + 200, candleClosedAt: slot,
+    symbol: "BTCUSDT", rulesVersion: "v1", status: "passed", close: 70000, rvol20: 2, trend4h: "up",
+    rules: [{ kind: "breakout", status: "passed", direction: "long", zone: null, checks },
+      { kind: "reclaim", status: "none", direction: null, zone: null, checks: [] }] };
+  let payload = { records: [row], from: slot, to: row.time, next: null };
+  setup(t, n => response(n % 2 === 1 ? ticket() : payload));
+  assert.deepEqual(await fetchMarketScans(session, undefined, signal), payload);
+  for (const autoAnalysis of [
+    { status: "completed", analysisId: "01234567-abcd-4abc-8abc-123456789012" },
+    { status: "failed", stage: "proposal_validation", errorCode: "INVALID_MODEL_OUTPUT" },
+    { status: "daily_limit" },
+  ]) {
+    payload = { ...payload, records: [{ ...row, autoAnalysis }] };
+    assert.deepEqual(await fetchMarketScans(session, undefined, signal), payload);
+  }
+  payload = { ...payload, records: [{ ...row, autoAnalysis: { status: "completed", analysisId: "invalid" } }] };
+  await assert.rejects(fetchMarketScans(session, undefined, signal), /扫描记录格式无效/);
+});

@@ -20,6 +20,7 @@ export interface SavedSignalSummary {
   completedAt: number;
   title: string;
   schemaVersion?: 4;
+  source?: "auto_scan";
   direction?: "long" | "short" | null;
   reviews?: ReviewSummary[];
 }

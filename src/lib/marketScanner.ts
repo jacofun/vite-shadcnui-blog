@@ -7,7 +7,11 @@ export interface ScanRule {
   kind: "breakout" | "reclaim"; status: Decision; direction: "long" | "short" | null;
   zone: { id: string; lower: number; upper: number } | null; checks: ScanCheck[];
 }
-export type ScanRecord = { id: string; time: number; scannedAt: number | null; candleClosedAt: number | null; symbol: "BTCUSDT"; rulesVersion: "v1" } & (
+export type ScanAutoAnalysis =
+  { status: "disabled" | "pending" | "duplicate" | "daily_limit" | "busy" | "stale" } |
+  { status: "failed"; stage: string; errorCode: string } |
+  { status: "completed"; analysisId: string };
+export type ScanRecord = { id: string; time: number; scannedAt: number | null; candleClosedAt: number | null; symbol: "BTCUSDT"; rulesVersion: "v1"; autoAnalysis?: ScanAutoAnalysis } & (
   { status: "error"; errorCode: string } |
   { status: Decision; close: number; rvol20: number | null; trend4h: "up" | "down" | "flat"; rules: ScanRule[] }
 );
@@ -20,6 +24,13 @@ const idFormat = /^[a-z0-9-]{1,60}$/;
 const cursorFormat = /^\d{13}:[a-z0-9-]{0,60}$/;
 const scalar = (value: unknown) => value === null || finite(value) || typeof value === "string" && value.length <= 80;
 const decision = (value: unknown) => value === "passed" || value === "watch" || value === "filtered" || value === "none";
+function validAutoAnalysis(value: unknown) {
+  if (!object(value) || typeof value.status !== "string") return false;
+  if (value.status === "completed") return typeof value.analysisId === "string" && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(value.analysisId);
+  if (value.status === "failed") return typeof value.stage === "string" && /^[a-z_]{1,40}$/.test(value.stage) &&
+    typeof value.errorCode === "string" && /^[A-Z0-9_]{1,80}$/.test(value.errorCode);
+  return ["disabled", "pending", "duplicate", "daily_limit", "busy", "stale"].includes(value.status);
+}
 function validRule(value: unknown) {
   return object(value) && (value.kind === "breakout" || value.kind === "reclaim") && decision(value.status) &&
     (value.direction === null || value.direction === "long" || value.direction === "short") &&
@@ -35,6 +46,7 @@ function validRow(value: unknown): value is ScanRecord {
     !(value.candleClosedAt === null || time(value.candleClosedAt) && value.candleClosedAt % period === 0)) return false;
   if (value.status === "error") return typeof value.errorCode === "string" && /^[A-Z_]{1,80}$/.test(value.errorCode);
   return decision(value.status) && value.candleClosedAt !== null && finite(value.close) && value.close > 0 &&
+    (value.autoAnalysis === undefined || value.status === "passed" && validAutoAnalysis(value.autoAnalysis)) &&
     (value.rvol20 === null || finite(value.rvol20) && value.rvol20 >= 0) &&
     (value.trend4h === "up" || value.trend4h === "down" || value.trend4h === "flat") &&
     Array.isArray(value.rules) && value.rules.length === 2 && value.rules.every(validRule);
