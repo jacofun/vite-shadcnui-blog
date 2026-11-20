@@ -164,6 +164,33 @@ test("only owners can archive V4, schema is checked, and partial writes can be r
   assert.ok(!JSON.stringify(entry).includes("candles"));
 });
 
+test("V4 archives a short stop inside resistance and still rejects a stop at the entry boundary", async () => {
+  const store = fakeStore();
+  const result = analysis();
+  const nearSupport = makeZone("support", 95, 98);
+  const resistance = makeZone("resistance", 100, 106);
+  const targets = [{ zoneId: nearSupport.id, price: 97, reason: "近端支撑" }];
+  Object.assign(result.opportunity, { direction: "short", stopLoss: 103, targets, rewardRisk: [{ target: 97, ratio: 0.5 }] });
+  const row = { ...result.research.targetAssessment[0], zoneId: nearSupport.id, price: 97, distance: 2, distancePct: 2, rewardRisk: 0.5 };
+  Object.assign(result.research, { stopZoneId: resistance.id, priceZones: [
+    { ...support, id: `1h:support:${AT - 6 * periods["1h"]}`, firstPivotTime: AT - 6 * periods["1h"] },
+    resistance, nearSupport,
+  ], targetAssessment: [row] });
+  result.research.entryZoneId = result.research.priceZones[0].id;
+  Object.assign(result.research.ruleAssessment, {
+    structure: { ...result.research.ruleAssessment.structure, activeSupport: 2, activeResistance: 1 },
+    invalidation: { zoneId: resistance.id, riskDistance: 4, riskAtr14: 4 / 3 },
+    targetSpace: [{ zoneId: nearSupport.id, obstacleCount: 0, historicalComparison: row.comparison }],
+    riskReward: [{ zoneId: nearSupport.id, rewardRisk: 0.5 }],
+  });
+  assert.equal(validResearchV4(result), true);
+  const invalid = structuredClone(result);
+  invalid.opportunity.stopLoss = invalid.opportunity.entry.max;
+  await assert.rejects(history(store, "save", { result: invalid }), { code: "INVALID_SIGNAL_HISTORY" });
+  await history(store, "save", { result });
+  assert.equal((await history(store, "get", { analysisId: ID })).result.opportunity.stopLoss, 103);
+});
+
 test("a revised V4 prompt and decision trace can be saved, listed and loaded through analysis history", async () => {
   const store = fakeStore();
   const result = analysis();

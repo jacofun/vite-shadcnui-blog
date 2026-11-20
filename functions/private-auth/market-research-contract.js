@@ -87,7 +87,7 @@ export function validResearchV4(result) {
   const long = opportunity.direction === "long";
   if (research.scenario === "none" || !entry || !entryZone || !stopZone || entryZone.status === "broken" || stopZone.status === "broken" ||
       !rule.volumePrice || rule.invalidation?.zoneId !== stopZone.id || entry.min < entryZone.lower || entry.max > entryZone.upper ||
-      (long ? opportunity.stopLoss >= Math.min(entry.min, stopZone.lower) : opportunity.stopLoss <= Math.max(entry.max, stopZone.upper))) return false;
+      !positive(opportunity.stopLoss) || (long ? opportunity.stopLoss >= entry.min : opportunity.stopLoss <= entry.max)) return false;
   return targets.every((target, i) => {
     const zone = zones.get(target.zoneId);
     const assessment = research.targetAssessment[i];

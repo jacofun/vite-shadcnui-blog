@@ -24,7 +24,9 @@ function ScanTime({ value }: { value: number | null }) {
 }
 
 function ScanDetails({ row }: { row: ScanRecord }) {
-  if (row.status === "error") return <span className="text-amber-200">{row.errorCode}</span>;
+  if (row.status === "error") return <span className="text-amber-200">
+    {row.errorCode === "SCAN_CANDLE_NOT_READY" ? "本次 15m K 线尚未发布" : row.errorCode}
+  </span>;
   return <details>
     <summary className="cursor-pointer text-cyan-200">筛选过程</summary>
     <div className="mt-2 space-y-3">
