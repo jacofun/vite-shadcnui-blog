@@ -71,12 +71,14 @@ test("native FC errors preserve code and request ID without invalidating the web
 
 test("incomplete, mismatched or HTML-success responses cannot be rendered as an opportunity", async t => {
   let payload;
-  const calls = setup(t, n => response(n % 2 === 1 ? ticket() : payload));
+  const calls = setup(t, n => n % 2 === 1 ? response(ticket()) : payload);
   for (const delta of [{ market: null }, { symbol: "ETHUSDT" }, { style: "trend" }, { opportunity: {} }, { timing: {} }, { status: "success" }]) {
-    payload = { ...result(), ...delta };
-    await assert.rejects(analyzeMarketOpportunity(session, input), /完整的分析结果/);
+    payload = response({ ...result(), ...delta });
+    await assert.rejects(analyzeMarketOpportunity(session, input), /未通过网页的分析结果校验.*请求编号 request-id/);
   }
-  assert.equal(calls.length, 12);
+  payload = new Response("<html>upstream</html>", { headers: { "Content-Type": "text/html" } });
+  await assert.rejects(analyzeMarketOpportunity(session, input), /无法读取为分析 JSON.*CDN/);
+  assert.equal(calls.length, 14);
 });
 
 test("connection failures and cancellation do not retry or save partial results", async t => {
@@ -111,7 +113,7 @@ test("candidate, watch and expired analyses retain complete price and evidence d
 });
 
 
-test("V4 accepts a watch without a plan and validates version, full chart and research horizons", () => {
+test("V4 renders a watch across prompt revisions and still validates schema, charts and research horizons", async t => {
   const payload = result();
   const at = Math.floor(Date.now() / 14_400_000) * 14_400_000;
   Object.assign(payload, { schemaVersion: 4, status: "watch" });
@@ -127,7 +129,16 @@ test("V4 accepts a watch without a plan and validates version, full chart and re
     ruleAssessment: { trendAlignment: "conflict", structure: { confirmedZones: 0, repeatedZones: 0, activeSupport: 0, activeResistance: 0, clarity: "limited" },
       volumePrice: null, invalidation: null, targetSpace: [], riskReward: [] },
   };
-  assert.equal(validResult(payload), true);
+  setup(t, n => response(n % 2 === 1 ? ticket() : payload));
+  for (const promptVersion of ["market-research-v4", "market-research-v4-auto-scan-v1", "market-research-v4-volume-timing-v5",
+    "market-research-v4-volume-timing-v5-auto-scan", "next-research-prompt"]) {
+    payload.model.promptVersion = promptVersion;
+    assert.equal(validResult(payload), true);
+    assert.deepEqual(await analyzeMarketOpportunity(session, input), payload);
+  }
+  for (const promptVersion of [undefined, null, 5, "", "   "]) {
+    assert.equal(validResult({ ...payload, model: { ...payload.model, promptVersion } }), false);
+  }
   assert.equal(validResult({ ...payload, research: { ...payload.research, researchHorizon: 3 } }), false);
   assert.equal(validResult({ ...payload, market: { ...payload.market, chart: [] } }), false);
   assert.equal(validResult({ ...payload, schemaVersion: 5 }), false);

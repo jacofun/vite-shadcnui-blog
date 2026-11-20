@@ -130,8 +130,10 @@ export async function analyzeMarketOpportunity(session: PrivateAuthSession, inpu
     const requestId = body.requestId ?? body.RequestId;
     throw new Error(`${text(message) ? message : "分析请求失败"}${text(code) ? `（${code}）` : `（HTTP ${response.status}）`}${text(requestId) ? `；请求编号：${requestId}` : ""}`);
   }
+  if (!record(payload)) throw new Error("交易信号响应无法读取为分析 JSON，请检查 CDN 路由及函数日志。");
   if (!validResult(payload) || payload.symbol !== input.symbol || payload.style !== input.style) {
-    throw new Error("交易信号函数未返回完整的分析结果，请检查 CDN 路由及函数日志。");
+    const requestId = text(payload.requestId) ? `，请求编号 ${payload.requestId}` : "";
+    throw new Error(`交易信号响应已返回，但未通过网页的分析结果校验。请核对返回结构与网页版本${requestId}。`);
   }
   return payload;
 }

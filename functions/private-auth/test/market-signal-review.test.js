@@ -164,6 +164,24 @@ test("only owners can archive V4, schema is checked, and partial writes can be r
   assert.ok(!JSON.stringify(entry).includes("candles"));
 });
 
+test("a revised V4 prompt can be saved, listed and loaded through analysis history", async () => {
+  const store = fakeStore();
+  const result = analysis();
+  result.status = "watch";
+  result.model.promptVersion = "market-research-v4-volume-timing-v5";
+  Object.assign(result.opportunity, { status: "watch", direction: null, entry: null, stopLoss: null, targets: [], rewardRisk: [] });
+  Object.assign(result.research, { scenario: "none", entryZoneId: null, stopZoneId: null, targetAssessment: [] });
+  Object.assign(result.research.ruleAssessment, { volumePrice: null, invalidation: null, targetSpace: [], riskReward: [] });
+  assert.deepEqual(await history(store, "save", { result }), { analysisId: ID });
+  const { entries } = await history(store, "list");
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].status, "watch");
+  assert.equal(entries[0].direction, null);
+  const detail = await history(store, "get", { analysisId: ID });
+  assert.deepEqual(detail.result, result);
+  assert.deepEqual(detail.reviews.map(r => r.status), ["pending", "pending", "pending"]);
+});
+
 test("timer drains only due windows, reports to separate objects and repairs report/index/cleanup failures without refetch", async () => {
   const store = fakeStore();
   const result = analysis();

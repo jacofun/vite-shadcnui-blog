@@ -38,7 +38,9 @@ function validDistribution(distribution, hours) {
 
 export function validResearchV4(result) {
   const { research, opportunity, market, timing, model } = result;
-  if (!research || !opportunity || !market || !timing || !model || model.promptVersion !== "market-research-v4" ||
+  // The response schema determines compatibility. The prompt version is
+  // provenance shared by live analyses and saved records.
+  if (!research || !opportunity || !market || !timing || !model || !text(model.promptVersion) || !model.promptVersion.trim() ||
       !time(market.asOf) || !time(timing.completedAt) || !time(market.latestQuote?.time) ||
       timing.completedAt < market.asOf - 30_000 ||
       !positive(market.tickSize) || !market.chart ||
