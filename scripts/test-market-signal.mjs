@@ -13,6 +13,14 @@ const source = compile(await readFile(new URL("../src/lib/marketSignal.ts", impo
   .replace('"@/lib/binanceSync"', JSON.stringify(data(ticketSource)))
   .replace('"../../functions/private-auth/market-research-contract.js"', JSON.stringify(data(researchContract)));
 const { analyzeMarketOpportunity, validResult } = await import(data(source));
+const tradingSource = compile(await readFile(new URL("../src/lib/trading.ts", import.meta.url), "utf8"))
+  .replace('"@/lib/privateAuthApi"', JSON.stringify(data('export const PRIVATE_AUTH_API_BASE = "https://www.yanxiao.me/api/private-auth"')))
+  .replace('"@/lib/privateAuthEvents"', JSON.stringify(data('export function notifyPrivateAuthInvalidated() {globalThis.invalidations++}')));
+const archiveSource = compile(await readFile(new URL("../src/lib/marketSignalHistory.ts", import.meta.url), "utf8"))
+  .replace('"@/lib/marketSignal"', JSON.stringify(data(source)))
+  .replace('"@/lib/binanceSync"', JSON.stringify(data(ticketSource)))
+  .replace('"@/lib/trading"', JSON.stringify(data(tradingSource)));
+const { getMarketSignal, describeMarketSignalReadError } = await import(data(archiveSource));
 const ordersSource = compile(await readFile(new URL("../src/lib/marketSignalOrders.ts", import.meta.url), "utf8"))
   .replace('"@/lib/binanceSync"', JSON.stringify(data(ticketSource)));
 const { createDemoOrderPlan, previewOrders, fetchOrderStatus } = await import(data(ordersSource));
@@ -113,7 +121,7 @@ test("candidate, watch and expired analyses retain complete price and evidence d
 });
 
 
-test("V4 renders a watch across prompt revisions and still validates schema, charts and research horizons", async t => {
+function v4Watch() {
   const payload = result();
   const at = Math.floor(Date.now() / 14_400_000) * 14_400_000;
   Object.assign(payload, { schemaVersion: 4, status: "watch" });
@@ -129,6 +137,11 @@ test("V4 renders a watch across prompt revisions and still validates schema, cha
     ruleAssessment: { trendAlignment: "conflict", structure: { confirmedZones: 0, repeatedZones: 0, activeSupport: 0, activeResistance: 0, clarity: "limited" },
       volumePrice: null, invalidation: null, targetSpace: [], riskReward: [] },
   };
+  return payload;
+}
+
+test("V4 renders a watch across prompt revisions and still validates schema, charts and research horizons", async t => {
+  const payload = v4Watch();
   setup(t, n => response(n % 2 === 1 ? ticket() : payload));
   for (const promptVersion of ["market-research-v4", "market-research-v4-auto-scan-v1", "market-research-v4-volume-timing-v5",
     "market-research-v4-volume-timing-v5-auto-scan", "next-research-prompt"]) {
@@ -150,6 +163,42 @@ test("V4 renders a watch across prompt revisions and still validates schema, cha
   assert.equal(validResult({ ...payload, market: { ...payload.market, chart: [] } }), false);
   assert.equal(validResult({ ...payload, schemaVersion: 5 }), false);
   assert.equal(validResult(result()), true);
+});
+
+test("an automatic record missing in the site archive is read from the linked scan archive", async t => {
+  const analysisId = "00000000-0000-0000-0000-000000000001";
+  const scanId = "00000000-0000-0000-0000-000000000002";
+  const record = { ...v4Watch(), analysisId, requestId: scanId };
+  const calls = setup(t, n => n === 1 ? response({ code: "SIGNAL_NOT_FOUND", requestId: "primary-123" }, 404) :
+    n === 2 ? response(ticket()) : response({ result: record, requestId: "scan-123" }));
+  assert.deepEqual(await getMarketSignal(session, analysisId, undefined, scanId), { result: record, reviewUnavailable: true, reviews: undefined });
+  assert.deepEqual(calls.map(call => call.url), [
+    "https://www.yanxiao.me/api/private-auth/trading/signals/get",
+    "https://www.yanxiao.me/api/private-auth/trading/binance/token",
+    "https://yanxiao.me/trade/api/signal/scans",
+  ]);
+  assert.deepEqual(JSON.parse(calls[2].options.body), { action: "analysis", analysisId, scanId });
+  assert.equal(calls[2].options.credentials, "omit");
+  assert.equal(calls[2].options.headers["X-JWT-Token"], "Bearer shared-sync-ticket");
+  assert.equal(calls[2].options.headers["X-CSRF-Token"], undefined);
+});
+
+test("archive detail preserves diagnostics and makes no fallback after a permission failure or for manual history", async t => {
+  const record = v4Watch();
+  let reply = () => response({ result: record, reviewUnavailable: true });
+  const calls = setup(t, () => reply());
+  assert.equal((await getMarketSignal(session, record.analysisId)).reviewUnavailable, true);
+  reply = () => response({ code: "MISSING_PERMISSION", requestId: "access-123" }, 403);
+  await assert.rejects(getMarketSignal(session, record.analysisId, undefined, record.requestId), error =>
+    /没有读取.*MISSING_PERMISSION.*access-123/.test(describeMarketSignalReadError(error)));
+  reply = () => response({ code: "SIGNAL_NOT_FOUND", requestId: "missing-123" }, 404);
+  await assert.rejects(getMarketSignal(session, record.analysisId), error =>
+    /未找到.*SIGNAL_NOT_FOUND.*missing-123/.test(describeMarketSignalReadError(error)));
+  reply = () => response({ result: { ...record, market: {} }, requestId: "format-123" });
+  await assert.rejects(getMarketSignal(session, record.analysisId, undefined, record.requestId), error =>
+    /数据不完整.*SIGNAL_ARCHIVE_INVALID.*format-123/.test(describeMarketSignalReadError(error)));
+  assert.ok(calls.every(call => call.url.endsWith("/trading/signals/get")));
+  assert.equal(calls.length, 4);
 });
 
 test("only read-only order previews with both matching protective prices are rendered", async t => {

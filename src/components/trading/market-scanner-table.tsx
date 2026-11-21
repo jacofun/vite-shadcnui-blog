@@ -64,7 +64,7 @@ function ScanDetails({ row }: { row: ScanRecord }) {
 export default function MarketScannerTable({ session }: { session: PrivateAuthSession }) {
   const [query, setQuery] = useState<{ before?: string }>({});
   const [result, setResult] = useState<{ query: typeof query; page?: ScanPage; error?: string }>();
-  const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<{ analysisId: string; scanId: string } | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     fetchMarketScans(session, query.before, controller.signal).then(page => {
@@ -108,7 +108,7 @@ export default function MarketScannerTable({ session }: { session: PrivateAuthSe
               <td className={`${cell} whitespace-nowrap text-xs leading-5`}>
                 {!row.autoAnalysis ? "—" : row.autoAnalysis.status === "completed" ?
                   <button type="button" className="text-cyan-200 underline-offset-2 hover:underline" onClick={() => {
-                    if (row.autoAnalysis?.status === "completed") setAnalysisId(row.autoAnalysis.analysisId);
+                    if (row.autoAnalysis?.status === "completed") setAnalysis({ analysisId: row.autoAnalysis.analysisId, scanId: row.id });
                   }}>查看分析</button> : row.autoAnalysis.status === "failed" ?
                     <details className="text-amber-200">
                       <summary className="cursor-pointer">分析失败</summary>
@@ -126,9 +126,9 @@ export default function MarketScannerTable({ session }: { session: PrivateAuthSe
       {page.next !== null && <button type="button" className="mt-4 rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-300 hover:text-white"
         onClick={() => setQuery({ before: page.next ?? undefined })}>查看更早时段</button>}
     </>}
-    {analysisId && <div className="mt-5 space-y-4 border-t border-white/10 pt-4">
-      <button type="button" onClick={() => setAnalysisId(null)} className="text-sm text-slate-300 underline-offset-2 hover:underline">收起分析</button>
-      <MarketSignalArchiveDetail key={analysisId} analysisId={analysisId} session={session} />
+    {analysis && <div className="mt-5 space-y-4 border-t border-white/10 pt-4">
+      <button type="button" onClick={() => setAnalysis(null)} className="text-sm text-slate-300 underline-offset-2 hover:underline">收起分析</button>
+      <MarketSignalArchiveDetail key={analysis.analysisId} {...analysis} session={session} />
     </div>}
   </section>;
 }

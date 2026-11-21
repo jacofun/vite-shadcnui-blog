@@ -1,29 +1,34 @@
 import { useEffect, useRef, useState } from "react";
-import { formatSignalDate, getMarketSignal, listMarketSignals, statusText, type SavedSignalSummary } from "@/lib/marketSignalHistory";
+import { describeMarketSignalReadError, formatSignalDate, getMarketSignal, listMarketSignals, statusText, type SavedSignalSummary } from "@/lib/marketSignalHistory";
 import type { PrivateAuthSession } from "@/lib/privateAuth";
 import MarketResearchReview from "./market-research-review";
 import MarketOpportunityResult from "./market-opportunity-result";
 
 const actionClass = "rounded-lg border border-white/15 px-3 py-2 text-xs text-slate-300 hover:bg-white/5 disabled:opacity-60";
 
-export function MarketSignalArchiveDetail({ session, analysisId }: { session: PrivateAuthSession; analysisId: string }) {
+export function MarketSignalArchiveDetail({ session, analysisId, scanId }: { session: PrivateAuthSession; analysisId: string; scanId?: string }) {
   const [detail, setDetail] = useState<Awaited<ReturnType<typeof getMarketSignal>> | null>(null);
   const [detailError, setDetailError] = useState("");
+  const [attempt, setAttempt] = useState(0);
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();
     const controller = new AbortController();
-    void getMarketSignal(session, analysisId, AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]))
+    void getMarketSignal(session, analysisId, AbortSignal.any([controller.signal, AbortSignal.timeout(32_000)]), scanId)
       .then(result => { if (!controller.signal.aborted) setDetail(result); })
-      .catch(() => { if (!controller.signal.aborted) setDetailError("读取这条分析记录失败。"); });
+      .catch((error: unknown) => { if (!controller.signal.aborted) setDetailError(describeMarketSignalReadError(error)); });
     return () => controller.abort();
-  }, [session, analysisId]);
+  }, [session, analysisId, scanId, attempt]);
   return <>
     <h3 ref={heading} tabIndex={-1} className="scroll-mt-24 text-base font-semibold text-white">分析记录详情</h3>
     {!detail && !detailError && <p role="status" className="text-sm text-slate-400">正在读取分析详情…</p>}
-    {detailError && <p role="alert" className="text-sm text-amber-200">{detailError}</p>}
+    {detailError && <div role="alert" className="flex flex-wrap items-center gap-2 break-words text-sm text-amber-200">
+      <span>{detailError}</span>
+      <button type="button" className={actionClass} onClick={() => { setDetailError(""); setAttempt(value => value + 1); }}>重新读取</button>
+    </div>}
     {detail && <>
       <MarketOpportunityResult result={detail.result} status={detail.result.status} archived />
+      {detail.reviewUnavailable && <p className="text-sm text-slate-400">分析已载入。复盘数据暂时无法读取。</p>}
       {detail.result.schemaVersion === 4 && detail.reviews &&
         <MarketResearchReview reviews={detail.reviews} preferred={detail.result.research.researchHorizon} />}
     </>}

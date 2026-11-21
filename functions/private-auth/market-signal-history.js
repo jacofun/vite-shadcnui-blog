@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { TradeError } from "./trading.js";
 
 import { SYMBOL, UUID, validResearchV4 } from "./market-research-contract.js";
@@ -9,6 +10,13 @@ const isTime = (value) => Number.isSafeInteger(value) && value > 0 && value <= M
 const isText = (value) => typeof value === "string" && value.length > 0 && value.length <= 1000;
 const positive = (value) => Number.isFinite(value) && value > 0;
 const invalid = () => { throw new TradeError(400, "INVALID_SIGNAL_HISTORY", "分析结果或行情快照不完整。"); };
+
+function reportArchiveRead(error, { analysisId, requestId, stage }) {
+  const upstreamCode = typeof error?.code === "string" && /^[A-Za-z][A-Za-z0-9_.-]{0,79}$/.test(error.code) ? error.code : undefined;
+  const status = error?.statusCode ?? error?.status;
+  console.warn(JSON.stringify({ event: "market_signal_archive_read_failed", analysisId, requestId, stage,
+    upstreamCode, upstreamStatus: Number.isInteger(status) && status >= 400 && status <= 599 ? status : undefined }));
+}
 
 function validChart(frames, asOf) {
   return Array.isArray(frames) && frames.length === 3 && Object.keys(PERIOD_MS).every(interval => {
@@ -72,10 +80,33 @@ export async function handleMarketSignalHistory({ route, body, user, config, con
     return { analysisId };
   }
   if (route === "trading/signals/get") {
-    if (typeof body.analysisId !== "string" || !UUID.test(body.analysisId)) invalid();
-    const result = await contentStore.readJson(`${root}/records/${body.analysisId}.json`, { missing: null });
-    if (!result) throw new TradeError(404, "SIGNAL_NOT_FOUND", "分析记录不存在。");
-    return { result, ...(result.schemaVersion === 4 ? { reviews: await readReviewWindows(contentStore, root, result.analysisId, result.timing.completedAt, true) } : {}) };
+    const { analysisId } = body;
+    if (typeof analysisId !== "string" || !UUID.test(analysisId)) invalid();
+    const requestId = randomUUID();
+    const readError = (status, code, message) => Object.assign(new TradeError(status, code, message), { requestId });
+    let result;
+    try {
+      result = await contentStore.readJson(`${root}/records/${analysisId}.json`, { missing: null });
+    } catch (error) {
+      reportArchiveRead(error, { analysisId, requestId, stage: "record" });
+      throw readError(503, "SIGNAL_ARCHIVE_UNAVAILABLE", "分析归档暂不可读。");
+    }
+    if (result === null) {
+      reportArchiveRead({ code: "SIGNAL_NOT_FOUND" }, { analysisId, requestId, stage: "record" });
+      throw readError(404, "SIGNAL_NOT_FOUND", "分析记录不存在。");
+    }
+    if (result?.analysisId !== analysisId || ![1, 4].includes(result.schemaVersion) ||
+        (result.schemaVersion === 4 && !isTime(result.timing?.completedAt))) {
+      reportArchiveRead({ code: "SIGNAL_ARCHIVE_INVALID" }, { analysisId, requestId, stage: "record" });
+      throw readError(502, "SIGNAL_ARCHIVE_INVALID", "分析归档格式无效。");
+    }
+    if (result.schemaVersion === 1) return { result, requestId };
+    try {
+      return { result, requestId, reviews: await readReviewWindows(contentStore, root, analysisId, result.timing.completedAt, true) };
+    } catch (error) {
+      reportArchiveRead(error, { analysisId, requestId, stage: "reviews" });
+      return { result, requestId, reviewUnavailable: true };
+    }
   }
   if (route === "trading/signals/list") {
     const { cursor } = body;
@@ -84,7 +115,12 @@ export async function handleMarketSignalHistory({ route, body, user, config, con
     const entries = await Promise.all(paths.map(async path => {
       const entry = await contentStore.readJson(path);
       if (entry.schemaVersion !== 4) return entry;
-      return { ...entry, reviews: await readReviewWindows(contentStore, root, entry.analysisId, entry.completedAt) };
+      try {
+        return { ...entry, reviews: await readReviewWindows(contentStore, root, entry.analysisId, entry.completedAt) };
+      } catch (error) {
+        reportArchiveRead(error, { analysisId: entry.analysisId, stage: "review_index" });
+        return entry;
+      }
     }));
     return { entries, nextCursor };
   }

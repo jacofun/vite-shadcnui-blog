@@ -150,11 +150,13 @@ export interface ImageTicket {
 export class TradingApiError extends Error {
   readonly status: number;
   readonly code: string;
-  constructor(status: number, code: string, message: string) {
+  readonly requestId?: string;
+  constructor(status: number, code: string, message: string, requestId?: string) {
     super(message);
     this.name = "TradingApiError";
     this.status = status;
     this.code = code;
+    this.requestId = requestId;
   }
 }
 export async function tradingRequest<T>(session: PrivateAuthSession, path: string, body: object, signal?: AbortSignal): Promise<T> {
@@ -167,9 +169,9 @@ export async function tradingRequest<T>(session: PrivateAuthSession, path: strin
     signal,
   });
   if (response.status === 401) notifyPrivateAuthInvalidated();
-  const payload = await response.json().catch(() => null) as (T & { code?: string; message?: string }) | null;
+  const payload = await response.json().catch(() => null) as (T & { code?: string; message?: string; requestId?: string }) | null;
   if (!response.ok) {
-    throw new TradingApiError(response.status, payload?.code ?? "REQUEST_FAILED", payload?.message ?? "交易日志请求失败");
+    throw new TradingApiError(response.status, payload?.code ?? "REQUEST_FAILED", payload?.message ?? "交易日志请求失败", payload?.requestId);
   }
   if (!payload) throw new TradingApiError(response.status, "INVALID_RESPONSE", "服务未返回有效 JSON");
   return payload;

@@ -164,6 +164,36 @@ test("only owners can archive V4, schema is checked, and partial writes can be r
   assert.ok(!JSON.stringify(entry).includes("candles"));
 });
 
+test("reading a saved analysis survives unavailable review objects and reports only safe diagnostics", async t => {
+  const warn = t.mock.method(console, "warn", () => {});
+  const store = fakeStore();
+  const result = analysis();
+  await history(store, "save", { result });
+  const read = store.readJson;
+  store.readJson = async (path, options) => {
+    if (path.includes("/reviews/") || path.includes("/review-index/")) {
+      throw Object.assign(new Error("private bucket or request body"), { code: "AccessDenied", status: 403 });
+    }
+    return read(path, options);
+  };
+  const detail = await history(store, "get", { analysisId: ID });
+  assert.deepEqual(detail.result, result);
+  assert.equal(detail.reviewUnavailable, true);
+  assert.equal(detail.reviews, undefined);
+  assert.equal((await history(store, "list")).entries[0].analysisId, ID);
+  const logged = warn.mock.calls.map(call => JSON.parse(call.arguments[0]));
+  assert.deepEqual(logged.map(event => event.stage), ["reviews", "review_index"]);
+  assert.equal(logged[0].requestId, detail.requestId);
+  assert.equal(logged[0].upstreamStatus, 403);
+  assert.ok(!JSON.stringify(logged).includes("private bucket"));
+
+  store.readJson = async () => { throw Object.assign(new Error("private bucket"), { code: "AccessDenied", status: 403 }); };
+  await assert.rejects(history(store, "get", { analysisId: ID }), error =>
+    error.code === "SIGNAL_ARCHIVE_UNAVAILABLE" && error.statusCode === 503 && /^[a-f0-9-]{36}$/.test(error.requestId));
+  store.readJson = async () => null;
+  await assert.rejects(history(store, "get", { analysisId: ID }), { code: "SIGNAL_NOT_FOUND", statusCode: 404 });
+});
+
 test("V4 archives a short stop inside resistance and still rejects a stop at the entry boundary", async () => {
   const store = fakeStore();
   const result = analysis();

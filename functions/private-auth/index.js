@@ -3100,7 +3100,8 @@ export function createHandler({
       const responseConfig = config || {
         expectedOrigin: env.WEBAUTHN_ORIGIN || "https://yanxiao.me",
       };
-      return jsonResponse(responseConfig, statusCode, { code, message });
+      return jsonResponse(responseConfig, statusCode, { code, message,
+        ...(error instanceof TradeError && typeof error.requestId === "string" ? { requestId: error.requestId } : {}) });
     }
   };
 }
