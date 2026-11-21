@@ -266,3 +266,22 @@ test("scanner accepts completed and failed automatic analysis without requiring 
   payload = { ...payload, records: [{ ...row, autoAnalysis: { status: "completed", analysisId: "invalid" } }] };
   await assert.rejects(fetchMarketScans(session, undefined, signal), /扫描记录格式无效/);
 });
+
+test("scanner accepts minute movement records and rejects an inconsistent trigger timestamp", async t => {
+  const signal = new AbortController().signal;
+  const minute = 1800000060000;
+  const window = { baselinePct: 0.2, thresholdPct: 0.6, severeAtPct: 1.2, changePct: -1.31, severity: "severe", volumeRatio: 1.2 };
+  const row = { id: "movement", time: minute + 5000, scannedAt: minute + 5000, candleClosedAt: null,
+    symbol: "BTCUSDT", rulesVersion: "v2", status: "passed", close: 70000, rvol20: null, trend4h: null, rules: [],
+    movement: { closedAt: minute, close: 70000, windows: [{ ...window, minutes: 5 },
+      { ...window, minutes: 15, changePct: -1.74, thresholdPct: 1, severeAtPct: 2, severity: "normal" }] },
+    trigger: { kind: "movement", eventAt: minute, direction: "short", severe: true } };
+  let payload;
+  setup(t, n => response(n % 2 === 1 ? ticket() : payload));
+  for (const status of ["episode", "reserved_quota"]) {
+    payload = { records: [{ ...row, autoAnalysis: { status } }], from: minute, to: row.time, next: null };
+    assert.deepEqual(await fetchMarketScans(session, undefined, signal), payload);
+  }
+  payload.records = [{ ...row, trigger: { ...row.trigger, eventAt: minute + 60000 } }];
+  await assert.rejects(fetchMarketScans(session, undefined, signal), /扫描记录格式无效/);
+});

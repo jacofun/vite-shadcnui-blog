@@ -8,12 +8,20 @@ export interface ScanRule {
   zone: { id: string; lower: number; upper: number } | null; checks: ScanCheck[];
 }
 export type ScanAutoAnalysis =
-  { status: "disabled" | "pending" | "duplicate" | "daily_limit" | "busy" | "stale" } |
+  { status: "disabled" | "pending" | "duplicate" | "episode" | "reserved_quota" | "daily_limit" | "busy" | "stale" } |
   { status: "failed"; stage: string; errorCode: string } |
   { status: "completed"; analysisId: string };
-export type ScanRecord = { id: string; time: number; scannedAt: number | null; candleClosedAt: number | null; symbol: "BTCUSDT"; rulesVersion: "v1"; autoAnalysis?: ScanAutoAnalysis } & (
+interface MovementWindow {
+  minutes: number; changePct: number; baselinePct: number | null; thresholdPct: number | null;
+  severeAtPct: number; severity: "none" | "normal" | "severe"; volumeRatio: number | null;
+}
+interface Movement { closedAt: number; close: number; windows: MovementWindow[] }
+export type ScanRecord = { id: string; time: number; scannedAt: number | null; candleClosedAt: number | null; symbol: "BTCUSDT";
+  rulesVersion: "v1" | "v2"; autoAnalysis?: ScanAutoAnalysis; movement?: Movement;
+  trigger?: { kind: "movement" | "structure"; eventAt: number; direction: "long" | "short"; severe: boolean };
+  movementErrorCode?: string; structureErrorCode?: string } & (
   { status: "error"; errorCode: string } |
-  { status: Decision; close: number; rvol20: number | null; trend4h: "up" | "down" | "flat"; rules: ScanRule[] }
+  { status: Decision; close: number; rvol20: number | null; trend4h: "up" | "down" | "flat" | null; rules: ScanRule[] }
 );
 export interface ScanPage { records: ScanRecord[]; from: number; to: number; next: string | null }
 const period = 900000;
@@ -29,7 +37,7 @@ function validAutoAnalysis(value: unknown) {
   if (value.status === "completed") return typeof value.analysisId === "string" && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(value.analysisId);
   if (value.status === "failed") return typeof value.stage === "string" && /^[a-z_]{1,40}$/.test(value.stage) &&
     typeof value.errorCode === "string" && /^[A-Z0-9_]{1,80}$/.test(value.errorCode);
-  return ["disabled", "pending", "duplicate", "daily_limit", "busy", "stale"].includes(value.status);
+  return ["disabled", "pending", "duplicate", "episode", "reserved_quota", "daily_limit", "busy", "stale"].includes(value.status);
 }
 function validRule(value: unknown) {
   return object(value) && (value.kind === "breakout" || value.kind === "reclaim") && decision(value.status) &&
@@ -42,14 +50,31 @@ function validRule(value: unknown) {
 }
 function validRow(value: unknown): value is ScanRecord {
   if (!object(value) || typeof value.id !== "string" || !idFormat.test(value.id) || !time(value.time) ||
-    !(value.scannedAt === null || value.scannedAt === value.time) || value.symbol !== "BTCUSDT" || value.rulesVersion !== "v1" ||
+    !(value.scannedAt === null || value.scannedAt === value.time) || value.symbol !== "BTCUSDT" ||
+    (value.rulesVersion !== "v1" && value.rulesVersion !== "v2") ||
     !(value.candleClosedAt === null || time(value.candleClosedAt) && value.candleClosedAt % period === 0)) return false;
   if (value.status === "error") return typeof value.errorCode === "string" && /^[A-Z_]{1,80}$/.test(value.errorCode);
-  return decision(value.status) && value.candleClosedAt !== null && finite(value.close) && value.close > 0 &&
+  const movement = value.movement;
+  const trigger = value.trigger;
+  const fresh = value.rulesVersion === "v2";
+  const nonnegative = (n: unknown) => n === null || (finite(n) && n >= 0);
+  if (movement !== undefined && (!fresh || !object(movement) || !time(movement.closedAt) || movement.closedAt % 60000 !== 0 ||
+    !finite(movement.close) || movement.close <= 0 || !Array.isArray(movement.windows) || movement.windows.length !== 2 ||
+    !movement.windows.every((row, i) => object(row) && row.minutes === (i === 0 ? 5 : 15) && finite(row.changePct) &&
+      nonnegative(row.baselinePct) && nonnegative(row.thresholdPct) && finite(row.severeAtPct) && row.severeAtPct > 0 &&
+      nonnegative(row.volumeRatio) && ["none", "normal", "severe"].includes(String(row.severity))))) return false;
+  if (trigger !== undefined && (!fresh || value.status !== "passed" || !object(trigger) || !time(trigger.eventAt) ||
+    !["long", "short"].includes(String(trigger.direction)) || typeof trigger.severe !== "boolean" ||
+    (trigger.kind === "movement" ? !object(movement) || trigger.eventAt !== movement.closedAt :
+      trigger.kind !== "structure" || trigger.eventAt !== value.candleClosedAt || trigger.severe))) return false;
+  if (fresh && value.status === "passed" && trigger === undefined) return false;
+  if (![value.movementErrorCode, value.structureErrorCode].every(code => code === undefined ||
+    typeof code === "string" && /^[A-Z_]{1,80}$/.test(code))) return false;
+  return decision(value.status) && (value.candleClosedAt !== null || (fresh && movement !== undefined)) && finite(value.close) && value.close > 0 &&
     (value.autoAnalysis === undefined || value.status === "passed" && validAutoAnalysis(value.autoAnalysis)) &&
     (value.rvol20 === null || finite(value.rvol20) && value.rvol20 >= 0) &&
-    (value.trend4h === "up" || value.trend4h === "down" || value.trend4h === "flat") &&
-    Array.isArray(value.rules) && value.rules.length === 2 && value.rules.every(validRule);
+    (value.trend4h === "up" || value.trend4h === "down" || value.trend4h === "flat" || (fresh && value.trend4h === null)) &&
+    Array.isArray(value.rules) && (value.rules.length === 2 || (fresh && value.rules.length === 0)) && value.rules.every(validRule);
 }
 
 export async function fetchMarketScans(session: PrivateAuthSession, before: string | undefined, signal: AbortSignal): Promise<ScanPage> {

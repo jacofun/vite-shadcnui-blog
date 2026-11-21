@@ -16,7 +16,7 @@ const display = (value: string | number | null) =>
   value === null ? "—" : typeof value === "number" ? number.format(value) : trends[value] ?? value;
 const cell = "border-t border-white/10 px-3 py-3 align-top";
 const autoStatuses = { disabled: "未启用", pending: "等待结果", duplicate: "重复信号", daily_limit: "达到当日上限",
-  busy: "分析服务忙", stale: "信号已过时" };
+  episode: "同轮已分析", reserved_quota: "普通额度用完", busy: "分析服务忙", stale: "信号已过时" };
 
 function ScanTime({ value }: { value: number | null }) {
   return value === null ? <span className="text-slate-400">—</span> :
@@ -30,6 +30,17 @@ function ScanDetails({ row }: { row: ScanRecord }) {
   return <details>
     <summary className="cursor-pointer text-cyan-200">筛选过程</summary>
     <div className="mt-2 space-y-3">
+      {row.movement && <div>
+        <p className="font-medium text-slate-200">1m 行情 · <ScanTime value={row.movement.closedAt} /></p>
+        {row.movement.windows.map(window => <p key={window.minutes} className="mt-1 text-slate-400">
+          {window.minutes}m {window.changePct > 0 ? "+" : ""}{display(window.changePct)}%
+          {window.thresholdPct !== null && <> · 普通门槛 {display(window.thresholdPct)}%</>}
+          {" · 严重门槛 "}{display(window.severeAtPct)}%
+          {window.volumeRatio !== null && <> · 量比 {display(window.volumeRatio)}</>}
+        </p>)}
+      </div>}
+      {row.movementErrorCode && <p className="text-amber-200">1m 数据异常 · {row.movementErrorCode}</p>}
+      {row.structureErrorCode && <p className="text-amber-200">15m 结构读取失败 · {row.structureErrorCode}</p>}
       {row.rules.map(rule => <div key={rule.kind}>
         <p className="font-medium text-slate-200">
           {rule.kind === "breakout" ? "顺势突破" : "假突破回收"} · {statuses[rule.status]}
@@ -72,7 +83,7 @@ export default function MarketScannerTable({ session }: { session: PrivateAuthSe
       <button type="button" className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-300 hover:text-white disabled:opacity-50"
         onClick={() => setQuery({})} disabled={pending}>刷新最新记录</button>
     </div>
-    <p className="mt-2 text-sm text-slate-400">BTCUSDT · 每次触发取最新已收盘 15m K 线 · 北京时间</p>
+    <p className="mt-2 text-sm text-slate-400">BTCUSDT · 1m 异动与 15m 结构 · 北京时间</p>
     {pending && <p role="status" className="mt-4 text-sm text-slate-300">正在读取自动扫描记录…</p>}
     {error && <p role="alert" className="mt-4 text-sm text-amber-200">{error}</p>}
     {page && <>
@@ -86,8 +97,14 @@ export default function MarketScannerTable({ session }: { session: PrivateAuthSe
             </tr></thead>
             <tbody>{page.records.map(row => <tr key={row.id}>
               <td className={`${cell} whitespace-nowrap`}><ScanTime value={row.scannedAt} /></td>
-              <td className={`${cell} whitespace-nowrap`}><ScanTime value={row.candleClosedAt} /></td>
-              <td className={`${cell} whitespace-nowrap ${row.status === "passed" ? "text-emerald-300" : ""}`}>{statuses[row.status]}</td>
+              <td className={`${cell} whitespace-nowrap`}>
+                <ScanTime value={row.candleClosedAt ?? row.movement?.closedAt ?? null} />
+                {row.rulesVersion === "v2" && row.status !== "error" && <span className="ml-1 text-xs text-slate-400">{row.candleClosedAt === null ? "1m" : "15m"}</span>}
+              </td>
+              <td className={`${cell} whitespace-nowrap ${row.status === "passed" ? "text-emerald-300" : ""}`}>
+                {row.trigger?.kind === "movement" ? row.trigger.severe ? "严重异动" : "普通异动" :
+                  row.trigger?.kind === "structure" ? "结构事件" : statuses[row.status]}
+              </td>
               <td className={`${cell} whitespace-nowrap text-xs leading-5`}>
                 {!row.autoAnalysis ? "—" : row.autoAnalysis.status === "completed" ?
                   <button type="button" className="text-cyan-200 underline-offset-2 hover:underline" onClick={() => {
@@ -101,7 +118,7 @@ export default function MarketScannerTable({ session }: { session: PrivateAuthSe
               </td>
               <td className={cell}>{row.status === "error" ? "—" : display(row.close)}</td>
               <td className={cell}>{row.status === "error" ? "—" : display(row.rvol20)}</td>
-              <td className={cell}>{row.status === "error" ? "—" : trends[row.trend4h]}</td>
+              <td className={cell}>{row.status === "error" || row.trend4h === null ? "—" : trends[row.trend4h]}</td>
               <td className={`${cell} min-w-48 text-xs leading-5`}><ScanDetails row={row} /></td>
             </tr>)}</tbody>
           </table>
