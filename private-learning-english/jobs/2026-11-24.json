@@ -1,0 +1,252 @@
+{
+  "schemaVersion": 1,
+  "recommendedDate": "2026-11-24",
+  "episodeId": "261112-learning-from-different-generations",
+  "title": "Learning from different generations",
+  "publishedAt": "2026-11-12",
+  "sourcePage": "https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-261112",
+  "audioSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/261112_6_minute_english_learning_from_different_generations_download.mp3",
+  "transcriptSource": "https://downloads.bbc.co.uk/learningenglish/features/6min/261112_6_minute_english_learning_from_different_generations_transcript.pdf",
+  "reason": "本集从上一期的压力管理轮换到团队协作、知识传承与代际沟通，贴合工程管理中资深与初级成员共同工作的真实场景。所选表达集中在组织参与、说明影响和修正刻板印象，均为原文支持的高频搭配，适合通过多次有支架调用，把被动理解转化为会议和团队沟通中的主动表达。",
+  "difficulty": "B1-B2",
+  "tags": [
+    "团队协作",
+    "知识传承",
+    "职场沟通",
+    "代际沟通",
+    "工程管理",
+    "主动表达"
+  ],
+  "assessment": {
+    "schemaVersion": 1,
+    "targetExpressions": [
+      {
+        "expression": "a wide range of",
+        "meaning": "many different types, ages or possibilities within one group",
+        "usage": "The platform team includes a wide range of experience levels."
+      },
+      {
+        "expression": "get people interacting",
+        "meaning": "to cause or encourage people to communicate and take part with one another",
+        "usage": "A short pairing exercise can get people interacting across teams."
+      },
+      {
+        "expression": "join in",
+        "meaning": "to take part in an activity with other people",
+        "usage": "Senior engineers can join in when junior developers review a design."
+      },
+      {
+        "expression": "fill a void",
+        "meaning": "to help someone feel better by replacing something important that was lost or missing",
+        "usage": "Mentoring can fill a void after someone leaves a close-knit team."
+      },
+      {
+        "expression": "have an impact on",
+        "meaning": "to affect someone or something in a noticeable way",
+        "usage": "Clear feedback can have a positive impact on a team's confidence."
+      },
+      {
+        "expression": "break down stereotypes",
+        "meaning": "to show through evidence or experience that common beliefs about a group are not always true",
+        "usage": "Working together can break down stereotypes about junior and senior colleagues."
+      }
+    ],
+    "objectiveQuestions": [
+      {
+        "id": "oq1",
+        "type": "fill-blank",
+        "prompt": "Complete Georgie's description of her choir: There is ______ ages, with both older and younger people.",
+        "targetExpression": "a wide range of",
+        "explanation": "Georgie says her choir has quite a wide range of ages.",
+        "answers": [
+          "a wide range of",
+          "quite a wide range of"
+        ]
+      },
+      {
+        "id": "oq2",
+        "type": "single-choice",
+        "prompt": "Which sentence best explains what the project does?",
+        "targetExpression": "get people interacting",
+        "explanation": "The project brings nursery children and retired residents together so that they communicate and share activities.",
+        "options": [
+          {
+            "id": "a",
+            "text": "It gets young children interacting with older retired people."
+          },
+          {
+            "id": "b",
+            "text": "It keeps both generations apart during activities."
+          },
+          {
+            "id": "c",
+            "text": "It asks children to study older people from a distance."
+          },
+          {
+            "id": "d",
+            "text": "It replaces nursery staff with retired residents."
+          }
+        ],
+        "answer": "a"
+      },
+      {
+        "id": "oq3",
+        "type": "fill-blank",
+        "prompt": "Complete the sentence about the retirement village: Older residents can ______ the nursery activities.",
+        "targetExpression": "join in",
+        "explanation": "The transcript says older residents can join in for activities as well.",
+        "answers": [
+          "join in",
+          "join in for"
+        ]
+      },
+      {
+        "id": "oq4",
+        "type": "single-choice",
+        "prompt": "What does “fill a void” mean in Ian's story?",
+        "targetExpression": "fill a void",
+        "explanation": "The nursery helped Ian feel better after the loss of his wife by giving him meaningful involvement.",
+        "options": [
+          {
+            "id": "a",
+            "text": "Find something meaningful that helps after a loss."
+          },
+          {
+            "id": "b",
+            "text": "Avoid all contact with other people."
+          },
+          {
+            "id": "c",
+            "text": "Complete an empty form at the nursery."
+          },
+          {
+            "id": "d",
+            "text": "Forget an activity because it is unimportant."
+          }
+        ],
+        "answer": "a"
+      },
+      {
+        "id": "oq5",
+        "type": "fill-blank",
+        "prompt": "Complete the question about results: What ______ mixing generations ______ health and wellbeing?",
+        "targetExpression": "have an impact on",
+        "explanation": "The programme asks about the impact the project is having on older and younger people and discusses effects on health and wellbeing.",
+        "answers": [
+          "impact does; have on",
+          "impact can; have on",
+          "impact will; have on"
+        ]
+      },
+      {
+        "id": "oq6",
+        "type": "single-choice",
+        "prompt": "Which observation most clearly helps “break down stereotypes” about age?",
+        "targetExpression": "break down stereotypes",
+        "explanation": "The nursery found that older people can be lively and energetic too, challenging the belief that only young children behave that way.",
+        "options": [
+          {
+            "id": "a",
+            "text": "Older residents can be lively and energetic, sometimes more than the children."
+          },
+          {
+            "id": "b",
+            "text": "The nursery has a library, cafeteria and garden."
+          },
+          {
+            "id": "c",
+            "text": "The project is located in northwest England."
+          },
+          {
+            "id": "d",
+            "text": "Children and adults use different words for every activity."
+          }
+        ],
+        "answer": "a"
+      },
+      {
+        "id": "oq7",
+        "type": "single-choice",
+        "prompt": "Which invitation uses “join in” naturally?",
+        "targetExpression": "join in",
+        "explanation": "“Join in” means taking part in a shared activity; it can be followed by “with us” or used without an object.",
+        "options": [
+          {
+            "id": "a",
+            "text": "We're making paper planes. Would you like to join in?"
+          },
+          {
+            "id": "b",
+            "text": "We're making paper planes. Would you like to join into?"
+          },
+          {
+            "id": "c",
+            "text": "We're making paper planes. Would you like joining in it?"
+          },
+          {
+            "id": "d",
+            "text": "We're making paper planes. Would you like to join at?"
+          }
+        ],
+        "answer": "a"
+      },
+      {
+        "id": "oq8",
+        "type": "fill-blank",
+        "prompt": "Complete the workplace sentence with the target expression: Pairing junior and senior engineers can ______ how confidently they share knowledge.",
+        "targetExpression": "have an impact on",
+        "explanation": "“Have an impact on” is the correct collocation for noticeably affecting confidence or behaviour.",
+        "answers": [
+          "have an impact on",
+          "have a positive impact on"
+        ]
+      }
+    ],
+    "subjectiveQuestions": [
+      {
+        "id": "sq1",
+        "type": "comprehension",
+        "prompt": "Guided recall (10-25 words, one sentence). What can older residents do at the nursery? Use “join in”. Starter: Older residents can...",
+        "targetExpression": "join in",
+        "gradingCriteria": "First judge whether the response answers the question. Then check whether the specified or selected target expression is used naturally. Point out only the 1-2 most useful improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase would help, offer only one alternative from today's target expressions or transcript. Distinguish between a missing or incorrect meaning and a correct meaning expressed less naturally; do not mark the latter as completely wrong."
+      },
+      {
+        "id": "sq2",
+        "type": "comprehension",
+        "prompt": "Guided comprehension (20-40 words, 1-2 sentences). Explain one benefit of mixing generations. Use “have an impact on”. You may use: loneliness / wellbeing / learning and creativity.",
+        "targetExpression": "have an impact on",
+        "gradingCriteria": "First judge whether the response answers the question. Then check whether the specified or selected target expression is used naturally. Point out only the 1-2 most useful improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase would help, offer only one alternative from today's target expressions or transcript. Distinguish between a missing or incorrect meaning and a correct meaning expressed less naturally; do not mark the latter as completely wrong."
+      },
+      {
+        "id": "sq3",
+        "type": "paraphrase",
+        "prompt": "Paraphrase (20-40 words, 1-2 sentences). Rewrite this idea using “break down stereotypes”: “The project shows that older people can be lively and energetic too.” Keep the main meaning unchanged.",
+        "targetExpression": "break down stereotypes",
+        "gradingCriteria": "First judge whether the response answers the question. Then check whether the specified or selected target expression is used naturally. Point out only the 1-2 most useful improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase would help, offer only one alternative from today's target expressions or transcript. Distinguish between a missing or incorrect meaning and a correct meaning expressed less naturally; do not mark the latter as completely wrong."
+      },
+      {
+        "id": "sq4",
+        "type": "application",
+        "prompt": "Supported application (30-60 words, two sentences). A project team has junior and senior engineers who rarely talk. Suggest one small activity to improve knowledge sharing. Phrase bank: “get people interacting”, “a wide range of”, “join in”. Use any one phrase naturally.",
+        "targetExpression": "get people interacting",
+        "gradingCriteria": "First judge whether the response answers the question. Then check whether the specified or selected target expression is used naturally. Point out only the 1-2 most useful improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase would help, offer only one alternative from today's target expressions or transcript. Distinguish between a missing or incorrect meaning and a correct meaning expressed less naturally; do not mark the latter as completely wrong."
+      },
+      {
+        "id": "sq5",
+        "type": "application",
+        "prompt": "Bounded free response (40-70 words, 2-3 sentences). Within the episode's theme, say whether workplaces should create more chances for different generations to work together, and give one reason. Use “break down stereotypes” naturally.",
+        "targetExpression": "break down stereotypes",
+        "gradingCriteria": "First judge whether the response answers the question. Then check whether the specified or selected target expression is used naturally. Point out only the 1-2 most useful improvements. Do not penalise simple but correct English for not being advanced. If a more natural phrase would help, offer only one alternative from today's target expressions or transcript. Distinguish between a missing or incorrect meaning and a correct meaning expressed less naturally; do not mark the latter as completely wrong."
+      }
+    ],
+    "retellingPrompt": "Without looking at the full transcript, retell the episode in 80-120 words. Use this structure: (1) topic—the nursery and retirement-village project; (2) two key ideas—what people do together and the benefits for both generations; (3) conclusion—one example that challenges an age stereotype. Phrase bank: “join in”, “have an impact on”, “break down stereotypes”. Use at least two phrases naturally. Simple, accurate English is enough; rare vocabulary and complex sentences are not required.",
+    "referencePoints": [
+      "A nursery in a retirement village in Chester brings young children and retired residents together.",
+      "The groups share spaces, and older “grand-friends” can join activities or lead dance and crafts.",
+      "Ian became involved after his wife died, and the nursery helped him fill a void.",
+      "Research on intergenerational projects reports reduced loneliness and improved health and wellbeing.",
+      "Mixing generations may also boost learning and creativity.",
+      "Older residents can be lively and energetic, which helps break down stereotypes about age."
+    ]
+  }
+}
