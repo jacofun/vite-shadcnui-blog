@@ -47,6 +47,7 @@ interface BaseSignalResult {
   symbol: string;
   style: SignalStyle;
   status: SignalStatus;
+  decisionSource?: "deterministic";
   opportunity: {
     status: SignalStatus; title: string; summary: string; direction: "long" | "short" | null;
     entry: { min: number; max: number } | null; stopLoss: number | null;

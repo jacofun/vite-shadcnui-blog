@@ -36,7 +36,7 @@ export default function MarketOpportunityResult({ result, status, archived = fal
       <h3 className="text-lg font-semibold text-white">{opportunity.title}</h3>
       {decision && <div className="space-y-2 border-l-2 border-violet-300/40 pl-3 text-sm">
         <dl className="flex flex-wrap gap-x-6 gap-y-2">
-          <div><dt className="text-xs text-slate-400">Kimi 原始结论</dt>
+          <div><dt className="text-xs text-slate-400">{result.decisionSource === "deterministic" ? "规则原始结论" : "模型原始结论"}</dt>
             <dd className="mt-0.5 font-medium text-slate-100">{decisionStatus[decision.modelStatus]}{decision.modelDirection === "long" ? " · 偏多" : decision.modelDirection === "short" ? " · 偏空" : ""}</dd></div>
           <div><dt className="text-xs text-slate-400">分析完成时的状态</dt>
             <dd className="mt-0.5 font-medium text-slate-100">{decisionStatus[result.status]}</dd></div>

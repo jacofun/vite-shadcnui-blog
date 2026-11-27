@@ -13,11 +13,13 @@ const alignments = ["up", "down", "mixed", "conflict"];
 const comparisons = ["within_p50", "p50_to_p75", "p75_to_p90", "above_p90"];
 const decisionCodes = ["model_watch", "model_none", "entry_missing", "entry_out_of_bounds", "target_obstacle", "quote_outside_entry",
   "analysis_age", "quote_stale", "quote_drift", "quote_crossed_exit"];
+const deterministicDecisionCodes = ["m1_not_triggered", "m2_no_order"];
 
-function validDecision(decision) {
+function validDecision(decision, source) {
   return decision && ["candidate", "watch", "none"].includes(decision.modelStatus) &&
     [null, "long", "short"].includes(decision.modelDirection) && text(decision.modelSummary) &&
-    bounded(decision.reasons, 5, reason => reason && decisionCodes.includes(reason.code) && text(reason.message));
+    bounded(decision.reasons, 5, reason => reason && text(reason.message) &&
+      (decisionCodes.includes(reason.code) || source === "deterministic" && deterministicDecisionCodes.includes(reason.code)));
 }
 
 function validZone(zone, at) {
@@ -49,7 +51,8 @@ export function validResearchV4(result) {
   // The response schema determines compatibility. The prompt version is
   // provenance shared by live analyses and saved records.
   if (!research || !opportunity || !market || !timing || !model || !text(model.promptVersion) || !model.promptVersion.trim() ||
-      (decision !== undefined && !validDecision(decision)) || !time(market.asOf) || !time(timing.completedAt) || !time(market.latestQuote?.time) ||
+      (decision !== undefined && !validDecision(decision, result.decisionSource)) || !time(market.asOf) ||
+      !time(timing.completedAt) || !time(market.latestQuote?.time) ||
       timing.completedAt < market.asOf - 30_000 ||
       !positive(market.tickSize) || !market.chart ||
       !["trend", "range", "transition"].includes(research.marketRegime) ||
