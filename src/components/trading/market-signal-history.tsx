@@ -3,6 +3,7 @@ import { describeMarketSignalReadError, formatSignalDate, getMarketSignal, listM
 import type { PrivateAuthSession } from "@/lib/privateAuth";
 import MarketResearchReview from "./market-research-review";
 import MarketOpportunityResult from "./market-opportunity-result";
+import MarketScanExecution from "./market-scan-execution";
 
 const actionClass = "rounded-lg border border-white/15 px-3 py-2 text-xs text-slate-300 hover:bg-white/5 disabled:opacity-60";
 
@@ -27,6 +28,8 @@ export function MarketSignalArchiveDetail({ session, analysisId, scanId }: { ses
       <button type="button" className={actionClass} onClick={() => { setDetailError(""); setAttempt(value => value + 1); }}>重新读取</button>
     </div>}
     {detail && <>
+      {scanId && detail.result.schemaVersion === 4 && detail.result.decisionSource === "deterministic" && detail.result.status === "candidate" &&
+        <MarketScanExecution key={analysisId} session={session} analysisId={analysisId} scanId={scanId} />}
       <MarketOpportunityResult result={detail.result} status={detail.result.status} archived />
       {detail.reviewUnavailable && <p className="text-sm text-slate-400">分析已载入。复盘数据暂时无法读取。</p>}
       {detail.result.schemaVersion === 4 && detail.reviews &&

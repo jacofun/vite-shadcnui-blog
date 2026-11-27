@@ -284,7 +284,26 @@ test("executable pending drafts support live and demo with a positive order wait
 
 const scannerSource = compile(await readFile(new URL("../src/lib/marketScanner.ts", import.meta.url), "utf8"))
   .replace('"@/lib/binanceSync"', JSON.stringify(data(ticketSource)));
-const { fetchMarketScans } = await import(data(scannerSource));
+const { fetchMarketScans, fetchScanExecution } = await import(data(scannerSource));
+
+test("scanner reads execution evidence by linked scan and analysis IDs", async t => {
+  const signal = new AbortController().signal;
+  const analysisId = "00000000-0000-0000-0000-000000000001";
+  const scanId = "00000000-0000-0000-0000-000000000002";
+  const execution = { state: "unfilled", exchangeStatus: "EXPIRED", executedQty: "0", clientId: "mse" + "a".repeat(30) };
+  let payload = { execution };
+  let status = 200;
+  const calls = setup(t, n => n % 2 === 1 ? response(ticket()) : response(payload, status));
+  const read = () => fetchScanExecution(session, analysisId, scanId, signal);
+  assert.deepEqual(await read(), execution);
+  assert.equal(calls[1].url, "https://yanxiao.me/trade/api/signal/scans");
+  assert.deepEqual(JSON.parse(calls[1].options.body), { action: "execution", analysisId, scanId });
+  payload = { execution: { ...execution, executedQty: "invalid" } };
+  await assert.rejects(read(), /无法读取自动开仓结果/);
+  status = 400;
+  payload = { error: { code: "INVALID_SCAN_CURSOR" } };
+  assert.deepEqual(await read(), { state: "unavailable" });
+});
 
 test("scanner reads only its own route and preserves two scans of the same candle", async t => {
   const signal = new AbortController().signal;
@@ -311,7 +330,7 @@ test("scanner reads new 5m closes and pre-upgrade 15m slots in the same page", a
   const row = { kind: "deterministic", id: "01234567-abcd-4abc-8abc-123456789012", time: slot + 5000,
     scannedAt: slot + 5000, candleClosedAt: slot, candleInterval: "5m", symbol: "BTCUSDT", status: "triggered",
     m1: { score: 95, reasons: ["continuation", "near_zone"] }, close: 70000, trend4h: "up", rvol20: 1.8,
-    analysisId: "72345678-abcd-4abc-8abc-123456789012", opportunityStatus: "candidate" };
+    analysisId: "72345678-abcd-4abc-8abc-123456789012", opportunityStatus: "watch", decisionReason: "首个止盈目标的盈亏比 0.70R，低于 1.50R。" };
   const older = slot - 300000;
   const preUpgrade = { kind: "deterministic", id: `m1-slot-${older}`, time: older, scannedAt: null,
     candleClosedAt: older, symbol: "BTCUSDT", status: "no_trigger" };

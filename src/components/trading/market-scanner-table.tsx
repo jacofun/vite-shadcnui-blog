@@ -78,10 +78,11 @@ function DeterministicRow({ row, openAnalysis }: { row: DeterministicScanRecord;
     <td className={`${cell} whitespace-nowrap ${row.status !== "no_trigger" ? "text-emerald-300" : ""}`}>{label}
       {row.m1 && <span className="ml-1 text-xs text-slate-400">{row.m1.score} 分</span>}
     </td>
-    <td className={`${cell} whitespace-nowrap text-xs leading-5`}>
+    <td className={`${cell} min-w-40 text-xs leading-5`}>
       {analysisId && row.opportunityStatus ? <button type="button" className="text-cyan-200 underline-offset-2 hover:underline"
         onClick={() => openAnalysis(analysisId)}>{opportunityStatuses[row.opportunityStatus]} · 查看分析</button> :
         row.status === "daily_limit" ? autoStatuses.daily_limit : row.status === "triggered" ? "暂无关联归档" : "—"}
+      {row.decisionReason && <p className="mt-1 max-w-60 break-words text-amber-200/90">{row.decisionReason}</p>}
     </td>
     <td className={cell}>{display(row.close ?? null)}</td>
     <td className={cell}>{display(row.rvol20 ?? null)}</td>
