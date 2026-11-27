@@ -1,5 +1,6 @@
 import type { PrivateAuthSession } from "@/lib/privateAuth";
 import { getTradingFunctionTicket } from "@/lib/binanceSync";
+import type { SignalStatus } from "@/lib/marketSignal";
 
 type Decision = "passed" | "watch" | "filtered" | "none";
 export interface ScanCheck { code: string; passed: boolean | null; value: number | string | null; expected: number | string | null }
@@ -16,25 +17,33 @@ interface MovementWindow {
   severeAtPct: number; severity: "none" | "normal" | "severe"; volumeRatio: number | null;
 }
 interface Movement { closedAt: number; close: number; windows: MovementWindow[] }
-export type ScanRecord = { id: string; time: number; scannedAt: number | null; candleClosedAt: number | null; symbol: "BTCUSDT";
+type ScanTimes = { id: string; time: number; scannedAt: number | null; candleClosedAt: number | null; symbol: "BTCUSDT" };
+export type LegacyScanRecord = ScanTimes & { kind?: never;
   rulesVersion: "v1" | "v2"; autoAnalysis?: ScanAutoAnalysis; movement?: Movement;
   trigger?: { kind: "movement" | "structure"; eventAt: number; direction: "long" | "short"; severe: boolean };
   movementErrorCode?: string; structureErrorCode?: string } & (
   { status: "error"; errorCode: string } |
   { status: Decision; close: number; rvol20: number | null; trend4h: "up" | "down" | "flat" | null; rules: ScanRule[] }
 );
+export type DeterministicScanRecord = ScanTimes & {
+  kind: "deterministic"; candleClosedAt: number; status: "triggered" | "no_trigger" | "daily_limit";
+  m1?: { score: number; reasons: string[] }; close?: number; rvol20?: number | null; trend4h?: "up" | "down" | "flat";
+  analysisId?: string; opportunityStatus?: SignalStatus;
+};
+export type ScanRecord = LegacyScanRecord | DeterministicScanRecord;
 export interface ScanPage { records: ScanRecord[]; from: number; to: number; next: string | null }
 const period = 900000;
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 const time = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value > 0 && value < 8640000000000000;
 const idFormat = /^[a-z0-9-]{1,60}$/;
+const analysisIdFormat = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
 const cursorFormat = /^\d{13}:[a-z0-9-]{0,60}$/;
 const scalar = (value: unknown) => value === null || finite(value) || typeof value === "string" && value.length <= 80;
 const decision = (value: unknown) => value === "passed" || value === "watch" || value === "filtered" || value === "none";
 function validAutoAnalysis(value: unknown) {
   if (!object(value) || typeof value.status !== "string") return false;
-  if (value.status === "completed") return typeof value.analysisId === "string" && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(value.analysisId);
+  if (value.status === "completed") return typeof value.analysisId === "string" && analysisIdFormat.test(value.analysisId);
   if (value.status === "failed") return typeof value.stage === "string" && /^[a-z_]{1,40}$/.test(value.stage) &&
     typeof value.errorCode === "string" && /^[A-Z0-9_]{1,80}$/.test(value.errorCode);
   return ["disabled", "pending", "duplicate", "episode", "reserved_quota", "daily_limit", "busy", "stale"].includes(value.status);
@@ -48,9 +57,9 @@ function validRule(value: unknown) {
       typeof check.code === "string" && check.code.length <= 50 && (check.passed === null || typeof check.passed === "boolean") &&
       scalar(check.value) && scalar(check.expected));
 }
-function validRow(value: unknown): value is ScanRecord {
+function validLegacyRow(value: unknown): value is LegacyScanRecord {
   if (!object(value) || typeof value.id !== "string" || !idFormat.test(value.id) || !time(value.time) ||
-    !(value.scannedAt === null || value.scannedAt === value.time) || value.symbol !== "BTCUSDT" ||
+    value.kind !== undefined || !(value.scannedAt === null || value.scannedAt === value.time) || value.symbol !== "BTCUSDT" ||
     (value.rulesVersion !== "v1" && value.rulesVersion !== "v2") ||
     !(value.candleClosedAt === null || time(value.candleClosedAt) && value.candleClosedAt % period === 0)) return false;
   if (value.status === "error") return typeof value.errorCode === "string" && /^[A-Z_]{1,80}$/.test(value.errorCode);
@@ -77,15 +86,38 @@ function validRow(value: unknown): value is ScanRecord {
     Array.isArray(value.rules) && (value.rules.length === 2 || (fresh && value.rules.length === 0)) && value.rules.every(validRule);
 }
 
+function validRow(value: unknown): value is ScanRecord {
+  if (!object(value) || value.kind !== "deterministic") return validLegacyRow(value);
+  const { id, symbol, candleClosedAt, scannedAt, status, m1, close, rvol20, trend4h, analysisId, opportunityStatus } = value;
+  return typeof id === "string" && idFormat.test(id) && symbol === "BTCUSDT" && time(value.time) &&
+    time(candleClosedAt) && candleClosedAt % period === 0 && candleClosedAt <= value.time && value.time < candleClosedAt + period &&
+    (scannedAt === value.time || scannedAt === null && value.time === candleClosedAt) &&
+    (status === "triggered" || status === "no_trigger" || status === "daily_limit") &&
+    (m1 === undefined || object(m1) && finite(m1.score) && m1.score >= 0 && m1.score <= 100 &&
+      Array.isArray(m1.reasons) && m1.reasons.length <= 16 && m1.reasons.every(reason => typeof reason === "string" && /^[a-z_]{1,60}$/.test(reason))) &&
+    (close === undefined || finite(close) && close > 0) &&
+    (rvol20 === undefined || rvol20 === null || finite(rvol20) && rvol20 >= 0) &&
+    (trend4h === undefined || trend4h === "up" || trend4h === "down" || trend4h === "flat") &&
+    (analysisId === undefined ? opportunityStatus === undefined : status === "triggered" && typeof analysisId === "string" &&
+      analysisIdFormat.test(analysisId) && analysisIdFormat.test(id) && (opportunityStatus === "candidate" ||
+        opportunityStatus === "watch" || opportunityStatus === "none" || opportunityStatus === "expired"));
+}
+
 export async function fetchMarketScans(session: PrivateAuthSession, before: string | undefined, signal: AbortSignal): Promise<ScanPage> {
   const ticket = await getTradingFunctionTicket(session, signal);
   const url = new URL("/trade/api/signal/scans", ticket.url.origin);
-  const response = await fetch(url.href, {
+  const deadline = AbortSignal.any([AbortSignal.timeout(22000), signal]);
+  const request = (version: 2 | 3) => fetch(url.href, {
     method: "POST", credentials: "omit", cache: "no-store", redirect: "error",
     headers: { "X-JWT-Token": `Bearer ${ticket.token}`, "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(before === undefined ? { version: 2 } : { version: 2, before }), signal: AbortSignal.any([AbortSignal.timeout(22000), signal]),
+    body: JSON.stringify(before === undefined ? { version } : { version, before }), signal: deadline,
   });
-  const payload: unknown = await response.json().catch(() => null);
+  let response = await request(3);
+  let payload: unknown = await response.json().catch(() => null);
+  if (response.status === 400 && object(payload) && object(payload.error) && payload.error.code === "INVALID_SCAN_CURSOR") {
+    response = await request(2);
+    payload = await response.json().catch(() => null);
+  }
   if (!response.ok) {
     const error = object(payload) && object(payload.error) ? payload.error : {};
     const requestId = object(payload) && typeof payload.requestId === "string" ? `（请求编号 ${payload.requestId}）` : "";
