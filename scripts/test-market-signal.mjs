@@ -299,25 +299,27 @@ test("scanner reads only its own route and preserves two scans of the same candl
   assert.equal(calls[0].url, "https://www.yanxiao.me/api/private-auth/trading/binance/token");
   assert.equal(calls[1].url, "https://yanxiao.me/trade/api/signal/scans");
   assert.equal(calls[1].options.credentials, "omit");
-  assert.deepEqual(JSON.parse(calls[1].options.body), { version: 3 });
+  assert.deepEqual(JSON.parse(calls[1].options.body), { version: 4 });
   payload = { ...payload, next: null, records: [{ ...row, time: slot + 900000, scannedAt: slot + 900000 }] };
   await assert.rejects(fetchMarketScans(session, next, signal), /扫描记录时段无效/);
-  assert.deepEqual(JSON.parse(calls[3].options.body), { version: 3, before: next });
+  assert.deepEqual(JSON.parse(calls[3].options.body), { version: 4, before: next });
 });
 
-test("scanner reads both REST M1 evaluations and pre-upgrade slots", async t => {
+test("scanner reads new 5m closes and pre-upgrade 15m slots in the same page", async t => {
   const signal = new AbortController().signal;
-  const slot = 1800000000000;
+  const slot = 1800000300000;
   const row = { kind: "deterministic", id: "01234567-abcd-4abc-8abc-123456789012", time: slot + 5000,
-    scannedAt: slot + 5000, candleClosedAt: slot, symbol: "BTCUSDT", status: "triggered",
+    scannedAt: slot + 5000, candleClosedAt: slot, candleInterval: "5m", symbol: "BTCUSDT", status: "triggered",
     m1: { score: 95, reasons: ["continuation", "near_zone"] }, close: 70000, trend4h: "up", rvol20: 1.8,
     analysisId: "72345678-abcd-4abc-8abc-123456789012", opportunityStatus: "candidate" };
-  const older = slot - 900000;
+  const older = slot - 300000;
   const preUpgrade = { kind: "deterministic", id: `m1-slot-${older}`, time: older, scannedAt: null,
     candleClosedAt: older, symbol: "BTCUSDT", status: "no_trigger" };
   let payload = { records: [row, preUpgrade], from: older, to: row.time, next: null };
   setup(t, n => response(n % 2 === 1 ? ticket() : payload));
   assert.deepEqual(await fetchMarketScans(session, undefined, signal), payload);
+  payload = { ...payload, records: [{ ...row, candleInterval: "15m" }] };
+  await assert.rejects(fetchMarketScans(session, undefined, signal), /扫描记录格式无效/);
   payload = { ...payload, records: [{ ...row, status: "no_trigger" }] };
   await assert.rejects(fetchMarketScans(session, undefined, signal), /扫描记录格式无效/);
 });
@@ -325,10 +327,10 @@ test("scanner reads both REST M1 evaluations and pre-upgrade slots", async t => 
 test("scanner falls back to legacy history when the API has not been upgraded", async t => {
   const now = 1800000000000;
   const page = { records: [], from: now, to: now, next: null };
-  const calls = setup(t, n => n === 1 ? response(ticket()) : n === 2 ?
+  const calls = setup(t, n => n === 1 ? response(ticket()) : n <= 3 ?
     response({ error: { code: "INVALID_SCAN_CURSOR" } }, 400) : response(page));
   assert.deepEqual(await fetchMarketScans(session, undefined, new AbortController().signal), page);
-  assert.deepEqual(calls.slice(1).map(call => JSON.parse(call.options.body)), [{ version: 3 }, { version: 2 }]);
+  assert.deepEqual(calls.slice(1).map(call => JSON.parse(call.options.body)), [{ version: 4 }, { version: 3 }, { version: 2 }]);
 });
 
 test("scanner accepts completed and failed automatic analysis without requiring it on legacy rows", async t => {
