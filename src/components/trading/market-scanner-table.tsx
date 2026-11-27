@@ -74,7 +74,7 @@ function DeterministicRow({ row, openAnalysis }: { row: DeterministicScanRecord;
   const analysisId = row.analysisId;
   return <tr>
     <td className={`${cell} whitespace-nowrap`}><ScanTime value={row.scannedAt} /></td>
-    <td className={`${cell} whitespace-nowrap`}><ScanTime value={row.candleClosedAt} /> <span className="text-xs text-slate-400">15m</span></td>
+    <td className={`${cell} whitespace-nowrap`}><ScanTime value={row.candleClosedAt} /> <span className="text-xs text-slate-400">{row.candleInterval ?? "15m"}</span></td>
     <td className={`${cell} whitespace-nowrap ${row.status !== "no_trigger" ? "text-emerald-300" : ""}`}>{label}
       {row.m1 && <span className="ml-1 text-xs text-slate-400">{row.m1.score} 分</span>}
     </td>
@@ -119,7 +119,7 @@ export default function MarketScannerTable({ session }: { session: PrivateAuthSe
       <button type="button" className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-300 hover:text-white disabled:opacity-50"
         onClick={() => setQuery({})} disabled={pending}>刷新最新记录</button>
     </div>
-    <p className="mt-2 text-sm text-slate-400">BTCUSDT · 15m 收盘评估 · 北京时间</p>
+    <p className="mt-2 text-sm text-slate-400">BTCUSDT · 收盘评估 · 北京时间</p>
     {pending && <p role="status" className="mt-4 text-sm text-slate-300">正在读取自动扫描记录…</p>}
     {error && <p role="alert" className="mt-4 text-sm text-amber-200">{error}</p>}
     {page && <>

@@ -26,7 +26,7 @@ export type LegacyScanRecord = ScanTimes & { kind?: never;
   { status: Decision; close: number; rvol20: number | null; trend4h: "up" | "down" | "flat" | null; rules: ScanRule[] }
 );
 export type DeterministicScanRecord = ScanTimes & {
-  kind: "deterministic"; candleClosedAt: number; status: "triggered" | "no_trigger" | "daily_limit";
+  kind: "deterministic"; candleClosedAt: number; candleInterval?: "5m" | "15m"; status: "triggered" | "no_trigger" | "daily_limit";
   m1?: { score: number; reasons: string[] }; close?: number; rvol20?: number | null; trend4h?: "up" | "down" | "flat";
   analysisId?: string; opportunityStatus?: SignalStatus;
 };
@@ -88,9 +88,11 @@ function validLegacyRow(value: unknown): value is LegacyScanRecord {
 
 function validRow(value: unknown): value is ScanRecord {
   if (!object(value) || value.kind !== "deterministic") return validLegacyRow(value);
-  const { id, symbol, candleClosedAt, scannedAt, status, m1, close, rvol20, trend4h, analysisId, opportunityStatus } = value;
+  const { id, symbol, candleClosedAt, candleInterval, scannedAt, status, m1, close, rvol20, trend4h, analysisId, opportunityStatus } = value;
+  const duration = candleInterval === "5m" ? 300000 : period;
   return typeof id === "string" && idFormat.test(id) && symbol === "BTCUSDT" && time(value.time) &&
-    time(candleClosedAt) && candleClosedAt % period === 0 && candleClosedAt <= value.time && value.time < candleClosedAt + period &&
+    (candleInterval === undefined || candleInterval === "15m" || candleInterval === "5m") &&
+    time(candleClosedAt) && candleClosedAt % duration === 0 && candleClosedAt <= value.time && value.time < candleClosedAt + duration &&
     (scannedAt === value.time || scannedAt === null && value.time === candleClosedAt) &&
     (status === "triggered" || status === "no_trigger" || status === "daily_limit") &&
     (m1 === undefined || object(m1) && finite(m1.score) && m1.score >= 0 && m1.score <= 100 &&
@@ -107,15 +109,17 @@ export async function fetchMarketScans(session: PrivateAuthSession, before: stri
   const ticket = await getTradingFunctionTicket(session, signal);
   const url = new URL("/trade/api/signal/scans", ticket.url.origin);
   const deadline = AbortSignal.any([AbortSignal.timeout(22000), signal]);
-  const request = (version: 2 | 3) => fetch(url.href, {
+  const request = (version: 2 | 3 | 4) => fetch(url.href, {
     method: "POST", credentials: "omit", cache: "no-store", redirect: "error",
     headers: { "X-JWT-Token": `Bearer ${ticket.token}`, "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(before === undefined ? { version } : { version, before }), signal: deadline,
   });
-  let response = await request(3);
+  let version: 2 | 3 | 4 = 4;
+  let response = await request(version);
   let payload: unknown = await response.json().catch(() => null);
-  if (response.status === 400 && object(payload) && object(payload.error) && payload.error.code === "INVALID_SCAN_CURSOR") {
-    response = await request(2);
+  while (version > 2 && response.status === 400 && object(payload) && object(payload.error) && payload.error.code === "INVALID_SCAN_CURSOR") {
+    version = version === 4 ? 3 : 2;
+    response = await request(version);
     payload = await response.json().catch(() => null);
   }
   if (!response.ok) {
