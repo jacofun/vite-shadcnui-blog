@@ -28,8 +28,14 @@ export type LegacyScanRecord = ScanTimes & { kind?: never;
 export type DeterministicScanRecord = ScanTimes & {
   kind: "deterministic"; candleClosedAt: number; candleInterval?: "5m" | "15m"; status: "triggered" | "no_trigger" | "daily_limit";
   m1?: { score: number; reasons: string[] }; close?: number; rvol20?: number | null; trend4h?: "up" | "down" | "flat";
-  analysisId?: string; opportunityStatus?: SignalStatus;
+  analysisId?: string; opportunityStatus?: SignalStatus; decisionReason?: string;
 };
+const executionStates = ["blocked", "rejected", "unfilled", "filled", "partially_filled", "unknown", "unavailable"] as const;
+export interface ScanExecution {
+  state: (typeof executionStates)[number];
+  reasonCode?: string; message?: string; clientId?: string; exchangeStatus?: string; exchangeCode?: number;
+  executedQty?: string; requestedQty?: string; protection?: "pending" | "active" | "attention" | "closed" | "not_required";
+}
 export type ScanRecord = LegacyScanRecord | DeterministicScanRecord;
 export interface ScanPage { records: ScanRecord[]; from: number; to: number; next: string | null }
 const period = 900000;
@@ -100,9 +106,34 @@ function validRow(value: unknown): value is ScanRecord {
     (close === undefined || finite(close) && close > 0) &&
     (rvol20 === undefined || rvol20 === null || finite(rvol20) && rvol20 >= 0) &&
     (trend4h === undefined || trend4h === "up" || trend4h === "down" || trend4h === "flat") &&
+    (value.decisionReason === undefined || typeof value.decisionReason === "string" && value.decisionReason.length <= 240 && analysisId !== undefined) &&
     (analysisId === undefined ? opportunityStatus === undefined : status === "triggered" && typeof analysisId === "string" &&
       analysisIdFormat.test(analysisId) && analysisIdFormat.test(id) && (opportunityStatus === "candidate" ||
         opportunityStatus === "watch" || opportunityStatus === "none" || opportunityStatus === "expired"));
+}
+
+export async function fetchScanExecution(session: PrivateAuthSession, analysisId: string, scanId: string, signal: AbortSignal): Promise<ScanExecution> {
+  const { token, url } = await getTradingFunctionTicket(session, signal);
+  const response = await fetch(new URL("/trade/api/signal/scans", url.origin), {
+    method: "POST", credentials: "omit", cache: "no-store", redirect: "error", signal,
+    headers: { "X-JWT-Token": `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ action: "execution", analysisId, scanId }),
+  });
+  const payload: unknown = await response.json().catch(() => null);
+  if (response.status === 400 && object(payload) && object(payload.error) && payload.error.code === "INVALID_SCAN_CURSOR") return { state: "unavailable" };
+  if (!response.ok || !object(payload) || !validExecution(payload.execution)) throw new Error("暂时无法读取自动开仓结果。");
+  return payload.execution;
+}
+
+function validExecution(value: unknown): value is ScanExecution {
+  if (!object(value) || !executionStates.some(state => value.state === state)) return false;
+  const matches = (field: unknown, re: RegExp) => field === undefined || typeof field === "string" && re.test(field);
+  const qty = /^\d{1,16}(?:\.\d{1,12})?$/;
+  return matches(value.reasonCode, /^[a-zA-Z_]{1,80}$/) && matches(value.clientId, /^mse[a-f0-9]{30}$/) &&
+    matches(value.exchangeStatus, /^[A-Z_]{2,32}$/) && matches(value.protection, /^(pending|active|attention|closed|not_required)$/) &&
+    matches(value.executedQty, qty) && matches(value.requestedQty, qty) &&
+    (value.message === undefined || typeof value.message === "string" && value.message.length <= 240) &&
+    (value.exchangeCode === undefined || finite(value.exchangeCode) && Number.isSafeInteger(value.exchangeCode) && value.exchangeCode < 0);
 }
 
 export async function fetchMarketScans(session: PrivateAuthSession, before: string | undefined, signal: AbortSignal): Promise<ScanPage> {
