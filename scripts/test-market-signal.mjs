@@ -227,8 +227,11 @@ test("only read-only order previews with both matching protective prices are ren
   assert.equal(calls[0].url, "https://www.yanxiao.me/api/private-auth/trading/binance/order-token");
   assert.deepEqual(JSON.parse(calls[0].options.body), { action: "preview" });
   assert.deepEqual(JSON.parse(calls[1].options.body), { action: "preview", permit, includePending: true });
+  payload = { ...valid, options: [{ ...option, quantity: "0.001" },
+    { ...option, kind: "limit", price: "9950", quantity: "0.02", risk: 1, notional: 199 }] };
+  assert.deepEqual(await preview(), payload);
   for (const patch of [{ submission: undefined }, { options: [{ ...option, takeProfitPrice: undefined }] },
-    { options: [{ ...option, stopLossPrice: "9000" }] }]) {
+    { options: [{ ...option, stopLossPrice: "9000" }] }, { options: [{ ...option, quantity: "0" }] }]) {
     payload = { ...valid, ...patch };
     await assert.rejects(preview(), /订单草稿格式无效/);
   }

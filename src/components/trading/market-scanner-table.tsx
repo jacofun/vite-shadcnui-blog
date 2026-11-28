@@ -6,6 +6,9 @@ import { MarketSignalArchiveDetail } from "./market-signal-history";
 
 const date = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month: "2-digit", day: "2-digit",
   hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
+const candleDate = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month: "2-digit", day: "2-digit",
+  hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+const candleClock = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 const number = new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 2 });
 const statuses = { passed: "通过初筛", watch: "待下一根确认", filtered: "已过滤", none: "无触发", error: "扫描失败" };
 const trends: Record<string, string> = { up: "上行", down: "下行", flat: "中性" };
@@ -30,6 +33,16 @@ const m1Reasons: Record<string, string> = {
 function ScanTime({ value }: { value: number | null }) {
   return value === null ? <span className="text-slate-400">—</span> :
     <time dateTime={new Date(value).toISOString()}>{date.format(value)}</time>;
+}
+
+function CandleWindow({ end, interval }: { end: number; interval: "5m" | "15m" }) {
+  const start = end - (interval === "5m" ? 5 : 15) * 60_000;
+  const endDisplay = candleClock.format(end) === "00:00" ? candleDate : candleClock;
+  return <>
+    <time dateTime={new Date(start).toISOString()}>{candleDate.format(start)}</time>
+    {"–"}<time dateTime={new Date(end).toISOString()}>{endDisplay.format(end)}</time>
+    <span className="ml-1 text-xs text-slate-400">{interval}</span>
+  </>;
 }
 
 function ScanDetails({ row }: { row: LegacyScanRecord }) {
@@ -80,7 +93,7 @@ function DeterministicRow({ row, openAnalysis, selected, selectionFull, toggle }
       aria-label={`选择 ${date.format(row.candleClosedAt)} 收盘记录`} checked={selected} disabled={!selected && selectionFull}
       onChange={() => toggle(exportId)} /> : <span className="whitespace-nowrap text-xs text-slate-500">无决策日志</span>}</td>
     <td className={`${cell} whitespace-nowrap`}><ScanTime value={row.scannedAt} /></td>
-    <td className={`${cell} whitespace-nowrap`}><ScanTime value={row.candleClosedAt} /> <span className="text-xs text-slate-400">{row.candleInterval ?? "15m"}</span></td>
+    <td className={`${cell} whitespace-nowrap`}><CandleWindow end={row.candleClosedAt} interval={row.candleInterval ?? "15m"} /></td>
     <td className={`${cell} whitespace-nowrap ${row.status !== "no_trigger" ? "text-emerald-300" : ""}`}>{label}
       {row.m1 && <span className="ml-1 text-xs text-slate-400">{row.m1.score} 分</span>}
     </td>
@@ -141,7 +154,7 @@ export default function MarketScannerTable({ session }: { session: PrivateAuthSe
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[59rem] text-left text-sm text-slate-300" aria-label="BTCUSDT 扫描结果和筛选过程">
             <thead className="text-xs text-slate-400"><tr>
-              {["选入清单", "运行时间", "K 线收盘时间", "结果", "自动分析", "收盘价", "量比", "4h 趋势", "评估详情"].map(label =>
+              {["选入清单", "运行时间", "已收盘 K 线时段", "结果", "自动分析", "所用 K 线收盘价", "量比", "4h 趋势", "评估详情"].map(label =>
                 <th key={label} scope="col" className="whitespace-nowrap px-3 py-2 font-medium">{label}</th>)}
             </tr></thead>
             <tbody>{page.records.map(row => row.kind === "deterministic" ?
@@ -152,8 +165,9 @@ export default function MarketScannerTable({ session }: { session: PrivateAuthSe
               <td className={`${cell} whitespace-nowrap text-xs text-slate-500`}>无决策日志</td>
               <td className={`${cell} whitespace-nowrap`}><ScanTime value={row.scannedAt} /></td>
               <td className={`${cell} whitespace-nowrap`}>
-                <ScanTime value={row.candleClosedAt ?? row.movement?.closedAt ?? null} />
-                {row.rulesVersion === "v2" && row.status !== "error" && <span className="ml-1 text-xs text-slate-400">{row.candleClosedAt === null ? "1m" : "15m"}</span>}
+                {row.candleClosedAt === null
+                  ? <><ScanTime value={row.movement?.closedAt ?? null} />{row.movement && <span className="ml-1 text-xs text-slate-400">1m 收盘</span>}</>
+                  : <CandleWindow end={row.candleClosedAt} interval="15m" />}
               </td>
               <td className={`${cell} whitespace-nowrap ${row.status === "passed" ? "text-emerald-300" : ""}`}>
                 {row.trigger?.kind === "movement" ? row.trigger.severe ? "严重异动" : "普通异动" :

@@ -15,7 +15,7 @@ const number = (value: unknown): value is number => typeof value === "number" &&
 const decimal = (value: unknown): value is string => typeof value === "string" && /^\d+(?:\.\d+)?$/.test(value);
 const kind = (value: unknown): value is OrderKind => value === "market" || value === "limit" || value === "conditional";
 export interface OrderOption {
-  kind: OrderKind; price: string; triggerPrice?: string; stopLossPrice: string; takeProfitPrice: string; risk: number; notional: number;
+  kind: OrderKind; price: string; quantity?: string; triggerPrice?: string; stopLossPrice: string; takeProfitPrice: string; risk: number; notional: number;
   draft?: string; entryWaitingSeconds?: number;
 }
 export interface OrderPreview {
@@ -81,6 +81,7 @@ export async function previewOrders(session: PrivateAuthSession, analysisId: str
     (!enabled && (submission.state !== "blocked" || typeof submission.reason !== "string" || !submission.reason)) ||
     !Array.isArray(value.options) || value.options.length > 3 ||
     !value.options.every(option => record(option) && kind(option.kind) && decimal(option.price) && decimal(option.stopLossPrice) && decimal(option.takeProfitPrice) &&
+      (option.quantity === undefined || decimal(option.quantity) && Number(option.quantity) > 0) &&
       (option.draft === undefined || enabled && sealed(option.draft)) &&
       (option.kind !== "market" && option.draft !== undefined
         ? typeof option.entryWaitingSeconds === "number" && Number.isSafeInteger(option.entryWaitingSeconds) && option.entryWaitingSeconds > 0
