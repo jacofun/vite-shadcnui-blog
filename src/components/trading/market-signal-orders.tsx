@@ -84,7 +84,7 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
       <h3 className="text-base font-semibold text-white">{heading}</h3>
       {fresh && preview && !alreadyAttempted && <p className="text-xs text-slate-400">
         <strong className={preview.mode === "live" ? "text-amber-200" : "text-sky-200"}>{preview.mode === "live" ? "实盘" : "测试网"}</strong>
-        {" · "}{preview.symbol}{" · "}{preview.direction === "long" ? "开多" : "开空"}{" · "}{preview.quantity} BTC
+        {" · "}{preview.symbol}{" · "}{preview.direction === "long" ? "开多" : "开空"}
       </p>}
     </div>
     {eligible && !alreadyAttempted && <>
@@ -120,6 +120,7 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
                 {option.triggerPrice && <span className="block">标记价 {preview.direction === "long" ? "≥" : "≤"} {option.triggerPrice} 触发</span>}
               </p>
               <p className="col-start-1 row-start-3 text-xs leading-5 text-slate-400 sm:col-start-3 sm:row-start-1">
+                <span className="block">数量 {option.quantity ?? preview.quantity} BTC</span>
                 名义 {format.format(option.notional)} USDT<span className="sm:hidden"> · </span><span className="sm:block">风险 {format.format(option.risk)} USDT</span>
               </p>
               <div className="col-start-2 row-span-3 row-start-1 justify-self-end sm:col-start-4 sm:row-span-1">
@@ -143,7 +144,7 @@ export default function MarketSignalOrders({ session, analysisId, permit, validU
       {selected?.draft && preview && analysisId && <div className="space-y-2 border-l-2 border-amber-300/55 py-1 pl-3">
         <h4 ref={confirmation} tabIndex={-1} className="scroll-mt-24 text-sm font-semibold text-amber-100">确认{preview.mode === "live" ? "实盘" : "测试网"}委托</h4>
         <p className="text-sm leading-6 text-slate-200">
-          {orderLabels[selected.kind]} · {preview.direction === "long" ? "开多" : "开空"} {preview.quantity} BTC · 入场 {selected.price}
+          {orderLabels[selected.kind]} · {preview.direction === "long" ? "开多" : "开空"} {selected.quantity ?? preview.quantity} BTC · 入场 {selected.price}
           {selected.triggerPrice && ` · 标记价触发 ${selected.triggerPrice}`} · 止盈 {selected.takeProfitPrice} · 止损 {selected.stopLossPrice}
         </p>
         {selected.kind !== "market" && <p className="text-xs leading-6 text-slate-400">约 {selected.entryWaitingSeconds} 秒后开始撤销未成交委托。</p>}
