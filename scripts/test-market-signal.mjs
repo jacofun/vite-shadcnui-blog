@@ -317,6 +317,13 @@ test("scanner reads execution evidence by linked scan and analysis IDs", async t
   assert.deepEqual(JSON.parse(calls[1].options.body), { action: "execution", analysisId, scanId });
   payload = { execution: { ...execution, executedQty: "invalid" } };
   await assert.rejects(read(), /无法读取自动开仓结果/);
+  const waitUntil = 1800000000000;
+  payload = { execution: { state: "waiting", waitUntil } };
+  assert.deepEqual(await read(), payload.execution);
+  payload = { execution: { state: "invalidated", waitUntil, reasonCode: "target_touched" } };
+  assert.deepEqual(await read(), payload.execution);
+  payload = { execution: { state: "waiting" } };
+  await assert.rejects(read(), /无法读取自动开仓结果/);
   status = 400;
   payload = { error: { code: "INVALID_SCAN_CURSOR" } };
   assert.deepEqual(await read(), { state: "unavailable" });

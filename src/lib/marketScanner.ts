@@ -34,11 +34,12 @@ export const maxSelectedScans = 100;
 export const maxScanExportRange = 7 * 24 * 60 * 60 * 1000;
 export type ScanExportRequest = { analysisIds: string[] } | { from: number; to: number };
 interface ScanExportResult { exportId: string; count: number; skippedCount: number; url: string }
-const executionStates = ["blocked", "rejected", "unfilled", "filled", "partially_filled", "unknown", "unavailable"] as const;
+const executionStates = ["waiting", "invalidated", "blocked", "rejected", "unfilled", "filled", "partially_filled", "unknown", "unavailable"] as const;
 export interface ScanExecution {
   state: (typeof executionStates)[number];
   reasonCode?: string; message?: string; clientId?: string; exchangeStatus?: string; exchangeCode?: number;
   executedQty?: string; requestedQty?: string; protection?: "pending" | "active" | "attention" | "closed" | "not_required";
+  waitUntil?: number;
 }
 export type ScanRecord = LegacyScanRecord | DeterministicScanRecord;
 export interface ScanPage { records: ScanRecord[]; from: number; to: number; next: string | null }
@@ -168,6 +169,7 @@ function validExecution(value: unknown): value is ScanExecution {
   return matches(value.reasonCode, /^[a-zA-Z_]{1,80}$/) && matches(value.clientId, /^mse[a-f0-9]{30}$/) &&
     matches(value.exchangeStatus, /^[A-Z_]{2,32}$/) && matches(value.protection, /^(pending|active|attention|closed|not_required)$/) &&
     matches(value.executedQty, qty) && matches(value.requestedQty, qty) &&
+    (value.waitUntil === undefined ? value.state !== "waiting" && value.state !== "invalidated" : time(value.waitUntil)) &&
     (value.message === undefined || typeof value.message === "string" && value.message.length <= 240) &&
     (value.exchangeCode === undefined || finite(value.exchangeCode) && Number.isSafeInteger(value.exchangeCode) && value.exchangeCode < 0);
 }

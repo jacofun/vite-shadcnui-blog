@@ -28,7 +28,9 @@ export function MarketSignalArchiveDetail({ session, analysisId, scanId }: { ses
       <button type="button" className={actionClass} onClick={() => { setDetailError(""); setAttempt(value => value + 1); }}>重新读取</button>
     </div>}
     {detail && <>
-      {scanId && detail.result.schemaVersion === 4 && detail.result.decisionSource === "deterministic" && detail.result.status === "candidate" &&
+      {scanId && detail.result.schemaVersion === 4 && detail.result.decisionSource === "deterministic" &&
+        (detail.result.status === "candidate" || detail.result.status === "watch" &&
+          detail.result.decision?.reasons.some(reason => reason.code === "quote_outside_entry")) &&
         <MarketScanExecution key={analysisId} session={session} analysisId={analysisId} scanId={scanId} />}
       <MarketOpportunityResult result={detail.result} status={detail.result.status} archived />
       {detail.reviewUnavailable && <p className="text-sm text-slate-400">分析已载入。复盘数据暂时无法读取。</p>}
