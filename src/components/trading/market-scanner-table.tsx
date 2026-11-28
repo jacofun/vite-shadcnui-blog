@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { PrivateAuthSession } from "@/lib/privateAuth";
-import { fetchMarketScans, type DeterministicScanRecord, type LegacyScanRecord, type ScanPage } from "@/lib/marketScanner";
+import { fetchMarketScans, maxSelectedScans, type DeterministicScanRecord, type LegacyScanRecord, type ScanPage } from "@/lib/marketScanner";
+import MarketScanExport from "./market-scan-export";
 import { MarketSignalArchiveDetail } from "./market-signal-history";
 
 const date = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month: "2-digit", day: "2-digit",
@@ -69,10 +70,15 @@ function ScanDetails({ row }: { row: LegacyScanRecord }) {
   </details>;
 }
 
-function DeterministicRow({ row, openAnalysis }: { row: DeterministicScanRecord; openAnalysis: (analysisId: string) => void }) {
+function DeterministicRow({ row, openAnalysis, selected, selectionFull, toggle }: { row: DeterministicScanRecord;
+  openAnalysis: (analysisId: string) => void; selected: boolean; selectionFull: boolean; toggle: (id: string) => void }) {
   const label = row.status === "no_trigger" ? "M1 未触发" : "M1 已触发";
   const analysisId = row.analysisId;
+  const exportId = row.exportAnalysisId;
   return <tr>
+    <td className={cell}>{exportId ? <input type="checkbox" className="size-4 accent-cyan-400"
+      aria-label={`选择 ${date.format(row.candleClosedAt)} 收盘记录`} checked={selected} disabled={!selected && selectionFull}
+      onChange={() => toggle(exportId)} /> : <span className="whitespace-nowrap text-xs text-slate-500">无决策日志</span>}</td>
     <td className={`${cell} whitespace-nowrap`}><ScanTime value={row.scannedAt} /></td>
     <td className={`${cell} whitespace-nowrap`}><ScanTime value={row.candleClosedAt} /> <span className="text-xs text-slate-400">{row.candleInterval ?? "15m"}</span></td>
     <td className={`${cell} whitespace-nowrap ${row.status !== "no_trigger" ? "text-emerald-300" : ""}`}>{label}
@@ -102,6 +108,7 @@ export default function MarketScannerTable({ session }: { session: PrivateAuthSe
   const [query, setQuery] = useState<{ before?: string }>({});
   const [result, setResult] = useState<{ query: typeof query; page?: ScanPage; error?: string }>();
   const [analysis, setAnalysis] = useState<{ analysisId: string; scanId: string } | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
   useEffect(() => {
     const controller = new AbortController();
     fetchMarketScans(session, query.before, controller.signal).then(page => {
@@ -114,6 +121,10 @@ export default function MarketScannerTable({ session }: { session: PrivateAuthSe
   const pending = result?.query !== query;
   const page = pending ? undefined : result.page;
   const error = pending ? undefined : result.error;
+  function toggleSelection(id: string) {
+    setSelected(ids => ids.includes(id) ? ids.filter(value => value !== id) :
+      ids.length < maxSelectedScans ? [...ids, id] : ids);
+  }
   return <section className="mt-7 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5" aria-label="自动扫描记录">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <h2 className="text-xl font-semibold text-white">自动扫描记录</h2>
@@ -121,20 +132,24 @@ export default function MarketScannerTable({ session }: { session: PrivateAuthSe
         onClick={() => setQuery({})} disabled={pending}>刷新最新记录</button>
     </div>
     <p className="mt-2 text-sm text-slate-400">BTCUSDT · 收盘评估 · 北京时间</p>
+    <MarketScanExport session={session} selected={selected} clear={() => setSelected([])} />
     {pending && <p role="status" className="mt-4 text-sm text-slate-300">正在读取自动扫描记录…</p>}
     {error && <p role="alert" className="mt-4 text-sm text-amber-200">{error}</p>}
     {page && <>
       <p className="mt-4 text-xs text-slate-400">{date.format(page.from)} 至 {date.format(page.to)}，共 {page.records.length} 条</p>
       {page.records.length === 0 ? <p className="mt-4 text-sm text-slate-300">此时段暂无扫描记录。</p> :
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[54rem] text-left text-sm text-slate-300" aria-label="BTCUSDT 扫描结果和筛选过程">
+          <table className="w-full min-w-[59rem] text-left text-sm text-slate-300" aria-label="BTCUSDT 扫描结果和筛选过程">
             <thead className="text-xs text-slate-400"><tr>
-              {["运行时间", "K 线收盘时间", "结果", "自动分析", "收盘价", "量比", "4h 趋势", "评估详情"].map(label =>
+              {["选入清单", "运行时间", "K 线收盘时间", "结果", "自动分析", "收盘价", "量比", "4h 趋势", "评估详情"].map(label =>
                 <th key={label} scope="col" className="whitespace-nowrap px-3 py-2 font-medium">{label}</th>)}
             </tr></thead>
             <tbody>{page.records.map(row => row.kind === "deterministic" ?
-              <DeterministicRow key={row.id} row={row} openAnalysis={analysisId => setAnalysis({ analysisId, scanId: row.id })} /> :
+              <DeterministicRow key={row.id} row={row} openAnalysis={analysisId => setAnalysis({ analysisId, scanId: row.id })}
+                selected={!!row.exportAnalysisId && selected.includes(row.exportAnalysisId)} selectionFull={selected.length >= maxSelectedScans}
+                toggle={toggleSelection} /> :
               <tr key={row.id}>
+              <td className={`${cell} whitespace-nowrap text-xs text-slate-500`}>无决策日志</td>
               <td className={`${cell} whitespace-nowrap`}><ScanTime value={row.scannedAt} /></td>
               <td className={`${cell} whitespace-nowrap`}>
                 <ScanTime value={row.candleClosedAt ?? row.movement?.closedAt ?? null} />
