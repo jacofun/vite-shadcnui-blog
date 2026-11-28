@@ -28,8 +28,12 @@ export type LegacyScanRecord = ScanTimes & { kind?: never;
 export type DeterministicScanRecord = ScanTimes & {
   kind: "deterministic"; candleClosedAt: number; candleInterval?: "5m" | "15m"; status: "triggered" | "no_trigger" | "daily_limit";
   m1?: { score: number; reasons: string[] }; close?: number; rvol20?: number | null; trend4h?: "up" | "down" | "flat";
-  analysisId?: string; opportunityStatus?: SignalStatus; decisionReason?: string;
+  analysisId?: string; opportunityStatus?: SignalStatus; decisionReason?: string; exportAnalysisId?: string;
 };
+export const maxSelectedScans = 100;
+export const maxScanExportRange = 7 * 24 * 60 * 60 * 1000;
+export type ScanExportRequest = { analysisIds: string[] } | { from: number; to: number };
+interface ScanExportResult { exportId: string; count: number; skippedCount: number; url: string }
 const executionStates = ["blocked", "rejected", "unfilled", "filled", "partially_filled", "unknown", "unavailable"] as const;
 export interface ScanExecution {
   state: (typeof executionStates)[number];
@@ -106,10 +110,42 @@ function validRow(value: unknown): value is ScanRecord {
     (close === undefined || finite(close) && close > 0) &&
     (rvol20 === undefined || rvol20 === null || finite(rvol20) && rvol20 >= 0) &&
     (trend4h === undefined || trend4h === "up" || trend4h === "down" || trend4h === "flat") &&
+    (value.exportAnalysisId === undefined || typeof value.exportAnalysisId === "string" && analysisIdFormat.test(value.exportAnalysisId) &&
+      analysisIdFormat.test(id) && scannedAt !== null && (analysisId === undefined || value.exportAnalysisId === analysisId)) &&
     (value.decisionReason === undefined || typeof value.decisionReason === "string" && value.decisionReason.length <= 240 && analysisId !== undefined) &&
     (analysisId === undefined ? opportunityStatus === undefined : status === "triggered" && typeof analysisId === "string" &&
       analysisIdFormat.test(analysisId) && analysisIdFormat.test(id) && (opportunityStatus === "candidate" ||
         opportunityStatus === "watch" || opportunityStatus === "none" || opportunityStatus === "expired"));
+}
+
+export function parseBeijingScanTime(value: string): number {
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? Date.parse(`${value}:00+08:00`) : NaN;
+}
+
+export async function exportMarketScans(session: PrivateAuthSession, input: ScanExportRequest, signal: AbortSignal): Promise<ScanExportResult> {
+  const { token, url } = await getTradingFunctionTicket(session, signal);
+  const response = await fetch(new URL("/trade/api/signal/scans", url.origin), {
+    method: "POST", credentials: "omit", cache: "no-store", redirect: "error", signal,
+    headers: { "X-JWT-Token": `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ action: "export", ...input }),
+  });
+  const payload: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const error = object(payload) && object(payload.error) ? payload.error : {};
+    const text = error.code === "INVALID_SCAN_CURSOR" ? "扫描导出接口尚未部署。" :
+      typeof error.message === "string" ? error.message : `扫描导出失败（HTTP ${response.status}）`;
+    throw new Error(text);
+  }
+  if (!object(payload)) throw new Error("导出清单回执格式无效。");
+  const { exportId, count, skippedCount, url: link } = payload;
+  const download = typeof link === "string" ? URL.parse(link) : null;
+  if (typeof exportId !== "string" || !analysisIdFormat.test(exportId) || !finite(count) || !Number.isSafeInteger(count) || count < 1 ||
+    !finite(skippedCount) || !Number.isSafeInteger(skippedCount) || skippedCount < 0 || !download ||
+    download.origin !== "https://static.yanxiao.me" || download.username || download.password || download.search || download.hash ||
+    !download.pathname.endsWith(`/.trading/owner/market-signals/records/trade-results/v1/exports/${exportId}.json`)) {
+    throw new Error("导出清单回执格式无效。");
+  }
+  return { exportId, count, skippedCount, url: download.href };
 }
 
 export async function fetchScanExecution(session: PrivateAuthSession, analysisId: string, scanId: string, signal: AbortSignal): Promise<ScanExecution> {
@@ -140,16 +176,16 @@ export async function fetchMarketScans(session: PrivateAuthSession, before: stri
   const ticket = await getTradingFunctionTicket(session, signal);
   const url = new URL("/trade/api/signal/scans", ticket.url.origin);
   const deadline = AbortSignal.any([AbortSignal.timeout(22000), signal]);
-  const request = (version: 2 | 3 | 4) => fetch(url.href, {
+  const request = (version: number) => fetch(url.href, {
     method: "POST", credentials: "omit", cache: "no-store", redirect: "error",
     headers: { "X-JWT-Token": `Bearer ${ticket.token}`, "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(before === undefined ? { version } : { version, before }), signal: deadline,
   });
-  let version: 2 | 3 | 4 = 4;
+  let version = 5;
   let response = await request(version);
   let payload: unknown = await response.json().catch(() => null);
   while (version > 2 && response.status === 400 && object(payload) && object(payload.error) && payload.error.code === "INVALID_SCAN_CURSOR") {
-    version = version === 4 ? 3 : 2;
+    version--;
     response = await request(version);
     payload = await response.json().catch(() => null);
   }

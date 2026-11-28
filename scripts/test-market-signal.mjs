@@ -284,7 +284,24 @@ test("executable pending drafts support live and demo with a positive order wait
 
 const scannerSource = compile(await readFile(new URL("../src/lib/marketScanner.ts", import.meta.url), "utf8"))
   .replace('"@/lib/binanceSync"', JSON.stringify(data(ticketSource)));
-const { fetchMarketScans, fetchScanExecution } = await import(data(scannerSource));
+const { fetchMarketScans, fetchScanExecution, exportMarketScans, parseBeijingScanTime } = await import(data(scannerSource));
+
+test("scan export uses local Beijing times and accepts only a linked CDN manifest", async t => {
+  const exportId = "00000000-0000-0000-0000-000000000002";
+  const path = `/private/.trading/owner/market-signals/records/trade-results/v1/exports/${exportId}.json`;
+  let payload = { exportId, count: 2, skippedCount: 1, url: `https://static.yanxiao.me${path}` };
+  const calls = setup(t, n => response(n % 2 === 1 ? ticket() : payload));
+  const signal = new AbortController().signal;
+  const from = parseBeijingScanTime("2026-11-27T23:55");
+  const to = parseBeijingScanTime("2026-11-28T00:05");
+  assert.equal(from, Date.UTC(2026, 10, 27, 15, 55));
+  assert.equal(to, Date.UTC(2026, 10, 27, 16, 5));
+  assert.deepEqual(await exportMarketScans(session, { from, to }, signal), payload);
+  assert.deepEqual(JSON.parse(calls[1].options.body), { action: "export", from, to });
+  payload = { ...payload, url: `https://example.com${path}` };
+  await assert.rejects(exportMarketScans(session, { analysisIds: [exportId] }, signal), /回执格式无效/);
+  assert.deepEqual(JSON.parse(calls[3].options.body), { action: "export", analysisIds: [exportId] });
+});
 
 test("scanner reads execution evidence by linked scan and analysis IDs", async t => {
   const signal = new AbortController().signal;
@@ -318,10 +335,10 @@ test("scanner reads only its own route and preserves two scans of the same candl
   assert.equal(calls[0].url, "https://www.yanxiao.me/api/private-auth/trading/binance/token");
   assert.equal(calls[1].url, "https://yanxiao.me/trade/api/signal/scans");
   assert.equal(calls[1].options.credentials, "omit");
-  assert.deepEqual(JSON.parse(calls[1].options.body), { version: 4 });
+  assert.deepEqual(JSON.parse(calls[1].options.body), { version: 5 });
   payload = { ...payload, next: null, records: [{ ...row, time: slot + 900000, scannedAt: slot + 900000 }] };
   await assert.rejects(fetchMarketScans(session, next, signal), /扫描记录时段无效/);
-  assert.deepEqual(JSON.parse(calls[3].options.body), { version: 4, before: next });
+  assert.deepEqual(JSON.parse(calls[3].options.body), { version: 5, before: next });
 });
 
 test("scanner reads new 5m closes and pre-upgrade 15m slots in the same page", async t => {
@@ -337,6 +354,10 @@ test("scanner reads new 5m closes and pre-upgrade 15m slots in the same page", a
   let payload = { records: [row, preUpgrade], from: older, to: row.time, next: null };
   setup(t, n => response(n % 2 === 1 ? ticket() : payload));
   assert.deepEqual(await fetchMarketScans(session, undefined, signal), payload);
+  const untriggered = { ...row, status: "no_trigger", analysisId: undefined, opportunityStatus: undefined, decisionReason: undefined,
+    exportAnalysisId: "11111111-1111-1111-1111-111111111111" };
+  payload = { ...payload, records: [untriggered] };
+  assert.equal((await fetchMarketScans(session, undefined, signal)).records[0].exportAnalysisId, untriggered.exportAnalysisId);
   payload = { ...payload, records: [{ ...row, candleInterval: "15m" }] };
   await assert.rejects(fetchMarketScans(session, undefined, signal), /扫描记录格式无效/);
   payload = { ...payload, records: [{ ...row, status: "no_trigger" }] };
@@ -346,10 +367,10 @@ test("scanner reads new 5m closes and pre-upgrade 15m slots in the same page", a
 test("scanner falls back to legacy history when the API has not been upgraded", async t => {
   const now = 1800000000000;
   const page = { records: [], from: now, to: now, next: null };
-  const calls = setup(t, n => n === 1 ? response(ticket()) : n <= 3 ?
+  const calls = setup(t, n => n === 1 ? response(ticket()) : n <= 4 ?
     response({ error: { code: "INVALID_SCAN_CURSOR" } }, 400) : response(page));
   assert.deepEqual(await fetchMarketScans(session, undefined, new AbortController().signal), page);
-  assert.deepEqual(calls.slice(1).map(call => JSON.parse(call.options.body)), [{ version: 4 }, { version: 3 }, { version: 2 }]);
+  assert.deepEqual(calls.slice(1).map(call => JSON.parse(call.options.body)), [{ version: 5 }, { version: 4 }, { version: 3 }, { version: 2 }]);
 });
 
 test("scanner accepts completed and failed automatic analysis without requiring it on legacy rows", async t => {
